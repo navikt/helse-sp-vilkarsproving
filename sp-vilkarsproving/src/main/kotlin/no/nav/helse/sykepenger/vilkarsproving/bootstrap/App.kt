@@ -6,6 +6,7 @@ import io.ktor.server.application.ApplicationStarted
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.sykepenger.vilkarsproving.shared.logging.loggInfo
 import org.flywaydb.core.Flyway
+import java.time.Duration
 
 fun main() {
     val env = System.getenv()
@@ -14,6 +15,10 @@ fun main() {
             HikariConfig().apply {
                 jdbcUrl = env.getValue("DATABASE_JDBC_URL")
                 maximumPoolSize = 10
+                minimumIdle = 1
+                idleTimeout = Duration.ofMinutes(5).toMillis()
+                maxLifetime = Duration.ofMinutes(30).toMillis()
+                connectionTimeout = Duration.ofSeconds(5).toMillis()
             },
         )
     launchApplication(System.getenv(), dataSource)
@@ -40,6 +45,6 @@ fun launchApplication(
             }
         })
         .apply {
-            VilkårsprøvingModule(this)
+            VilkårsprøvingModule(this, dataSource)
         }.start()
 }

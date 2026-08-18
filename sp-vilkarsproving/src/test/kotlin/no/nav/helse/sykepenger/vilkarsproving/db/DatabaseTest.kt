@@ -1,0 +1,14 @@
+package no.nav.helse.sykepenger.vilkarsproving.infra.db
+
+import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
+import org.junit.jupiter.api.BeforeEach
+
+internal abstract class DatabaseTest {
+    @BeforeEach
+    fun tømDatabasen() {
+        Database.tøm()
+    }
+
+    /** Kjører blokken i én transaksjon, akkurat som behandlingen av én melding gjør. */
+    protected fun <T> transaksjon(block: (Transaksjonskontekst) -> T): T = Database.transaksjonProvider.transaksjon(block)
+}

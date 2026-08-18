@@ -2,7 +2,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.kafka
 
 import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
 import no.nav.helse.februar
-import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryVilkårsvurderingRepository
+import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
@@ -21,10 +21,11 @@ import java.util.UUID
 import java.util.stream.Stream
 
 internal class OpptjeningsvurderingResultatRiverTest {
-    private val repository = InMemoryVilkårsvurderingRepository()
+    private val transaksjon = InMemoryTransaksjonProvider()
+    private val repository = transaksjon.vilkårsvurderinger
     private val rapid =
         TestRapid().apply {
-            OpptjeningsvurderingResultatRiver(this, repository)
+            OpptjeningsvurderingResultatRiver(this, transaksjon)
         }
 
     // Riveren skal svare med ok=true når vurderingen er oppfylt

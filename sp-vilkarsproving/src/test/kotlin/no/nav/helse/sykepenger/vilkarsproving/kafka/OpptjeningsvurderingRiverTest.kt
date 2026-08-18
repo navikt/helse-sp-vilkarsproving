@@ -4,9 +4,7 @@ import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
 import no.nav.helse.februar
 import no.nav.helse.hendelser.til
 import no.nav.helse.januar
-import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryVilkårsprøvingRepository
-import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryVilkårsvurderingRepository
-import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService
+import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
@@ -26,11 +24,12 @@ import tools.jackson.databind.node.ObjectNode
 import java.util.UUID
 
 internal class OpptjeningsvurderingRiverTest {
-    private val vurderinger = InMemoryVilkårsvurderingRepository()
-    private val prøvinger = InMemoryVilkårsprøvingRepository()
+    private val transaksjon = InMemoryTransaksjonProvider()
+    private val vurderinger = transaksjon.vilkårsvurderinger
+    private val prøvinger = transaksjon.vilkårsprøvinger
     private val rapid =
         TestRapid().apply {
-            OpptjeningsvurderingRiver(this, OpptjeningService(vurderinger, prøvinger))
+            OpptjeningsvurderingRiver(this, transaksjon)
         }
 
     // For arbeidstakere må vi hente arbeidsforhold før vi kan vurdere, så riveren
@@ -185,7 +184,7 @@ internal class OpptjeningsvurderingRiverTest {
         val prøving = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving
         val arbeidsforhold = Arbeidsforhold(orgnummer = ORGNUMMER, ansettelseperiode = 1.januar til 31.januar, type = ORDINÆRT)
         val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(listOf(arbeidsforhold)))
-        prøvinger.opprett(prøving)
+        prøvinger.lagre(prøving)
         vurderinger.lagre(vurdering)
         return vurdering.id
     }

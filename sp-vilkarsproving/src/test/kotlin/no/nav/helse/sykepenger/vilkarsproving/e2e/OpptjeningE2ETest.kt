@@ -1,20 +1,24 @@
 package no.nav.helse.sykepenger.vilkarsproving.e2e
 
 import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
-import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryVilkårsvurderingRepository
-import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService
+import no.nav.helse.sykepenger.vilkarsproving.application.TransaksjonProvider
+import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
+import no.nav.helse.sykepenger.vilkarsproving.infra.db.Database
+import no.nav.helse.sykepenger.vilkarsproving.infra.db.DatabaseTest
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingResultatRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
 import org.intellij.lang.annotations.Language
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import java.util.UUID
+import org.junit.jupiter.api.assertThrows
+import java.util.*
 
 /**
- * E2E-tester for opptjeningsflyten gjennom alle tre rivers.
+ * E2E-tester for opptjeningsflyten gjennom alle tre rivers, mot en ekte database.
+ *
+ * Testene bekrefter både at meldingene går riktig vei og at tilstanden faktisk overlever lagringen:
+ * radtellingene underveis viser at alt som skjer i kontekst av én melding havner i én transaksjon.
  *
  * Flyt for arbeidstaker:
  *   1. OpptjeningsvurderingRiver mottar Opptjeningsvurdering-behov → sender ArbeidsforholdV2-behov
@@ -25,14 +29,13 @@ import java.util.UUID
  *   1. OpptjeningsvurderingRiver mottar Opptjeningsvurdering-behov → besvarer direkte
  *   2. OpptjeningsvurderingResultatRiver mottar OpptjeningsvurderingResultat-behov → svarer med ok=true
  */
-internal class OpptjeningE2ETest {
-    private val repository = InMemoryVilkårsvurderingRepository()
+internal class OpptjeningE2ETest : DatabaseTest() {
+    private val transaksjon = Database.transaksjonProvider
     private val rapid =
         TestRapid().apply {
-            val opptjeningService = OpptjeningService(repository)
-            OpptjeningsvurderingRiver(this, opptjeningService)
-            GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(this, opptjeningService)
-            OpptjeningsvurderingResultatRiver(this, repository)
+            OpptjeningsvurderingRiver(this, transaksjon)
+            GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(this, transaksjon)
+            OpptjeningsvurderingResultatRiver(this, transaksjon)
         }
 
     // === Arbeidstaker-flyt ===
@@ -49,6 +52,10 @@ internal class OpptjeningE2ETest {
         assertEquals("behov", arbeidsforholdBehov.path("@event_name").asString())
         assertEquals(listOf("ArbeidsforholdV2"), arbeidsforholdBehov.path("@behov").toList().map { it.asString() })
 
+        // Prøvingen er lagret og venter på grunnlag; ingen vurdering ennå
+        assertEquals(1, Database.antallRader("vilkarsproving"))
+        assertEquals(0, Database.antallRader("vilkarsvurdering"))
+
         // Steg 2: Aareg svarer med arbeidsforhold som gir nok opptjening (28+ dager)
         rapid.sendTestMessage(
             arbeidsforholdløsning(
@@ -58,6 +65,10 @@ internal class OpptjeningE2ETest {
             FØDSELSNUMMER,
         )
         assertEquals(2, rapid.inspektør.size)
+
+        // Vurderingen og den fullførte prøvingen ble skrevet i samme transaksjon
+        assertEquals(1, Database.antallRader("vilkarsproving"))
+        assertEquals(1, Database.antallRader("vilkarsvurdering"))
 
         val opptjeningsvurderingLøsning = rapid.inspektør.message(1)
         assertEquals(behovId.toString(), opptjeningsvurderingLøsning.path("@id").asString())
@@ -205,6 +216,7 @@ internal class OpptjeningE2ETest {
 
         rapid.sendTestMessage(løsning, FØDSELSNUMMER)
         assertEquals(2, rapid.inspektør.size) // Ingen ny melding
+        assertEquals(1, Database.antallRader("vilkarsvurdering"))
     }
 
     // === Selvstendig næringsdrivende-flyt ===
@@ -244,37 +256,63 @@ internal class OpptjeningE2ETest {
         )
     }
 
+    // Vurderingen ligger i databasen, så et nytt behov besvares direkte — også etter at prosessen
+    // har startet på nytt (nye rivers, ingen tilstand i minnet, samme database)
     @Test
-    fun `selvstendig næringsdrivende med allerede komplett vurdering svares direkte`() {
-        val behovId1 = UUID.randomUUID()
-        val behovId2 = UUID.randomUUID()
+    fun `lagret vurdering gjenbrukes av en ny instans`() {
+        rapid.sendTestMessage(opptjeningsvurderingBehov(UUID.randomUUID(), "SelvstendigNæringsdrivende"), FØDSELSNUMMER)
+        val vurderingId =
+            rapid.inspektør
+                .message(0)
+                .path("@løsning")
+                .path("Opptjeningsvurdering")
+                .path("id")
+                .asString()
 
-        rapid.sendTestMessage(opptjeningsvurderingBehov(behovId1, "SelvstendigNæringsdrivende"), FØDSELSNUMMER)
-        val vurderingId1 =
-            UUID.fromString(
-                rapid.inspektør
-                    .message(0)
-                    .path("@løsning")
-                    .path("Opptjeningsvurdering")
-                    .path("id")
-                    .asString(),
-            )
+        val nyRapid =
+            TestRapid().apply {
+                OpptjeningsvurderingRiver(this, transaksjon)
+            }
+        nyRapid.sendTestMessage(opptjeningsvurderingBehov(UUID.randomUUID(), "SelvstendigNæringsdrivende"), FØDSELSNUMMER)
 
-        // Nytt behov for samme skjæringstidspunkt
-        rapid.sendTestMessage(opptjeningsvurderingBehov(behovId2, "SelvstendigNæringsdrivende"), FØDSELSNUMMER)
-        assertEquals(2, rapid.inspektør.size)
-
-        val vurderingId2 =
-            UUID.fromString(
-                rapid.inspektør
-                    .message(1)
-                    .path("@løsning")
-                    .path("Opptjeningsvurdering")
-                    .path("id")
-                    .asString(),
-            )
-        assertEquals(vurderingId1, vurderingId2) { "Eksisterende vurdering skal gjenbrukes" }
+        assertEquals(1, nyRapid.inspektør.size)
+        assertEquals(
+            vurderingId,
+            nyRapid.inspektør
+                .message(0)
+                .path("@løsning")
+                .path("Opptjeningsvurdering")
+                .path("id")
+                .asString(),
+        ) { "Eksisterende vurdering skal gjenbrukes" }
+        assertEquals(1, Database.antallRader("vilkarsvurdering"))
     }
+
+    // Feiler behandlingen av en melding etter at arbeidet er gjort, skal ingenting være lagret
+    @Test
+    fun `feil i behandlingen av en melding lagrer ingenting`() {
+        val feilendeRapid =
+            TestRapid().apply {
+                OpptjeningsvurderingRiver(this, feilerEtterArbeidet)
+            }
+
+        assertThrows<RuntimeException> {
+            feilendeRapid.sendTestMessage(opptjeningsvurderingBehov(UUID.randomUUID(), "SelvstendigNæringsdrivende"), FØDSELSNUMMER)
+        }
+
+        assertEquals(0, Database.antallRader("vilkarsproving"))
+        assertEquals(0, Database.antallRader("vilkarsvurdering"))
+    }
+
+    /** Gjør alt arbeidet i en ekte transaksjon, men krasjer før commit. */
+    private val feilerEtterArbeidet =
+        object : TransaksjonProvider {
+            override fun <T> transaksjon(block: (Transaksjonskontekst) -> T): T =
+                transaksjon.transaksjon { kontekst ->
+                    block(kontekst)
+                    throw RuntimeException("krasjer før commit")
+                }
+        }
 
     private companion object {
         const val FØDSELSNUMMER = "12029240045"

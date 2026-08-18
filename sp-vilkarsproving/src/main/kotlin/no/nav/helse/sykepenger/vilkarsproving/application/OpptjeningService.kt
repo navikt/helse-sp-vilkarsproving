@@ -11,18 +11,19 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
-import no.nav.helse.sykepenger.vilkarsproving.infra.db.InMemoryVilkårsprøvingRepository
 import java.time.LocalDate
 
 /**
  * Oversetter opptjeningsspesifikke kommandoer til den generelle prøvingsflyten.
  * All orkestrering ligger i [VilkårsprøvingService]; her er kun det som er særegent for opptjening.
+ *
+ * Tjenesten konstrueres av en [Transaksjonskontekst] og lever like lenge som transaksjonen —
+ * altså like lenge som behandlingen av én melding.
  */
 internal class OpptjeningService(
-    vilkårsvurderingRepository: VilkårsvurderingRepository,
-    vilkårsprøvingRepository: VilkårsprøvingRepository = InMemoryVilkårsprøvingRepository(),
+    kontekst: Transaksjonskontekst,
 ) {
-    private val vilkårsprøving = VilkårsprøvingService(vilkårsvurderingRepository, vilkårsprøvingRepository)
+    private val vilkårsprøving = VilkårsprøvingService(kontekst)
 
     fun vurderOpptjening(
         fødselsnummer: String,

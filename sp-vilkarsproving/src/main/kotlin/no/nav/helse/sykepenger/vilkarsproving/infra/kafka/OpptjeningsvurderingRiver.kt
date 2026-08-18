@@ -8,6 +8,7 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService
+import no.nav.helse.sykepenger.vilkarsproving.application.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResultat
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.sikkerLogg
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
@@ -16,7 +17,7 @@ import tools.jackson.module.kotlin.jacksonObjectMapper
 
 internal class OpptjeningsvurderingRiver(
     rapidsConnection: RapidsConnection,
-    private val opptjeningService: OpptjeningService,
+    private val transaksjonProvider: TransaksjonProvider,
 ) : River.PacketListener {
     private val behovKey = "Opptjeningsvurdering"
 
@@ -48,12 +49,16 @@ internal class OpptjeningsvurderingRiver(
         val arbeidssituasjon = Arbeidssituasjon.valueOf(packet["arbeidssituasjon"].asString())
 
         val vurderOpptjeningResultat =
-            opptjeningService.vurderOpptjening(
-                fødselsnummer = fødselsnummer,
-                skjæringstidspunkt = skjæringstidspunkt,
-                arbeidssituasjon = arbeidssituasjon,
-            )
+            transaksjonProvider.transaksjon { kontekst ->
+                OpptjeningService(kontekst).vurderOpptjening(
+                    fødselsnummer = fødselsnummer,
+                    skjæringstidspunkt = skjæringstidspunkt,
+                    arbeidssituasjon = arbeidssituasjon,
+                )
+            }
 
+        // Publisering skjer først etter at transaksjonen er commitet — vi forteller aldri
+        // omverdenen om en vurdering vi ikke har lagret.
         when (vurderOpptjeningResultat) {
             is VurderOpptjeningResultat.HarVurdering -> {
                 packet["@løsning"] =

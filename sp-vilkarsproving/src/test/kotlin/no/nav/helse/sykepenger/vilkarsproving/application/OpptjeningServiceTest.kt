@@ -29,9 +29,10 @@ import org.junit.jupiter.api.assertThrows
 import java.time.LocalDate
 
 internal class OpptjeningServiceTest {
-    private val vurderinger = InMemoryVilkårsvurderingRepository()
-    private val prøvinger = InMemoryVilkårsprøvingRepository()
-    private val service = OpptjeningService(vurderinger, prøvinger)
+    private val transaksjon = InMemoryTransaksjonProvider()
+    private val vurderinger = transaksjon.vilkårsvurderinger
+    private val prøvinger = transaksjon.vilkårsprøvinger
+    private val service = OpptjeningService(transaksjon)
 
     // ---------------------------------------------------------------------
     // vurderOpptjening
@@ -102,16 +103,6 @@ internal class OpptjeningServiceTest {
 
         assertEquals(TrengerArbeidsforhold(FØDSELSNUMMER, 1.februar), resultat)
         assertEquals(1, prøvinger.alleProvinger.size)
-    }
-
-    // Invarianten håndheves av lageret, ikke bare av sjekken i servicen
-    @Test
-    fun `lageret nekter to aktive prøvinger på samme grunnlag`() {
-        val første = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving
-        prøvinger.opprett(første)
-
-        val andre = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving
-        assertThrows<IllegalStateException> { prøvinger.opprett(andre) }
     }
 
     // Vurderinger er knyttet til ett skjæringstidspunkt; en vurdering på et annet
@@ -273,7 +264,7 @@ internal class OpptjeningServiceTest {
     ): VurderingId {
         val prøving = Opptjeningsprøving.start(fødselsnummer, skjæringstidspunkt, Arbeidssituasjon.Arbeidstaker).prøving
         val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(listOf(arbeidsforhold(1.januar til 31.januar))))
-        prøvinger.opprett(prøving)
+        prøvinger.lagre(prøving)
         vurderinger.lagre(vurdering)
         return vurdering.id
     }

@@ -9,15 +9,16 @@ internal class InMemoryVilkårsprøvingRepository : VilkårsprøvingRepository {
 
     internal val alleProvinger: List<Vilkårsprøving> get() = prøvinger.toList()
 
-    override fun opprett(prøving: Vilkårsprøving) {
+    override fun lagre(prøving: Vilkårsprøving) {
+        val eksisterende = prøvinger.indexOfFirst { it.id == prøving.id }
+        if (eksisterende != -1) {
+            prøvinger[eksisterende] = prøving
+            return
+        }
         check(prøvinger.none { it.gjelderSammeSom(prøving) && !it.erAvsluttet }) {
             "Det pågår allerede en prøving av ${prøving.vilkår} for fødselsnummer ${prøving.fødselsnummer} med skjæringstidspunkt ${prøving.skjæringstidspunkt}"
         }
         prøvinger.add(prøving)
-    }
-
-    override fun oppdater(prøving: Vilkårsprøving) {
-        check(prøvinger.any { it.id == prøving.id }) { "Prøving ${prøving.id} er ikke opprettet" }
     }
 
     override fun finnSiste(

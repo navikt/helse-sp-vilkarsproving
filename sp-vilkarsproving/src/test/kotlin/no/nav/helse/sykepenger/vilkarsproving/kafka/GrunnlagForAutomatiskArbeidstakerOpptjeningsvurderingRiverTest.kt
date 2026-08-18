@@ -3,9 +3,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.kafka
 import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
 import no.nav.helse.februar
 import no.nav.helse.januar
-import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryVilkårsprøvingRepository
-import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryVilkårsvurderingRepository
-import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService
+import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode.IKKE_OPPTJENING_ARBEID_ELLER_YTELSE
@@ -21,11 +19,12 @@ import java.time.LocalDate
 import java.util.UUID
 
 internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
-    private val vurderinger = InMemoryVilkårsvurderingRepository()
-    private val prøvinger = InMemoryVilkårsprøvingRepository()
+    private val transaksjon = InMemoryTransaksjonProvider()
+    private val vurderinger = transaksjon.vilkårsvurderinger
+    private val prøvinger = transaksjon.vilkårsprøvinger
     private val rapid =
         TestRapid().apply {
-            GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(this, OpptjeningService(vurderinger, prøvinger))
+            GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(this, transaksjon)
         }
 
     // Normalflyten: løsningen fullfører prøvingen, vurderingen oppstår, og det opprinnelige
@@ -192,7 +191,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
     @Test
     fun `løsning på allerede avsluttet prøving gir ingen melding`() {
         val (prøving, vurdering) = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
-        prøvinger.opprett(prøving)
+        prøvinger.lagre(prøving)
         vurderinger.lagre(vurdering!!)
 
         rapid.sendTestMessage(arbeidsforholdløsning(arbeidsforhold(ansattSiden = "2018-01-01", ansattTil = "2018-01-31")))
@@ -201,7 +200,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, vurderinger.alleVurderinger.single().grunnlag)
     }
 
-    private fun påbegyntPrøving() = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving.also { prøvinger.opprett(it) }
+    private fun påbegyntPrøving() = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving.also { prøvinger.lagre(it) }
 
     private fun arbeidsforholdPåVurdering() = (vurderinger.alleVurderinger.single().grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold
 

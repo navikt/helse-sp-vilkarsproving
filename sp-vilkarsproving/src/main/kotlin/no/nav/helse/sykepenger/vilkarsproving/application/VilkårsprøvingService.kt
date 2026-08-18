@@ -16,9 +16,11 @@ import java.time.LocalDate
  * grunnlag — ligger hos kallerne (`OpptjeningService`, `MedlemskapService`) og i domenet.
  */
 internal class VilkårsprøvingService(
-    private val vilkårsvurderingRepository: VilkårsvurderingRepository,
-    private val vilkårsprøvingRepository: VilkårsprøvingRepository,
+    kontekst: Transaksjonskontekst,
 ) {
+    private val vilkårsvurderingRepository = kontekst.vilkårsvurderinger
+    private val vilkårsprøvingRepository = kontekst.vilkårsprøvinger
+
     /**
      * Starter en prøving med mindre vi allerede har et svar, eller en prøving pågår.
      * [startPrøving] kalles kun når det faktisk er noe å starte.
@@ -40,7 +42,7 @@ internal class VilkårsprøvingService(
         }
 
         val (prøving, vurdering) = startPrøving()
-        vilkårsprøvingRepository.opprett(prøving)
+        vilkårsprøvingRepository.lagre(prøving)
 
         if (vurdering == null) {
             sikkerLogg.info("Startet prøving ${prøving.id} av $vilkår for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. Venter på ${prøving.uteståendeBehov}.")
@@ -83,7 +85,7 @@ internal class VilkårsprøvingService(
 
         val vurdering = prøving.motta(grunnlag)
         vilkårsvurderingRepository.lagre(vurdering)
-        vilkårsprøvingRepository.oppdater(prøving)
+        vilkårsprøvingRepository.lagre(prøving)
         sikkerLogg.info("Prøving ${prøving.id} av $vilkår fullført for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. VurderingId: ${vurdering.id}.")
         return GrunnlagResultat.NyVurderingForetatt(vurdering)
     }

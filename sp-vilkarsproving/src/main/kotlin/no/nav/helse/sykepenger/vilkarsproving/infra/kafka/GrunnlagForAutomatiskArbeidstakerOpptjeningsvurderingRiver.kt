@@ -9,6 +9,7 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService
+import no.nav.helse.sykepenger.vilkarsproving.application.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.sikkerLogg
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import tools.jackson.databind.JsonNode
@@ -16,7 +17,7 @@ import tools.jackson.databind.node.ObjectNode
 
 internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(
     rapidsConnection: RapidsConnection,
-    private val opptjeningService: OpptjeningService,
+    private val transaksjonProvider: TransaksjonProvider,
 ) : River.PacketListener {
     private val behovKey = "ArbeidsforholdV2"
 
@@ -56,11 +57,15 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(
         val fødselsnummer = packet["fødselsnummer"].asString()
         sikkerLogg.info("Mottatt løsning på behov for $behovKey for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. Antall arbeidsforhold: ${arbeidsforhold.size}")
         val resultat =
-            opptjeningService.behandleGrunnlagForAutomatiskArbeidstakerOpptjeningsvurdering(
-                fødselsnummer = fødselsnummer,
-                skjæringstidspunkt = skjæringstidspunkt,
-                arbeidsforhold = arbeidsforhold,
-            )
+            transaksjonProvider.transaksjon { kontekst ->
+                OpptjeningService(kontekst).behandleGrunnlagForAutomatiskArbeidstakerOpptjeningsvurdering(
+                    fødselsnummer = fødselsnummer,
+                    skjæringstidspunkt = skjæringstidspunkt,
+                    arbeidsforhold = arbeidsforhold,
+                )
+            }
+        // Publisering skjer først etter at transaksjonen er commitet — vi forteller aldri
+        // omverdenen om en vurdering vi ikke har lagret.
         when (resultat) {
             OpptjeningService.BehandleGrunnlagResultat.AlleredeVurdert -> {
                 sikkerLogg.warn("Allerede vurdert for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. Ingen ny vurdering foretatt.")

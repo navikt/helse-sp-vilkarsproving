@@ -73,6 +73,31 @@ internal class Vilkårsvurdering private constructor(
             kilde = Kilde.Manuell(saksbehandlerIdent, fritekstbegrunnelse),
             vurdertTidspunkt = vurdertTidspunkt,
         )
+
+        /**
+         * Rekonstruerer en lagret vurdering. Regelen kjøres ikke på nytt — resultatet er det som ble
+         * vurdert den gangen, med den regelversjonen som står i [kilde].
+         */
+        fun fraLagring(
+            id: VurderingId,
+            prøvingId: PrøvingId,
+            fødselsnummer: String,
+            skjæringstidspunkt: LocalDate,
+            grunnlag: Vilkårsgrunnlag,
+            kodeverkkode: Kodeverkkode,
+            kilde: Kilde,
+            vurdertTidspunkt: Instant,
+        ) = Vilkårsvurdering(
+            id = id,
+            prøvingId = prøvingId,
+            vilkår = grunnlag.vilkår,
+            fødselsnummer = fødselsnummer,
+            skjæringstidspunkt = skjæringstidspunkt,
+            grunnlag = grunnlag,
+            kodeverkkode = kodeverkkode,
+            kilde = kilde,
+            vurdertTidspunkt = vurdertTidspunkt,
+        )
     }
 }
 

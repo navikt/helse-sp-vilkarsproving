@@ -6,7 +6,8 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
-import no.nav.helse.sykepenger.vilkarsproving.application.VilkårsvurderingRepository
+import no.nav.helse.sykepenger.vilkarsproving.application.TransaksjonProvider
+import no.nav.helse.sykepenger.vilkarsproving.application.VilkårsprøvingService
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.sikkerLogg
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
@@ -20,7 +21,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
  */
 internal open class VilkårsvurderingResultatRiver(
     rapidsConnection: RapidsConnection,
-    private val vilkårsvurderingRepository: VilkårsvurderingRepository,
+    private val transaksjonProvider: TransaksjonProvider,
     private val vilkår: Vilkår,
     private val behovnavn: String,
     private val idFelt: String,
@@ -44,7 +45,10 @@ internal open class VilkårsvurderingResultatRiver(
     ) {
         val vurderingId = VurderingId(packet[idFelt].asUUID())
         sikkerLogg.info("Mottatt behov for $behovnavn for $idFelt $vurderingId")
-        val vurdering = vilkårsvurderingRepository.finn(vilkår, vurderingId) ?: error("Finner ikke vurdering av $vilkår med id $vurderingId")
+        val vurdering =
+            transaksjonProvider.transaksjon { kontekst ->
+                VilkårsprøvingService(kontekst).finnVurdering(vilkår, vurderingId)
+            }
 
         val ok =
             when (vurdering.utfall) {
@@ -60,10 +64,10 @@ internal open class VilkårsvurderingResultatRiver(
 
 internal class OpptjeningsvurderingResultatRiver(
     rapidsConnection: RapidsConnection,
-    vilkårsvurderingRepository: VilkårsvurderingRepository,
+    transaksjonProvider: TransaksjonProvider,
 ) : VilkårsvurderingResultatRiver(
         rapidsConnection = rapidsConnection,
-        vilkårsvurderingRepository = vilkårsvurderingRepository,
+        transaksjonProvider = transaksjonProvider,
         vilkår = Vilkår.Opptjening,
         behovnavn = "OpptjeningsvurderingResultat",
         idFelt = "OpptjeningsvurderingResultat.opptjeningsvurderingId",
