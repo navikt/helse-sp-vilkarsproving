@@ -19,3 +19,9 @@ dependencies {
     testImplementation(libs.testcontainers.postgres)
     testImplementation(libs.flyway.database.postgresql)
 }
+
+tasks {
+    test {
+        failOnNoDiscoveredTests = false
+    }
+}
