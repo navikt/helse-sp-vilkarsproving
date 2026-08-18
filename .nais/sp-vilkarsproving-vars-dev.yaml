@@ -1,7 +1,7 @@
 kafkaPool: nav-dev
-#db:
-#  tier: "db-f1-micro"
-#  extraUsers:
-#    - "sp-vilkarsproving-opprydding-dev"
+db:
+  tier: "db-f1-micro"
+  extraUsers:
+    - "sp-vilkarsproving-opprydding-dev"
 minReplicas: 1
 maxReplicas: 2
