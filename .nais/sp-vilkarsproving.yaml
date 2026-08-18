@@ -6,21 +6,21 @@ metadata:
   labels:
     team: tbd
 spec:
-#  gcp:
-#    sqlInstances:
-#      - type: POSTGRES_18
-#        diskAutoresize: true
-#        tier: {{ db.tier }}
-#        name: sp-vilkarsproving
-#        databases:
-#          - name: sp-vilkarsproving
-#            envVarPrefix: DATABASE
-#{{#if db.extraUsers}}
-#            users:
-#{{#each db.extraUsers as |extraUser|}}
-#              - name: {{ extraUser }}
-#{{/each}}
-#{{/if}}
+  gcp:
+    sqlInstances:
+      - type: POSTGRES_18
+        diskAutoresize: true
+        tier: {{ db.tier }}
+        name: sp-vilkarsproving
+        databases:
+          - name: sp-vilkarsproving
+            envVarPrefix: DATABASE
+{{#if db.extraUsers}}
+            users:
+{{#each db.extraUsers as |extraUser|}}
+              - name: {{ extraUser }}
+{{/each}}
+{{/if}}
   port: 8080
   startup:
     path: isready
