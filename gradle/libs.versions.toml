@@ -33,7 +33,7 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 tbd-libs-azure = {module = "com.github.navikt.tbd-libs:azure-token-client-default", version.ref = "tbd-libs"}
 tbd-libs-retry = {module = "com.github.navikt.tbd-libs:retry", version.ref = "tbd-libs"}
 
-logback-classic = "ch.qos.logback:logback-classic:1.6.1"
+logback-classic = "ch.qos.logback:logback-classic:1.6.2"
 logback-logstash-encoder = "net.logstash.logback:logstash-logback-encoder:9.0"
 postgresql = "org.postgresql:postgresql:42.7.13"
 rapids-and-rivers = {module = "com.github.navikt:rapids-and-rivers", version.ref = "rapidsAndRivers"}
