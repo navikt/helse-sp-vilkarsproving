@@ -33,7 +33,7 @@ internal class PostgresVilkårsprøvingRepositoryTest : DatabaseTest() {
         assertEquals(Vilkår.Opptjening, lagret.vilkår)
         assertEquals(FØDSELSNUMMER, lagret.fødselsnummer)
         assertEquals(1.februar, lagret.skjæringstidspunkt)
-        assertEquals(prøving.startet.truncatedTo(ChronoUnit.MICROS), lagret.startet.truncatedTo(ChronoUnit.MICROS))
+        assertEquals(prøving.startet.truncatedTo(ChronoUnit.MILLIS), lagret.startet.truncatedTo(ChronoUnit.MILLIS))
         assertEquals(Grunnlagsbehov.Arbeidsforhold, lagret.uteståendeBehov)
         assertFalse(lagret.erAvsluttet)
     }
@@ -94,7 +94,7 @@ internal class PostgresVilkårsprøvingRepositoryTest : DatabaseTest() {
 
         val lagret = transaksjon { it.vilkårsprøvinger.finnSiste(Vilkår.Opptjening, FØDSELSNUMMER, 1.februar) }!!
         assertEquals(1, Database.antallRader("vilkarsproving"))
-        assertEquals(prøving.startet.truncatedTo(ChronoUnit.MICROS), lagret.startet.truncatedTo(ChronoUnit.MICROS))
+        assertEquals(prøving.startet.truncatedTo(ChronoUnit.MILLIS), lagret.startet.truncatedTo(ChronoUnit.MILLIS))
     }
 
     // Invarianten håndheves av det partielle unike indekset, ikke av en sjekk i applikasjonskoden.

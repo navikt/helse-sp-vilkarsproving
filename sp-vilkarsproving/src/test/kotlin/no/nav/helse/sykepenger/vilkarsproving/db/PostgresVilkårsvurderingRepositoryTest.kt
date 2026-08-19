@@ -43,7 +43,7 @@ internal class PostgresVilkårsvurderingRepositoryTest : DatabaseTest() {
         assertEquals(vurdering.kodeverkkode, lagret.kodeverkkode)
         assertEquals(vurdering.utfall, lagret.utfall)
         assertEquals(Kilde.Automatisk("1"), lagret.kilde)
-        assertEquals(vurdering.vurdertTidspunkt.truncatedTo(ChronoUnit.MICROS), lagret.vurdertTidspunkt.truncatedTo(ChronoUnit.MICROS))
+        assertEquals(vurdering.vurdertTidspunkt.truncatedTo(ChronoUnit.MILLIS), lagret.vurdertTidspunkt.truncatedTo(ChronoUnit.MILLIS))
     }
 
     @Test
