@@ -41,9 +41,3 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-
-includeBuild("../tbd-libs") {
-    dependencySubstitution {
-        substitute(module("com.github.navikt.tbd-libs:speil-backend-app")).using(project(":speil-backend-app"))
-    }
-}
