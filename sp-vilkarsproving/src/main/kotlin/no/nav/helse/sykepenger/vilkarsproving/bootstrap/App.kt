@@ -4,6 +4,8 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.ApplicationStarted
 import no.nav.helse.rapids_rivers.RapidApplication
+import no.nav.helse.sykepenger.vilkarsproving.infra.api.vilkårsprøvingApi
+import no.nav.helse.sykepenger.vilkarsproving.infra.db.PostgresTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.shared.logging.loggInfo
 import org.flywaydb.core.Flyway
 import java.time.Duration
@@ -31,6 +33,12 @@ fun launchApplication(
     RapidApplication
         .create(env, builder = {
             withKtorModule {
+                vilkårsprøvingApi(
+                    transaksjonProvider = PostgresTransaksjonProvider(dataSource),
+                    clientId = env.getValue("AZURE_APP_CLIENT_ID"),
+                    issuerUrl = env.getValue("AZURE_APP_ISSUER_URL"),
+                    jwkProviderUri = env.getValue("AZURE_APP_JWK_PROVIDER_URI"),
+                )
                 monitor.subscribe(ApplicationStarted) {
                     loggInfo("Migrerer database")
                     Flyway
