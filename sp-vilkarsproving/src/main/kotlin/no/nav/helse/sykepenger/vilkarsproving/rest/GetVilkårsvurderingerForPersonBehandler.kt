@@ -7,7 +7,11 @@ import no.nav.helse.speil.backend.app.rest.KallKontekst
 import no.nav.helse.speil.backend.app.rest.RestResponse
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kilde
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsregel
+import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
 
 /**
@@ -25,14 +29,14 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
  *
  * Krever kun [Tilgang.Les] — dette er et rent oppslag, ingen skriving.
  */
-internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<VilkårsvurderingerForPersonResource, VilkårsvurderingerForPersonResponse, VilkårsvurderingerForPersonFeil, AppRolle, Transaksjonskontekst> {
+internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<VilkårsvurderingerForPersonResource, ApiVilkårsvurderingerForPersonResponse, VilkårsvurderingerForPersonFeil, AppRolle, Transaksjonskontekst> {
     override val påkrevdTilgang = Tilgang.Les
     override val tag = "vilkarsvurderinger"
 
     override fun behandle(
         resource: VilkårsvurderingerForPersonResource,
         kallKontekst: KallKontekst<Transaksjonskontekst, AppRolle>,
-    ): RestResponse<VilkårsvurderingerForPersonResponse, VilkårsvurderingerForPersonFeil> {
+    ): RestResponse<ApiVilkårsvurderingerForPersonResponse, VilkårsvurderingerForPersonFeil> {
         val personPseudoId =
             PersonPseudoId.fraString(resource.personId)
                 ?: return RestResponse.feil(VilkårsvurderingerForPersonFeil.PersonIkkeFunnet)
@@ -42,21 +46,51 @@ internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<Vilkårsv
             personIkkeFunnet = { VilkårsvurderingerForPersonFeil.PersonIkkeFunnet },
             manglerTilgang = { VilkårsvurderingerForPersonFeil.ManglerTilgang },
         ) { identitetsnummer ->
-            if (resource.medlemskapsvurderingId != null) {
-                TODO("Medlemskapsvurdering er ikke implementert ennå")
+
+
+            val opptjeningsvurderingId = resource.opptjeningsvurderingId ?: return@medPerson RestResponse.Feil(
+                VilkårsvurderingerForPersonFeil.ManglerRequestParameter
+            )
+
+
+            val vurdering = kallKontekst.transaksjon.vilkårsvurderinger.finn(Vilkår.Opptjening, VurderingId(opptjeningsvurderingId))
+            if (vurdering == null || vurdering.fødselsnummer != identitetsnummer.value) {
+                // TODO kalle gjennom til spleis i migreringsfasen
+                return@medPerson RestResponse.feil(VilkårsvurderingerForPersonFeil.VurderingIkkeFunnet)
             }
 
-            val opptjeningsvurderingId = resource.opptjeningsvurderingId
-            if (opptjeningsvurderingId != null) {
-                val vurdering = kallKontekst.transaksjon.vilkårsvurderinger.finn(Vilkår.Opptjening, VurderingId(opptjeningsvurderingId))
-                if (vurdering == null || vurdering.fødselsnummer != identitetsnummer.value) {
-                    return@medPerson RestResponse.feil(VilkårsvurderingerForPersonFeil.VurderingIkkeFunnet)
-                }
-                return@medPerson RestResponse.ok(VilkårsvurderingerForPersonResponse(listOf(vurdering.tilResponse())))
-            }
+            return@medPerson RestResponse.ok(ApiVilkårsvurderingerForPersonResponse(vurdering.tilApiOpptjeningResponse()))
 
-            val vurderinger = kallKontekst.transaksjon.vilkårsvurderinger.finnAlle(identitetsnummer.value)
-            RestResponse.ok(VilkårsvurderingerForPersonResponse(vurderinger.map { it.tilResponse() }))
         }
     }
 }
+
+/**
+ * Kildetypen ([Kilde.Automatisk] vs. [Kilde.Manuell]) avgjør hvilken [ApiOpptjening]-variant vi
+ * mapper til — feltene der er ikke overlappende, jf. de to variantene i API-kontrakten.
+ *
+ * [ApiOpptjeningsperiode] er ikke noe [Opptjeningsregel] beregner og lagrer i dag (den avgjør kun
+ * [no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode]), så feltet er alltid `null` her
+ * inntil regelen eventuelt utvides til å gi fra seg selve perioden den la til grunn.
+ */
+private fun Vilkårsvurdering.tilApiOpptjeningResponse(): ApiOpptjening =
+    when (val kilde = kilde) {
+        is Kilde.Automatisk ->
+            ApiOpptjening.Automatisk(
+                regelversjon = kilde.regelversjon,
+                opptjeningsperiode = null,
+                antallDagerPåkrevd = Opptjeningsregel.ANTALL_OPPTJENINGSDAGER_SOM_KREVES,
+                id = id.value,
+                utfall = utfall.tilApiUtfall(),
+                kodeverkkode = kodeverkkode.name,
+            )
+
+        is Kilde.Manuell ->
+            ApiOpptjening.Manuell(
+                saksbehandlerIdent = kilde.saksbehandlerIdent,
+                fritekstbegrunnelse = kilde.fritekstbegrunnelse,
+                id = id.value,
+                utfall = utfall.tilApiUtfall(),
+                kodeverkkode = kodeverkkode.name,
+            )
+    }

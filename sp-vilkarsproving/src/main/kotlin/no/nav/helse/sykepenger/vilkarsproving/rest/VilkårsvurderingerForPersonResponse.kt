@@ -1,58 +1,78 @@
-@file:kotlinx.serialization.UseContextualSerialization(java.util.UUID::class, java.time.Instant::class, java.time.LocalDate::class)
+@file:kotlinx.serialization.UseContextualSerialization(UUID::class, Instant::class, LocalDate::class)
 
 package no.nav.helse.sykepenger.vilkarsproving.rest
 
 import kotlinx.serialization.Serializable
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kilde
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
-/** Responsen for GET .../vilkarsvurderinger: alt som er vurdert for personen, eldste først (eller kun én, se [VilkårsvurderingerForPersonResource]). */
+
 @Serializable
-internal data class VilkårsvurderingerForPersonResponse(
-    val vurderinger: List<VilkårsvurderingResponse>,
+internal data class ApiVilkårsvurderingerForPersonResponse(
+    val opptjening: ApiOpptjening? = null
 )
 
 @Serializable
-internal data class VilkårsvurderingResponse(
-    val id: UUID,
-    val vilkår: Vilkår,
-    val skjæringstidspunkt: LocalDate,
-    val utfall: Utfall,
-    val kodeverkkode: String,
-    val kilde: KildeResponse,
-    val vurdertTidspunkt: Instant,
-)
+internal sealed interface ApiOpptjening {
+    val id: UUID
+    val utfall: ApiUtfall
+    val kodeverkkode: String
 
-@Serializable
-internal sealed interface KildeResponse {
+
     @Serializable
     data class Automatisk(
         val regelversjon: String,
-    ) : KildeResponse
+        val opptjeningsperiode: ApiOpptjeningsperiode?,
+        val antallDagerPåkrevd: Int,
+        override val id: UUID,
+        override val utfall: ApiUtfall,
+        override val kodeverkkode: String,
+
+        ) : ApiOpptjening
 
     @Serializable
     data class Manuell(
         val saksbehandlerIdent: String,
         val fritekstbegrunnelse: String,
-    ) : KildeResponse
+        override val id: UUID,
+        override val utfall: ApiUtfall,
+        override val kodeverkkode: String,
+    ) : ApiOpptjening
 }
 
-internal fun Vilkårsvurdering.tilResponse() =
-    VilkårsvurderingResponse(
-        id = id.value,
-        vilkår = vilkår,
-        skjæringstidspunkt = skjæringstidspunkt,
-        utfall = utfall,
-        kodeverkkode = kodeverkkode.name,
-        kilde =
-            when (val kilde = kilde) {
-                is Kilde.Automatisk -> KildeResponse.Automatisk(kilde.regelversjon)
-                is Kilde.Manuell -> KildeResponse.Manuell(kilde.saksbehandlerIdent, kilde.fritekstbegrunnelse)
-            },
-        vurdertTidspunkt = vurdertTidspunkt,
-    )
+@Serializable
+data class ApiOpptjeningsperiode(
+    val fom: LocalDate,
+    val tom: LocalDate,
+    val antallDager: Int,
+)
+
+
+/** API-domenets utgave av [Vilkår] — API-et sitt kontraktsobjekt, uavhengig av det interne domenet. */
+@Serializable
+internal enum class ApiVilkår {
+    Opptjening,
+}
+
+/** API-domenets utgave av [Utfall] — API-et sitt kontraktsobjekt, uavhengig av det interne domenet. */
+@Serializable
+internal enum class ApiUtfall {
+    Oppfylt,
+    IkkeOppfylt,
+}
+
+
+
+private fun Vilkår.tilApiVilkår() =
+    when (this) {
+        Vilkår.Opptjening -> ApiVilkår.Opptjening
+    }
+
+internal fun Utfall.tilApiUtfall() =
+    when (this) {
+        Utfall.Oppfylt -> ApiUtfall.Oppfylt
+        Utfall.IkkeOppfylt -> ApiUtfall.IkkeOppfylt
+    }

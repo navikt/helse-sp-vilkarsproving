@@ -33,5 +33,5 @@ import java.util.UUID
 internal class VilkårsvurderingerForPersonResource(
     val personId: String,
     val opptjeningsvurderingId: UUID? = null,
-    val medlemskapsvurderingId: UUID? = null,
 )
+

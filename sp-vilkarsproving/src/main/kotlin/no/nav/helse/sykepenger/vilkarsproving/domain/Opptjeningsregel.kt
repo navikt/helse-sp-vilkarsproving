@@ -9,7 +9,8 @@ internal object Opptjeningsregel : Vilkårsregel {
     override val vilkår = Vilkår.Opptjening
     override val versjon = "1"
 
-    private const val ANTALL_OPPTJENINGSDAGER_SOM_KREVES = 28
+    /** Eksponert slik at API-laget kan opplyse om kravet uten å duplisere det, jf. [ApiOpptjening.Automatisk.antallDagerPåkrevd]. */
+    const val ANTALL_OPPTJENINGSDAGER_SOM_KREVES = 28
 
     override fun vurder(
         skjæringstidspunkt: LocalDate,
