@@ -1,10 +1,11 @@
-package no.nav.helse.sykepenger.vilkarsproving.infra.db
+package no.nav.helse.sykepenger.vilkarsproving.db
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import kotliquery.Row
 import kotliquery.queryOf
 import kotliquery.sessionOf
+import no.nav.helse.sykepenger.vilkarsproving.infra.db.PostgresTransaksjonProvider
 import org.flywaydb.core.Flyway
 import org.testcontainers.postgresql.PostgreSQLContainer
 
