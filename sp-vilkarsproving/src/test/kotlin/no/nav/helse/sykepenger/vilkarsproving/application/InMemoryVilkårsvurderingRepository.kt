@@ -26,4 +26,6 @@ internal class InMemoryVilkårsvurderingRepository : VilkårsvurderingRepository
         vilkår: Vilkår,
         vurderingId: VurderingId,
     ) = vurderinger.firstOrNull { it.vilkår == vilkår && it.id == vurderingId }
+
+    override fun finnAlle(fødselsnummer: String): List<Vilkårsvurdering> = vurderinger.filter { it.fødselsnummer == fødselsnummer }
 }

@@ -1,10 +1,14 @@
-package no.nav.helse.sykepenger.vilkarsproving.infra.db
+package no.nav.helse.sykepenger.vilkarsproving.db
 
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kilde
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
+import no.nav.helse.sykepenger.vilkarsproving.infra.db.Grunnlagsjson
+import no.nav.helse.sykepenger.vilkarsproving.infra.db.Kildejson
+import no.nav.helse.sykepenger.vilkarsproving.infra.db.arbeidsforhold
+import no.nav.helse.sykepenger.vilkarsproving.infra.db.arbeidstakergrunnlag
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -50,7 +54,8 @@ internal class LagringsjsonTest {
     @Test
     fun `alle arbeidsforholdtyper tåler en rundtur`() {
         Arbeidsforhold.Arbeidsforholdtype.entries.forEach { type ->
-            val grunnlag = arbeidstakergrunnlag(arbeidsforhold(ansattFom = 1.januar, ansattTom = 31.januar, type = type))
+            val grunnlag =
+                arbeidstakergrunnlag(arbeidsforhold(ansattFom = 1.januar, ansattTom = 31.januar, type = type))
             assertEquals(grunnlag, grunnlagFraJson(grunnlag))
         }
     }

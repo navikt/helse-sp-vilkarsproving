@@ -1,58 +1,43 @@
 package no.nav.helse.sykepenger.vilkarsproving.bootstrap
 
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
-import io.ktor.server.application.ApplicationStarted
-import no.nav.helse.rapids_rivers.RapidApplication
-import no.nav.helse.sykepenger.vilkarsproving.infra.api.vilkårsprøvingApi
+import no.nav.helse.speil.backend.app.auth.Brukerrolle
+import no.nav.helse.speil.backend.app.auth.TilgangsgrupperTilBrukerroller
+import no.nav.helse.speil.backend.app.bootstrap.AppKonfigurasjon
+import no.nav.helse.speil.backend.app.bootstrap.startApp
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.PostgresTransaksjonProvider
-import no.nav.helse.sykepenger.vilkarsproving.shared.logging.loggInfo
-import org.flywaydb.core.Flyway
-import java.time.Duration
+import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver
+import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingResultatRiver
+import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
+import no.nav.helse.sykepenger.vilkarsproving.rest.GetVilkårsvurderingerForPersonBehandler
 
-fun main() {
-    val env = System.getenv()
-    val dataSource =
-        HikariDataSource(
-            HikariConfig().apply {
-                jdbcUrl = env.getValue("DATABASE_JDBC_URL")
-                maximumPoolSize = 10
-                minimumIdle = 1
-                idleTimeout = Duration.ofMinutes(5).toMillis()
-                maxLifetime = Duration.ofMinutes(30).toMillis()
-                connectionTimeout = Duration.ofSeconds(5).toMillis()
-            },
-        )
-    launchApplication(System.getenv(), dataSource)
+enum class AppRolle(
+    override val navn: String,
+) : Brukerrolle {
+    Saksbehandler("saksbehandler"),
 }
 
-fun launchApplication(
-    env: Map<String, String>,
-    dataSource: HikariDataSource,
-) {
-    RapidApplication
-        .create(env, builder = {
-            withKtorModule {
-                vilkårsprøvingApi(
-                    transaksjonProvider = PostgresTransaksjonProvider(dataSource),
-                    clientId = env.getValue("AZURE_APP_CLIENT_ID"),
-                    issuerUrl = env.getValue("AZURE_APP_ISSUER_URL"),
-                    jwkProviderUri = env.getValue("AZURE_APP_JWK_PROVIDER_URI"),
-                )
-                monitor.subscribe(ApplicationStarted) {
-                    loggInfo("Migrerer database")
-                    Flyway
-                        .configure()
-                        .dataSource(dataSource)
-                        .cleanDisabled(true)
-                        .lockRetryCount(-1)
-                        .load()
-                        .migrate()
-                    loggInfo("Migrering ferdig!")
-                }
-            }
-        })
-        .apply {
-            VilkårsprøvingModule(this, dataSource)
-        }.start()
+fun main() {
+    startApp(
+        konfigurasjon = AppKonfigurasjon.fraEnv("sp-vilkarsproving"),
+        brukerroller = TilgangsgrupperTilBrukerroller<AppRolle>(emptyMap()),
+        transaksjonProvider = ::PostgresTransaksjonProvider,
+        rivere = { dataSource ->
+            val transaksjonProvider = PostgresTransaksjonProvider(dataSource)
+            GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(
+                rapidsConnection = this,
+                transaksjonProvider = transaksjonProvider,
+            )
+            OpptjeningsvurderingRiver(
+                rapidsConnection = this,
+                transaksjonProvider = transaksjonProvider,
+            )
+            OpptjeningsvurderingResultatRiver(
+                rapidsConnection = this,
+                transaksjonProvider = transaksjonProvider,
+            )
+        },
+        endepunkter = {
+            get(GetVilkårsvurderingerForPersonBehandler())
+        },
+    )
 }

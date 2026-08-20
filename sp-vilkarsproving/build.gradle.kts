@@ -1,5 +1,8 @@
 plugins {
     id("no.nav.helse.sas.sas-deployable")
+    // Kreves av ktors Resources-plugin for å generere serializers for @Resource-klassene
+    alias(libs.plugins.kotlin.serialization)
+    `java-test-fixtures`
 }
 
 sasDeployable {
@@ -7,25 +10,24 @@ sasDeployable {
 }
 
 dependencies {
-    implementation(libs.hikaricp)
-    implementation(libs.postgresql)
-    implementation(libs.rapids.and.rivers)
-    implementation(libs.bundles.ktor.server)
-    implementation(libs.bundles.ktor.client)
-    implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.bundles.logback)
-    implementation(libs.kotliquery)
-    implementation(libs.flyway.database.postgresql)
-    implementation(libs.jackson.datatype.jsr310)
-    implementation(libs.tbd.libs.azure)
-    implementation(libs.tbd.libs.retry)
-    implementation(project(":migreringer"))
+    implementation(libs.tbd.libs.speil.backend.app)
 
-    testImplementation(libs.ktor.client.mock)
+    implementation(libs.kotliquery)
+    implementation(project(":migreringer"))
     testImplementation(libs.rapids.and.rivers.test)
-    testImplementation(libs.httpclient5.fluent)
-    testImplementation(libs.mock.oauth2.server)
     testImplementation(libs.wiremock)
-    testImplementation(libs.mockk)
+    testImplementation(libs.hikaricp)
+    testImplementation(libs.flyway.database.postgresql)
     testImplementation(libs.testcontainers.postgres)
+    testImplementation(libs.ktor.server.test.host)
+    testImplementation(libs.tbd.libs.speil.backend.app) {
+        capabilities {
+            requireCapability("tbd-libs:speil-backend-app-test-fixtures")
+        }
+        // Test fixtures drar inn org.wiremock:wiremock, som er bygget for Jetty 11 og henter
+        // versjoner fra jetty-bom 11. Vi tvinger Jetty 12 via plattformen, og da finnes ikke
+        // Jetty 11-artefaktene (jetty-servlet, jetty-servlets, jetty-webapp, http2-server) lenger.
+        // Vi bruker wiremock-jetty12 i stedet, som allerede ekskluderer Jetty 11-avhengighetene.
+        exclude(group = "org.wiremock", module = "wiremock")
+    }
 }

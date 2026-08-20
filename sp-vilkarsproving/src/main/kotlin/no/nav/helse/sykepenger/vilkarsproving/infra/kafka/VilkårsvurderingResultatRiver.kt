@@ -6,7 +6,8 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
-import no.nav.helse.sykepenger.vilkarsproving.application.TransaksjonProvider
+import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
+import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.application.VilkårsprøvingService
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.sikkerLogg
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
@@ -21,7 +22,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
  */
 internal open class VilkårsvurderingResultatRiver(
     rapidsConnection: RapidsConnection,
-    private val transaksjonProvider: TransaksjonProvider,
+    private val transaksjonProvider: TransaksjonProvider<Transaksjonskontekst>,
     private val vilkår: Vilkår,
     private val behovnavn: String,
     private val idFelt: String,
@@ -64,7 +65,7 @@ internal open class VilkårsvurderingResultatRiver(
 
 internal class OpptjeningsvurderingResultatRiver(
     rapidsConnection: RapidsConnection,
-    transaksjonProvider: TransaksjonProvider,
+    transaksjonProvider: TransaksjonProvider<Transaksjonskontekst>,
 ) : VilkårsvurderingResultatRiver(
         rapidsConnection = rapidsConnection,
         transaksjonProvider = transaksjonProvider,

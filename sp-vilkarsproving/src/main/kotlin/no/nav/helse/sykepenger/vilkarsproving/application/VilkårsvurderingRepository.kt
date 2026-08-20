@@ -25,4 +25,6 @@ internal interface VilkårsvurderingRepository {
         vilkår: Vilkår,
         vurderingId: VurderingId,
     ): Vilkårsvurdering?
+
+    fun finnAlle(fødselsnummer: String): List<Vilkårsvurdering>
 }

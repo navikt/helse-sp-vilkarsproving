@@ -1,8 +1,10 @@
-package no.nav.helse.sykepenger.vilkarsproving.infra.db
+package no.nav.helse.sykepenger.vilkarsproving.db
 
 import no.nav.helse.februar
 import no.nav.helse.januar
 import no.nav.helse.mars
+import no.nav.helse.sykepenger.vilkarsproving.db.Database
+import no.nav.helse.sykepenger.vilkarsproving.db.DatabaseTest
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kilde
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode
@@ -12,6 +14,9 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
+import no.nav.helse.sykepenger.vilkarsproving.infra.db.FØDSELSNUMMER
+import no.nav.helse.sykepenger.vilkarsproving.infra.db.arbeidsforhold
+import no.nav.helse.sykepenger.vilkarsproving.infra.db.arbeidstakergrunnlag
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -113,6 +118,25 @@ internal class PostgresVilkårsvurderingRepositoryTest : DatabaseTest() {
     @Test
     fun `finn gir null for en ukjent vurdering`() {
         assertNull(transaksjon { it.vilkårsvurderinger.finn(Vilkår.Opptjening, VurderingId.ny()) })
+    }
+
+    // "Hent alt for person" (GET-endepunktet) må se alle vurderinger uavhengig av skjæringstidspunkt,
+    // eldste først.
+    @Test
+    fun `finnAlle henter alle vurderinger for personen, eldste foerst`() {
+        val første = lagreVurdering(arbeidstakergrunnlag(), skjæringstidspunkt = 1.januar)
+        val andre = lagreVurdering(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, skjæringstidspunkt = 1.februar)
+
+        val alle = transaksjon { it.vilkårsvurderinger.finnAlle(FØDSELSNUMMER) }
+
+        assertEquals(listOf(første.id, andre.id), alle.map { it.id })
+    }
+
+    @Test
+    fun `finnAlle skiller paa fødselsnummer`() {
+        lagreVurdering(arbeidstakergrunnlag())
+
+        assertEquals(emptyList<Any>(), transaksjon { it.vilkårsvurderinger.finnAlle("12029240046") })
     }
 
     /**

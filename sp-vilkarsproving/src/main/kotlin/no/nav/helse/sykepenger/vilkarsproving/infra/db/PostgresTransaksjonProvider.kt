@@ -2,7 +2,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
 import kotliquery.Session
 import kotliquery.sessionOf
-import no.nav.helse.sykepenger.vilkarsproving.application.TransaksjonProvider
+import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import javax.sql.DataSource
 
@@ -11,7 +11,7 @@ import javax.sql.DataSource
  */
 internal class PostgresTransaksjonProvider(
     private val dataSource: DataSource,
-) : TransaksjonProvider {
+) : TransaksjonProvider<Transaksjonskontekst> {
     override fun <T> transaksjon(block: (Transaksjonskontekst) -> T): T =
         sessionOf(dataSource).use { session ->
             session.transaction { transaksjon -> block(PostgresTransaksjonskontekst(transaksjon)) }

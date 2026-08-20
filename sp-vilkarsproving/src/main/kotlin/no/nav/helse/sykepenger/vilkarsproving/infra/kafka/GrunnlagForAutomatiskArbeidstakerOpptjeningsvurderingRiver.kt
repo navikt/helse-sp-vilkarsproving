@@ -8,8 +8,9 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
+import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService
-import no.nav.helse.sykepenger.vilkarsproving.application.TransaksjonProvider
+import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.sikkerLogg
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import tools.jackson.databind.JsonNode
@@ -17,7 +18,7 @@ import tools.jackson.databind.node.ObjectNode
 
 internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(
     rapidsConnection: RapidsConnection,
-    private val transaksjonProvider: TransaksjonProvider,
+    private val transaksjonProvider: TransaksjonProvider<Transaksjonskontekst>,
 ) : River.PacketListener {
     private val behovKey = "ArbeidsforholdV2"
 

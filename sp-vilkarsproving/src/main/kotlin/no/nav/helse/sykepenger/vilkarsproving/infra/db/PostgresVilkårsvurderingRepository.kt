@@ -83,6 +83,18 @@ internal class PostgresVilkårsvurderingRepository(
         )
     }
 
+    override fun finnAlle(fødselsnummer: String): List<Vilkårsvurdering> {
+        @Language("PostgreSQL")
+        val sql = """
+            $SELECT
+            where fødselsnummer = :fodselsnummer
+            order by løpenummer
+        """
+        return session.run(
+            queryOf(sql, mapOf("fodselsnummer" to fødselsnummer)).map(::tilVurdering).asList,
+        )
+    }
+
     private fun tilVurdering(row: Row): Vilkårsvurdering {
         val vilkår = Vilkår.valueOf(row.string("vilkår"))
         return Vilkårsvurdering.fraLagring(

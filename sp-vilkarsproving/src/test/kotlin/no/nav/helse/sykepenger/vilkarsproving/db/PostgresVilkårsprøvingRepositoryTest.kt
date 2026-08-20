@@ -1,13 +1,17 @@
-package no.nav.helse.sykepenger.vilkarsproving.infra.db
+package no.nav.helse.sykepenger.vilkarsproving.db
 
 import no.nav.helse.februar
 import no.nav.helse.januar
+import no.nav.helse.sykepenger.vilkarsproving.db.Database
+import no.nav.helse.sykepenger.vilkarsproving.db.DatabaseTest
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
 import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsprøving
+import no.nav.helse.sykepenger.vilkarsproving.infra.db.FØDSELSNUMMER
+import no.nav.helse.sykepenger.vilkarsproving.infra.db.arbeidstakergrunnlag
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull

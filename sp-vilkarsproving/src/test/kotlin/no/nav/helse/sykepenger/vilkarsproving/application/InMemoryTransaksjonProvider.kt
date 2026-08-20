@@ -1,5 +1,7 @@
 package no.nav.helse.sykepenger.vilkarsproving.application
 
+import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
+
 /**
  * Kjører arbeidet rett mot in-memory-lagrene.
  *
@@ -9,7 +11,7 @@ package no.nav.helse.sykepenger.vilkarsproving.application
 internal class InMemoryTransaksjonProvider(
     override val vilkårsprøvinger: InMemoryVilkårsprøvingRepository = InMemoryVilkårsprøvingRepository(),
     override val vilkårsvurderinger: InMemoryVilkårsvurderingRepository = InMemoryVilkårsvurderingRepository(),
-) : TransaksjonProvider,
+) : TransaksjonProvider<Transaksjonskontekst>,
     Transaksjonskontekst {
     override fun <T> transaksjon(block: (Transaksjonskontekst) -> T): T = block(this)
 }

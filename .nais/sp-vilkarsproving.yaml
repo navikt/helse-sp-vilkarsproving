@@ -61,6 +61,15 @@ spec:
   azure:
     application:
       enabled: true
+      claims:
+        extra:
+          - NAVident
+        groups:
+          - id: {{ENTRAID_UUID_SPEIL_SAKSBEHANDLER}}
+          - id: {{ENTRAID_UUID_SPEIL_LESETILGANG}}
+  valkey:
+    - instance: personpseudoid
+      access: read
   prometheus:
     enabled: true
     path: /metrics
@@ -69,11 +78,23 @@ spec:
       value: tbd-sp-vilkarsproving-v1
     - name: KAFKA_RAPID_TOPIC
       value: tbd.rapid.v1
+    - name: TILGANGSMASKINEN_SCOPE
+      value: {{ tilgangsmaskinenScope }}
+    - name: TILGANGSMASKINEN_BASE_URL
+      value: http://populasjonstilgangskontroll.tilgangsmaskin
+    - name: TILGANG_LES
+      value: {{ENTRAID_UUID_SPEIL_LESETILGANG}}
+    - name: TILGANG_SKRIV
+      value: {{ENTRAID_UUID_SPEIL_SAKSBEHANDLER}}
+    - name: DB_POOL_SIZE
+      value: "{{ db.poolSize }}"
   accessPolicy:
+    inbound:
+      rules:
+        - application: speil
     outbound:
       rules:
         - application: logging
           namespace: nais-system
-#    inbound:
-#      rules:
-#        - application:
+        - application: populasjonstilgangskontroll
+          namespace: tilgangsmaskin
