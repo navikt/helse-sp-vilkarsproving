@@ -69,7 +69,7 @@ spec:
           - id: {{ENTRAID_UUID_SPEIL_LESETILGANG}}
   valkey:
     - instance: personpseudoid
-      access: readwrite
+      access: read
   prometheus:
     enabled: true
     path: /metrics
