@@ -15,7 +15,7 @@ import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonPro
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 
-private const val PORT = 8080
+private const val PORT = 8181
 
 fun main() {
     val restAdapter =
