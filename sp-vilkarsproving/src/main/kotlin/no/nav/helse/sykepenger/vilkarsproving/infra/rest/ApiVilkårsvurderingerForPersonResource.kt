@@ -1,8 +1,9 @@
-@file:kotlinx.serialization.UseContextualSerialization(java.util.UUID::class)
+@file:UseContextualSerialization(UUID::class)
 
-package no.nav.helse.sykepenger.vilkarsproving.rest
+package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import io.ktor.resources.Resource
+import kotlinx.serialization.UseContextualSerialization
 import java.util.UUID
 
 /**
@@ -30,7 +31,7 @@ import java.util.UUID
  * tilgangskontroll-/auditlogg-kall per forespørsel.
  */
 @Resource("/api/personer/{personId}/vilkarsvurderinger")
-internal class VilkårsvurderingerForPersonResource(
+internal class ApiVilkårsvurderingerForPersonResource(
     val personId: String,
     val opptjeningsvurderingId: UUID? = null,
     val medlemskapsvurderingId: UUID? = null,

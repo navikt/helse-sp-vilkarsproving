@@ -13,7 +13,7 @@ import no.nav.helse.speil.backend.app.testfixtures.InMemoryPersonPseudoIdProvide
 import no.nav.helse.speil.backend.app.testfixtures.installTestPlugins
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
-import no.nav.helse.sykepenger.vilkarsproving.rest.GetVilkårsvurderingerForPersonBehandler
+import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 
 private const val PORT = 8080
 

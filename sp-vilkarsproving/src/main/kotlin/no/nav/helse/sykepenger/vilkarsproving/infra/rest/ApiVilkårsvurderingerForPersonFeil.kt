@@ -1,8 +1,8 @@
-package no.nav.helse.sykepenger.vilkarsproving.rest
+package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import no.nav.helse.speil.backend.app.rest.ApiErrorCode
 
-internal enum class VilkårsvurderingerForPersonFeil(
+internal enum class ApiVilkårsvurderingerForPersonFeil(
     override val httpStatus: Int,
     override val tittel: String,
 ) : ApiErrorCode {

@@ -1,8 +1,9 @@
-@file:kotlinx.serialization.UseContextualSerialization(UUID::class, Instant::class, LocalDate::class)
+@file:UseContextualSerialization(UUID::class, Instant::class, LocalDate::class)
 
-package no.nav.helse.sykepenger.vilkarsproving.rest
+package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseContextualSerialization
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kilde
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
@@ -15,7 +16,7 @@ import java.util.UUID
 
 /**
  * Responsen for GET .../vilkarsvurderinger: én egen nøkkel per vilkårstype, slik at hver type
- * vurdering kan ha sin egen datastruktur (jf. [OpptjeningsvurderingResponse.grunnlag]) uten at
+ * vurdering kan ha sin egen datastruktur (jf. [ApiOpptjeningsvurderingResponse.grunnlag]) uten at
  * klienten må gjette typen ut fra innholdet.
  *
  * Verdien per nøkkel er den ene vurderingen som ble forespurt for det vilkåret — enten den
@@ -23,54 +24,68 @@ import java.util.UUID
  * som er vurdert for personen. `null` betyr at vilkåret ikke er vurdert (ennå).
  */
 @Serializable
-internal data class VilkårsvurderingerForPersonResponse(
-    val opptjeningsvurdering: OpptjeningsvurderingResponse,
-    // val medlemskapsvurdering: MedlemskapsvurderingResponse? = null — når medlemskapsvilkåret er implementert
+internal data class ApiVilkårsvurderingerForPersonResponse(
+    val opptjeningsvurdering: ApiOpptjeningsvurderingResponse,
+    // val medlemskapsvurdering: ApiMedlemskapsvurderingResponse? = null — når medlemskapsvilkåret er implementert
 )
 
 @Serializable
-internal data class OpptjeningsvurderingResponse(
+internal data class ApiOpptjeningsvurderingResponse(
     val id: UUID,
     val skjæringstidspunkt: LocalDate,
-    val utfall: Utfall,
+    val utfall: ApiUtfallResponse,
     val kodeverkkode: String,
-    val grunnlag: OpptjeningsgrunnlagResponse,
-    val kilde: KildeResponse,
+    val grunnlag: ApiOpptjeningsgrunnlagResponse,
+    val kilde: ApiKildeResponse,
     val vurdertTidspunkt: Instant,
 )
 
 @Serializable
-internal sealed interface OpptjeningsgrunnlagResponse {
-    @Serializable
-    data class Arbeidstaker(
-        val arbeidsforhold: List<ArbeidsforholdResponse>,
-    ) : OpptjeningsgrunnlagResponse
-
-    @Serializable
-    data object SelvstendigNæringsdrivende : OpptjeningsgrunnlagResponse
+internal enum class ApiUtfallResponse {
+    Oppfylt,
+    IkkeOppfylt,
 }
 
 @Serializable
-internal data class ArbeidsforholdResponse(
+internal sealed interface ApiOpptjeningsgrunnlagResponse {
+    @Serializable
+    data class Arbeidstaker(
+        val arbeidsforhold: List<ApiArbeidsforholdResponse>,
+    ) : ApiOpptjeningsgrunnlagResponse
+
+    @Serializable
+    data object SelvstendigNæringsdrivende : ApiOpptjeningsgrunnlagResponse
+}
+
+@Serializable
+internal data class ApiArbeidsforholdResponse(
     val orgnummer: String,
     val fom: LocalDate,
     /** Null betyr løpende ansettelsesforhold. */
     val tom: LocalDate?,
-    val type: Arbeidsforhold.Arbeidsforholdtype,
+    val type: ApiArbeidsforholdtypeResponse,
 )
 
 @Serializable
-internal sealed interface KildeResponse {
+internal enum class ApiArbeidsforholdtypeResponse {
+    FORENKLET_OPPGJØRSORDNING,
+    FRILANSER,
+    MARITIMT,
+    ORDINÆRT,
+}
+
+@Serializable
+internal sealed interface ApiKildeResponse {
     @Serializable
     data class Automatisk(
         val regelversjon: String,
-    ) : KildeResponse
+    ) : ApiKildeResponse
 
     @Serializable
     data class Manuell(
         val saksbehandlerIdent: String,
         val fritekstbegrunnelse: String,
-    ) : KildeResponse
+    ) : ApiKildeResponse
 }
 
 /**
@@ -80,45 +95,55 @@ internal sealed interface KildeResponse {
  * `when (vilkår)` er exhaustive over enum-en [Vilkår] — legges det til et nytt vilkår her, feiler
  * kompileringen til den nye grenen er håndtert, i stedet for å svare feil eller ufullstendig i runtime.
  */
-internal fun List<Vilkårsvurdering>.tilResponse(): VilkårsvurderingerForPersonResponse {
+internal fun List<Vilkårsvurdering>.tilResponse(): ApiVilkårsvurderingerForPersonResponse {
     val gjeldendePrVilkår = groupBy { it.vilkår }.mapValues { (_, vurderinger) -> vurderinger.maxBy { it.vurdertTidspunkt } }
-    return VilkårsvurderingerForPersonResponse(
-        opptjeningsvurdering = gjeldendePrVilkår[Vilkår.Opptjening]!!.tilOpptjeningsvurderingResponse(),
+    return ApiVilkårsvurderingerForPersonResponse(
+        opptjeningsvurdering = gjeldendePrVilkår[Vilkår.Opptjening]!!.tilApiOpptjeningsvurderingResponse(),
     )
 }
 
 /**
- * Krever at [Vilkårsvurdering.vilkår] er [Vilkår.Opptjening] — kalles kun fra steder som allerede
+ * Krever at [vilkår] er [Vilkår.Opptjening] — kalles kun fra steder som allerede
  * vet dette (oppslag på et konkret vilkår, eller filtrert gruppering som i [tilResponse]).
  */
-internal fun Vilkårsvurdering.tilOpptjeningsvurderingResponse(): OpptjeningsvurderingResponse {
+internal fun Vilkårsvurdering.tilApiOpptjeningsvurderingResponse(): ApiOpptjeningsvurderingResponse {
     check(vilkår == Vilkår.Opptjening) { "Kan ikke bygge en opptjeningsvurdering-respons av en vurdering av $vilkår" }
     // Trygt: klasseinvarianten i Vilkårsvurdering (se init-blokken der) garanterer at
     // grunnlag.vilkår == vilkår, og vi har akkurat sjekket at vilkår er Opptjening.
     val opptjeningsgrunnlag = grunnlag as Opptjeningsgrunnlag
-    return OpptjeningsvurderingResponse(
+    return ApiOpptjeningsvurderingResponse(
         id = id.value,
         skjæringstidspunkt = skjæringstidspunkt,
-        utfall = utfall,
+        utfall =
+            when (utfall) {
+                Utfall.Oppfylt -> ApiUtfallResponse.Oppfylt
+                Utfall.IkkeOppfylt -> ApiUtfallResponse.IkkeOppfylt
+            },
         kodeverkkode = kodeverkkode.name,
         grunnlag =
             when (opptjeningsgrunnlag) {
-                is Opptjeningsgrunnlag.Arbeidstaker -> OpptjeningsgrunnlagResponse.Arbeidstaker(opptjeningsgrunnlag.arbeidsforhold.map { it.tilResponse() })
-                Opptjeningsgrunnlag.SelvstendigNæringsdrivende -> OpptjeningsgrunnlagResponse.SelvstendigNæringsdrivende
+                is Opptjeningsgrunnlag.Arbeidstaker -> ApiOpptjeningsgrunnlagResponse.Arbeidstaker(opptjeningsgrunnlag.arbeidsforhold.map { it.tilResponse() })
+                Opptjeningsgrunnlag.SelvstendigNæringsdrivende -> ApiOpptjeningsgrunnlagResponse.SelvstendigNæringsdrivende
             },
         kilde =
             when (val kilde = kilde) {
-                is Kilde.Automatisk -> KildeResponse.Automatisk(kilde.regelversjon)
-                is Kilde.Manuell -> KildeResponse.Manuell(kilde.saksbehandlerIdent, kilde.fritekstbegrunnelse)
+                is Kilde.Automatisk -> ApiKildeResponse.Automatisk(kilde.regelversjon)
+                is Kilde.Manuell -> ApiKildeResponse.Manuell(kilde.saksbehandlerIdent, kilde.fritekstbegrunnelse)
             },
         vurdertTidspunkt = vurdertTidspunkt,
     )
 }
 
 private fun Arbeidsforhold.tilResponse() =
-    ArbeidsforholdResponse(
+    ApiArbeidsforholdResponse(
         orgnummer = orgnummer,
         fom = ansettelseperiode.start,
         tom = ansettelseperiode.endInclusive.takeUnless { it == LocalDate.MAX },
-        type = type,
+        type =
+            when (type) {
+                Arbeidsforhold.Arbeidsforholdtype.FORENKLET_OPPGJØRSORDNING -> ApiArbeidsforholdtypeResponse.FORENKLET_OPPGJØRSORDNING
+                Arbeidsforhold.Arbeidsforholdtype.FRILANSER -> ApiArbeidsforholdtypeResponse.FRILANSER
+                Arbeidsforhold.Arbeidsforholdtype.MARITIMT -> ApiArbeidsforholdtypeResponse.MARITIMT
+                Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT -> ApiArbeidsforholdtypeResponse.ORDINÆRT
+            },
     )

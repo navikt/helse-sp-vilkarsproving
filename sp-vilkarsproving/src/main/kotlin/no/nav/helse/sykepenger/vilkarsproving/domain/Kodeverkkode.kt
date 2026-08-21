@@ -1,9 +1,5 @@
 package no.nav.helse.sykepenger.vilkarsproving.domain
 
-import kotlinx.serialization.Serializable
-
-/** `@Serializable` kun brukt av OpenAPI-schema-generatoren — påvirker ikke Jackson-basert (de)serialisering. */
-@Serializable
 internal enum class Utfall {
     Oppfylt,
     IkkeOppfylt,

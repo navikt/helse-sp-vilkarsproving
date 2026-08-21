@@ -1,4 +1,4 @@
-package no.nav.helse.sykepenger.vilkarsproving.rest
+package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import no.nav.helse.speil.backend.app.auth.Tilgang
 import no.nav.helse.speil.backend.app.person.PersonPseudoId
@@ -12,7 +12,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
 
 /**
  * Henter vilkårsvurderinger for en person. Tre modi, styrt av query-parametrene på
- * [VilkårsvurderingerForPersonResource] (minst ett av dem er ALDRI et krav — ingen parametre er en
+ * [ApiVilkårsvurderingerForPersonResource] (minst ett av dem er ALDRI et krav — ingen parametre er en
  * gyldig, egen modus: "hent alt"):
  * - Ingen parametre: alt som er vurdert for personen, på tvers av vilkår og skjæringstidspunkt.
  * - `opptjeningsvurderingId`: den ene, konkrete opptjeningsvurderingen (404 dersom den ikke finnes,
@@ -25,22 +25,22 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
  *
  * Krever kun [Tilgang.Les] — dette er et rent oppslag, ingen skriving.
  */
-internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<VilkårsvurderingerForPersonResource, VilkårsvurderingerForPersonResponse, VilkårsvurderingerForPersonFeil, AppRolle, Transaksjonskontekst> {
+internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<ApiVilkårsvurderingerForPersonResource, ApiVilkårsvurderingerForPersonResponse, ApiVilkårsvurderingerForPersonFeil, AppRolle, Transaksjonskontekst> {
     override val påkrevdTilgang = Tilgang.Les
     override val tag = "vilkarsvurderinger"
 
     override fun behandle(
-        resource: VilkårsvurderingerForPersonResource,
+        resource: ApiVilkårsvurderingerForPersonResource,
         kallKontekst: KallKontekst<Transaksjonskontekst, AppRolle>,
-    ): RestResponse<VilkårsvurderingerForPersonResponse, VilkårsvurderingerForPersonFeil> {
+    ): RestResponse<ApiVilkårsvurderingerForPersonResponse, ApiVilkårsvurderingerForPersonFeil> {
         val personPseudoId =
             PersonPseudoId.fraString(resource.personId)
-                ?: return RestResponse.feil(VilkårsvurderingerForPersonFeil.PersonIkkeFunnet)
+                ?: return RestResponse.feil(ApiVilkårsvurderingerForPersonFeil.PersonIkkeFunnet)
 
         return kallKontekst.medPerson(
             personPseudoId = personPseudoId,
-            personIkkeFunnet = { VilkårsvurderingerForPersonFeil.PersonIkkeFunnet },
-            manglerTilgang = { VilkårsvurderingerForPersonFeil.ManglerTilgang },
+            personIkkeFunnet = { ApiVilkårsvurderingerForPersonFeil.PersonIkkeFunnet },
+            manglerTilgang = { ApiVilkårsvurderingerForPersonFeil.ManglerTilgang },
         ) { identitetsnummer ->
             if (resource.medlemskapsvurderingId != null) {
                 TODO("Medlemskapsvurdering er ikke implementert ennå")
@@ -50,9 +50,9 @@ internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<Vilkårsv
             if (opptjeningsvurderingId != null) {
                 val vurdering = kallKontekst.transaksjon.vilkårsvurderinger.finn(Vilkår.Opptjening, VurderingId(opptjeningsvurderingId))
                 if (vurdering == null || vurdering.fødselsnummer != identitetsnummer.value) {
-                    return@medPerson RestResponse.feil(VilkårsvurderingerForPersonFeil.VurderingIkkeFunnet)
+                    return@medPerson RestResponse.feil(ApiVilkårsvurderingerForPersonFeil.VurderingIkkeFunnet)
                 }
-                return@medPerson RestResponse.ok(VilkårsvurderingerForPersonResponse(opptjeningsvurdering = vurdering.tilOpptjeningsvurderingResponse()))
+                return@medPerson RestResponse.ok(ApiVilkårsvurderingerForPersonResponse(opptjeningsvurdering = vurdering.tilApiOpptjeningsvurderingResponse()))
             }
 
             val vurderinger = kallKontekst.transaksjon.vilkårsvurderinger.finnAlle(identitetsnummer.value)

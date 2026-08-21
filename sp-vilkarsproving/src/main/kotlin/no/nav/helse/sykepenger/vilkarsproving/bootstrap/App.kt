@@ -8,7 +8,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.db.PostgresTransaksjonProvid
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingResultatRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
-import no.nav.helse.sykepenger.vilkarsproving.rest.GetVilkårsvurderingerForPersonBehandler
+import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 
 enum class AppRolle(
     override val navn: String,
