@@ -52,11 +52,11 @@ internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<Vilkårsv
                 if (vurdering == null || vurdering.fødselsnummer != identitetsnummer.value) {
                     return@medPerson RestResponse.feil(VilkårsvurderingerForPersonFeil.VurderingIkkeFunnet)
                 }
-                return@medPerson RestResponse.ok(VilkårsvurderingerForPersonResponse(listOf(vurdering.tilResponse())))
+                return@medPerson RestResponse.ok(VilkårsvurderingerForPersonResponse(opptjeningsvurdering = vurdering.tilOpptjeningsvurderingResponse()))
             }
 
             val vurderinger = kallKontekst.transaksjon.vilkårsvurderinger.finnAlle(identitetsnummer.value)
-            RestResponse.ok(VilkårsvurderingerForPersonResponse(vurderinger.map { it.tilResponse() }))
+            RestResponse.ok(vurderinger.tilResponse())
         }
     }
 }

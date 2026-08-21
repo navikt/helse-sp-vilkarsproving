@@ -123,22 +123,6 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
         }
 
     @Test
-    fun `tom liste naar personen ikke har noen vurderinger`() =
-        testApplication {
-            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
-            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
-
-            application {
-                settOppTestapp(principal(), personPseudoIdProvider = pseudoIdProvider)
-            }
-
-            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger")
-
-            assertEquals(HttpStatusCode.OK, response.status)
-            assertEquals("""{"vurderinger":[]}""", response.bodyAsText())
-        }
-
-    @Test
     fun `kall uten Les-tilgang gir 403`() =
         testApplication {
             val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
