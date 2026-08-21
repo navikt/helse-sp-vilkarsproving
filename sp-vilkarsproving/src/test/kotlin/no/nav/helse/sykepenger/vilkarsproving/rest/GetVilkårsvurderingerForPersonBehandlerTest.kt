@@ -4,7 +4,6 @@ import com.github.navikt.tbd_libs.populasjonstilgang.api.Populasjonstilgangskont
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangSomMangler
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
 import io.ktor.client.request.get
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCallPipeline
@@ -33,7 +32,6 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.LocalDate
@@ -94,35 +92,6 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
         }
     }
 
-    private fun enVurdering(skjæringstidspunkt: LocalDate = LocalDate.of(2024, 1, 1)) =
-        Vilkårsvurdering.automatisk(
-            prøvingId = PrøvingId.ny(),
-            fødselsnummer = identitetsnummer.value,
-            skjæringstidspunkt = skjæringstidspunkt,
-            grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,
-            vurdertTidspunkt = Instant.now(),
-        )
-
-    @Test
-    fun `henter alle vurderinger for personen`() =
-        testApplication {
-            val transaksjonProvider = InMemoryTransaksjonProvider()
-            val vurdering = enVurdering()
-            transaksjonProvider.vilkårsvurderinger.lagre(vurdering)
-
-            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
-            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
-
-            application {
-                settOppTestapp(principal(), transaksjonProvider, personPseudoIdProvider = pseudoIdProvider)
-            }
-
-            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger")
-
-            assertEquals(HttpStatusCode.OK, response.status)
-            assertTrue(response.bodyAsText().contains(vurdering.id.value.toString()))
-        }
-
     @Test
     fun `kall uten Les-tilgang gir 403`() =
         testApplication {
@@ -133,7 +102,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
                 settOppTestapp(principal(tilganger = emptySet()), personPseudoIdProvider = pseudoIdProvider)
             }
 
-            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger")
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=${UUID.randomUUID()}")
 
             assertEquals(HttpStatusCode.Forbidden, response.status)
         }
@@ -143,7 +112,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
         testApplication {
             application { settOppTestapp(principal()) }
 
-            val response = client.get("/api/personer/${UUID.randomUUID()}/vilkarsvurderinger")
+            val response = client.get("/api/personer/${UUID.randomUUID()}/vilkarsvurderinger?opptjeningsvurderingId=${UUID.randomUUID()}")
 
             assertEquals(HttpStatusCode.NotFound, response.status)
         }
@@ -153,7 +122,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
         testApplication {
             application { settOppTestapp(principal()) }
 
-            val response = client.get("/api/personer/dette-er-ikke-en-uuid/vilkarsvurderinger")
+            val response = client.get("/api/personer/dette-er-ikke-en-uuid/vilkarsvurderinger?opptjeningsvurderingId=${UUID.randomUUID()}")
 
             assertEquals(HttpStatusCode.NotFound, response.status)
         }
@@ -169,34 +138,10 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
                 settOppTestapp(principal(), tilgangskontroll = fake, personPseudoIdProvider = pseudoIdProvider)
             }
 
-            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger")
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=${UUID.randomUUID()}")
 
             assertEquals(HttpStatusCode.Forbidden, response.status)
             assertEquals(1, fake.antallKall)
-        }
-
-    @Test
-    fun `henter kun den ene vurderingen naar opptjeningsvurderingId er satt`() =
-        testApplication {
-            val transaksjonProvider = InMemoryTransaksjonProvider()
-            val ønsketVurdering = enVurdering(skjæringstidspunkt = LocalDate.of(2024, 1, 1))
-            val enAnnenVurdering = enVurdering(skjæringstidspunkt = LocalDate.of(2024, 6, 1))
-            transaksjonProvider.vilkårsvurderinger.lagre(ønsketVurdering)
-            transaksjonProvider.vilkårsvurderinger.lagre(enAnnenVurdering)
-
-            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
-            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
-
-            application {
-                settOppTestapp(principal(), transaksjonProvider, personPseudoIdProvider = pseudoIdProvider)
-            }
-
-            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=${ønsketVurdering.id.value}")
-
-            assertEquals(HttpStatusCode.OK, response.status)
-            val body = response.bodyAsText()
-            assertTrue(body.contains(ønsketVurdering.id.value.toString()))
-            assertTrue(!body.contains(enAnnenVurdering.id.value.toString()))
         }
 
     @Test
@@ -239,20 +184,5 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=${andresVurdering.id.value}")
 
             assertEquals(HttpStatusCode.NotFound, response.status)
-        }
-
-    @Test
-    fun `medlemskapsvurderingId gir 500, ikke implementert ennaa`() =
-        testApplication {
-            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
-            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
-
-            application {
-                settOppTestapp(principal(), personPseudoIdProvider = pseudoIdProvider)
-            }
-
-            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?medlemskapsvurderingId=${UUID.randomUUID()}")
-
-            assertEquals(HttpStatusCode.InternalServerError, response.status)
         }
 }

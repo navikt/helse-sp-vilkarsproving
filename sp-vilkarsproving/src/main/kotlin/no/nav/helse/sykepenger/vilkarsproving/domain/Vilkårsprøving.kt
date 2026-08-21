@@ -12,7 +12,7 @@ import java.time.LocalDate
  *
  * Livssyklusen er den samme for alle vilkår, og ligger derfor her. Det vilkårsspesifikke — hvilket
  * grunnlag som må innhentes, og hva som utgjør et utfall — ligger i [Vilkårsgrunnlag] og [Vilkårsregel].
- * Hvert vilkår har en egen startfunksjon, se `Opptjeningsprøving` og `Medlemskapsprøving`.
+ * Hvert vilkår har en egen startfunksjon, se `Opptjeningsprøving`.
  *
  * Prøvingen holder ikke på innhentede fakta. Det er ikke nødvendig så lenge den venter på ett
  * grunnlag om gangen: kommer svaret, konstrueres grunnlaget og vurderingen i samme operasjon.

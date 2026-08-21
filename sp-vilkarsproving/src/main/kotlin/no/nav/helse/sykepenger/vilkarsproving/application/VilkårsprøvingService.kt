@@ -13,7 +13,7 @@ import java.time.LocalDate
  * det ikke startes flere prøvinger på de samme dataene, og tar imot grunnlag når det kommer inn.
  *
  * Alt vilkårsspesifikt — hvordan en prøving startes og hvordan et innkommende svar blir til et
- * grunnlag — ligger hos kallerne (`OpptjeningService`, `MedlemskapService`) og i domenet.
+ * grunnlag — ligger hos kallerne (`OpptjeningService`) og i domenet.
  */
 internal class VilkårsprøvingService(
     kontekst: Transaksjonskontekst,

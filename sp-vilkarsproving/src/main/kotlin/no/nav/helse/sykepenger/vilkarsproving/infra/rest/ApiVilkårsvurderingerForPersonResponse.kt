@@ -26,7 +26,6 @@ import java.util.UUID
 @Serializable
 internal data class ApiVilkårsvurderingerForPersonResponse(
     val opptjeningsvurdering: ApiOpptjeningsvurderingResponse,
-    // val medlemskapsvurdering: ApiMedlemskapsvurderingResponse? = null — når medlemskapsvilkåret er implementert
 )
 
 @Serializable
@@ -86,20 +85,6 @@ internal sealed interface ApiKildeResponse {
         val saksbehandlerIdent: String,
         val fritekstbegrunnelse: String,
     ) : ApiKildeResponse
-}
-
-/**
- * Bygger keyet respons på tvers av vilkår, én vurdering per vilkårstype: den gjeldende (nyeste)
- * dersom personen er vurdert på flere skjæringstidspunkt for samme vilkår.
- *
- * `when (vilkår)` er exhaustive over enum-en [Vilkår] — legges det til et nytt vilkår her, feiler
- * kompileringen til den nye grenen er håndtert, i stedet for å svare feil eller ufullstendig i runtime.
- */
-internal fun List<Vilkårsvurdering>.tilResponse(): ApiVilkårsvurderingerForPersonResponse {
-    val gjeldendePrVilkår = groupBy { it.vilkår }.mapValues { (_, vurderinger) -> vurderinger.maxBy { it.vurdertTidspunkt } }
-    return ApiVilkårsvurderingerForPersonResponse(
-        opptjeningsvurdering = gjeldendePrVilkår[Vilkår.Opptjening]!!.tilApiOpptjeningsvurderingResponse(),
-    )
 }
 
 /**

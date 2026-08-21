@@ -10,21 +10,6 @@ import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
 import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
 
-/**
- * Henter vilkårsvurderinger for en person. Tre modi, styrt av query-parametrene på
- * [ApiVilkårsvurderingerForPersonResource] (minst ett av dem er ALDRI et krav — ingen parametre er en
- * gyldig, egen modus: "hent alt"):
- * - Ingen parametre: alt som er vurdert for personen, på tvers av vilkår og skjæringstidspunkt.
- * - `opptjeningsvurderingId`: den ene, konkrete opptjeningsvurderingen (404 dersom den ikke finnes,
- *   eller finnes men tilhører en annen person enn `personId` — vurderings-ID-er er globalt unike,
- *   så dette må sjekkes eksplisitt for å ikke lekke andre personers vurderinger).
- * - `medlemskapsvurderingId`: IKKE implementert ennå (medlemskapsvilkåret finnes ikke i domenet) —
- *   kaster en feil som fanges av den applikasjonsvide `StatusPages`-pluginen (se
- *   `configureStatusPages`), altså 500 uten detaljer til klienten, tilsvarende alle andre uventede
- *   feil i appen.
- *
- * Krever kun [Tilgang.Les] — dette er et rent oppslag, ingen skriving.
- */
 internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<ApiVilkårsvurderingerForPersonResource, ApiVilkårsvurderingerForPersonResponse, ApiVilkårsvurderingerForPersonFeil, AppRolle, Transaksjonskontekst> {
     override val påkrevdTilgang = Tilgang.Les
     override val tag = "vilkarsvurderinger"
@@ -42,21 +27,12 @@ internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<ApiVilkå
             personIkkeFunnet = { ApiVilkårsvurderingerForPersonFeil.PersonIkkeFunnet },
             manglerTilgang = { ApiVilkårsvurderingerForPersonFeil.ManglerTilgang },
         ) { identitetsnummer ->
-            if (resource.medlemskapsvurderingId != null) {
-                TODO("Medlemskapsvurdering er ikke implementert ennå")
-            }
-
             val opptjeningsvurderingId = resource.opptjeningsvurderingId
-            if (opptjeningsvurderingId != null) {
-                val vurdering = kallKontekst.transaksjon.vilkårsvurderinger.finn(Vilkår.Opptjening, VurderingId(opptjeningsvurderingId))
-                if (vurdering == null || vurdering.fødselsnummer != identitetsnummer.value) {
-                    return@medPerson RestResponse.feil(ApiVilkårsvurderingerForPersonFeil.VurderingIkkeFunnet)
-                }
-                return@medPerson RestResponse.ok(ApiVilkårsvurderingerForPersonResponse(opptjeningsvurdering = vurdering.tilApiOpptjeningsvurderingResponse()))
+            val vurdering = kallKontekst.transaksjon.vilkårsvurderinger.finn(Vilkår.Opptjening, VurderingId(opptjeningsvurderingId))
+            if (vurdering == null || vurdering.fødselsnummer != identitetsnummer.value) {
+                return@medPerson RestResponse.feil(ApiVilkårsvurderingerForPersonFeil.VurderingIkkeFunnet)
             }
-
-            val vurderinger = kallKontekst.transaksjon.vilkårsvurderinger.finnAlle(identitetsnummer.value)
-            RestResponse.ok(vurderinger.tilResponse())
+            RestResponse.ok(ApiVilkårsvurderingerForPersonResponse(opptjeningsvurdering = vurdering.tilApiOpptjeningsvurderingResponse()))
         }
     }
 }

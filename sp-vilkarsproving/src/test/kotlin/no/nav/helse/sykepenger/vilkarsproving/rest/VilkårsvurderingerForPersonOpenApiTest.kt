@@ -68,7 +68,6 @@ class VilkårsvurderingerForPersonOpenApiTest {
 
             assertTrue(spec.contains("/api/personer/{personId}/vilkarsvurderinger")) { "Forventet at ruten var dokumentert: $spec" }
             assertTrue(spec.contains("opptjeningsvurderingId")) { "Forventet query-parameteret opptjeningsvurderingId i spec-en: $spec" }
-            assertTrue(spec.contains("medlemskapsvurderingId")) { "Forventet query-parameteret medlemskapsvurderingId i spec-en: $spec" }
             assertTrue(spec.contains("\"format\" : \"uuid\"")) { "Forventet at UUID-parametrene var typet med format uuid: $spec" }
         }
 }
