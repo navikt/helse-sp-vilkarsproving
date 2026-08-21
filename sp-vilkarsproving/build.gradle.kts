@@ -16,9 +16,6 @@ dependencies {
     implementation(project(":migreringer"))
     testImplementation(libs.rapids.and.rivers.test)
     testImplementation(libs.wiremock)
-    testImplementation(libs.hikaricp)
-    testImplementation(libs.flyway.database.postgresql)
-    testImplementation(libs.testcontainers.postgres)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.tbd.libs.speil.backend.app) {
         capabilities {
