@@ -9,7 +9,6 @@ import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kilde
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsregel
-import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
@@ -47,11 +46,10 @@ internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<Vilkårsv
             manglerTilgang = { VilkårsvurderingerForPersonFeil.ManglerTilgang },
         ) { identitetsnummer ->
 
-
-            val opptjeningsvurderingId = resource.opptjeningsvurderingId ?: return@medPerson RestResponse.Feil(
-                VilkårsvurderingerForPersonFeil.ManglerRequestParameter
-            )
-
+            val opptjeningsvurderingId =
+                resource.opptjeningsvurderingId ?: return@medPerson RestResponse.Feil(
+                    VilkårsvurderingerForPersonFeil.ManglerRequestParameter,
+                )
 
             val vurdering = kallKontekst.transaksjon.vilkårsvurderinger.finn(Vilkår.Opptjening, VurderingId(opptjeningsvurderingId))
             if (vurdering == null || vurdering.fødselsnummer != identitetsnummer.value) {
@@ -60,7 +58,6 @@ internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<Vilkårsv
             }
 
             return@medPerson RestResponse.ok(ApiVilkårsvurderingerForPersonResponse(vurdering.tilApiOpptjeningResponse()))
-
         }
     }
 }
