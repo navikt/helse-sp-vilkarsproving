@@ -37,8 +37,11 @@ internal open class OpptjeningsvurderingResultatRiver(
                 precondition {
                     it.requireValue("@event_name", "behov")
                     it.requireAllOrAny("@behov", listOf(behovnavn))
-                    it.requireKey(idFelt)
+                    it.forbid("@løsning")
+                }
+                validate {
                     it.requireKey("fødselsnummer")
+                    it.requireKey(idFelt)
                 }
             }.register(this)
     }
