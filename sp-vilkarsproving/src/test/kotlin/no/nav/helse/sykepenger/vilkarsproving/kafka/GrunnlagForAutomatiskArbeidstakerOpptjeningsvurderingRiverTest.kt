@@ -8,6 +8,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforho
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode.IKKE_OPPTJENING_ARBEID_ELLER_YTELSE
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode.OPPTJENING_MINST_4_UKER
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opphav
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import org.intellij.lang.annotations.Language
@@ -197,12 +198,12 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         rapid.sendTestMessage(arbeidsforholdløsning(arbeidsforhold(ansattSiden = "2018-01-01", ansattTil = "2018-01-31")))
 
         assertEquals(0, rapid.inspektør.size)
-        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, vurderinger.alleVurderinger.single().grunnlag)
+        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (vurderinger.alleVurderinger.single().opphav as Opphav.Automatisk).grunnlag)
     }
 
     private fun påbegyntPrøving() = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving.also { prøvinger.lagre(it) }
 
-    private fun arbeidsforholdPåVurdering() = (vurderinger.alleVurderinger.single().grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold
+    private fun arbeidsforholdPåVurdering() = ((vurderinger.alleVurderinger.single().opphav as Opphav.Automatisk).grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold
 
     private companion object {
         const val FØDSELSNUMMER = "12029240045"

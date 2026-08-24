@@ -14,6 +14,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
 import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode.IKKE_OPPTJENING_ARBEID_ELLER_YTELSE
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode.OPPTJENING_MINST_4_UKER
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opphav
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
@@ -66,7 +67,7 @@ internal class OpptjeningServiceTest {
 
         val vurdering = vurderinger.finn(Vilkår.Opptjening, harVurdering.vurderingId)!!
         assertEquals(OPPTJENING_MINST_4_UKER, vurdering.kodeverkkode)
-        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, vurdering.grunnlag)
+        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (vurdering.opphav as Opphav.Automatisk).grunnlag)
         assertTrue(prøvinger.alleProvinger.single().erAvsluttet)
     }
 
@@ -165,7 +166,7 @@ internal class OpptjeningServiceTest {
         val vurdering = vurderinger.finn(Vilkår.Opptjening, nyVurdering.vurderingId)!!
         assertEquals(prøving.id, vurdering.prøvingId)
         assertEquals(OPPTJENING_MINST_4_UKER, vurdering.kodeverkkode)
-        assertEquals(arbeidsforhold, (vurdering.grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold)
+        assertEquals(arbeidsforhold, ((vurdering.opphav as Opphav.Automatisk).grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold)
     }
 
     // Kodeverkkoden utledes av arbeidsforholdene: for kort opptjening gir avslagskode

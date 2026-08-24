@@ -36,24 +36,29 @@ internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<ApiVilkå
                 return@medPerson RestResponse.ok(
                     ApiVilkårsvurderingerForPersonResponse(
                         opptjeningsvurdering =
-                            ApiOpptjeningsvurderingResponse(
+                            ApiOpptjeningsvurdering(
                                 id = opptjeningsvurderingId,
-                                utfall = ApiUtfallResponse.Oppfylt,
+                                rettTilSykepenger = true,
                                 skjæringstidspunkt = 1.januar(2018),
                                 kodeverkkode = "OPPTJENING_MINST_4_UKER",
-                                grunnlag =
-                                    ApiOpptjeningsgrunnlagResponse.Arbeidstaker(
-                                        arbeidsforhold =
-                                            listOf(
-                                                ApiArbeidsforholdResponse(
-                                                    orgnummer = "123456789",
-                                                    fom = 1.desember(2017),
-                                                    tom = 31.desember(2017),
-                                                    type = ApiArbeidsforholdtypeResponse.ORDINÆRT,
-                                                ),
+                                opphav =
+                                    ApiOpphav.Automatisk(
+                                        grunnlag =
+                                            ApiOpptjeningsgrunnlag.Arbeidstaker(
+                                                opptjeningsdager = 31,
+                                                opptjeningsperiode = null,
+                                                arbeidsforhold =
+                                                    listOf(
+                                                        ApiArbeidsforhold(
+                                                            organisasjonsnummer = "123456789",
+                                                            fom = 1.desember(2017),
+                                                            tom = 31.desember(2017),
+                                                            type = ApiArbeidsforholdtype.ORDINÆRT,
+                                                        ),
+                                                    ),
                                             ),
+                                        versjonAvKildekode = "1",
                                     ),
-                                kilde = ApiKildeResponse.Automatisk("1"),
                                 vurdertTidspunkt = Instant.now(),
                             ),
                     ),

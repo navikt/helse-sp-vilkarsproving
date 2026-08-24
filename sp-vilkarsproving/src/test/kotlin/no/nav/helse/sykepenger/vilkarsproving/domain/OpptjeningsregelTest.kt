@@ -113,7 +113,43 @@ internal class OpptjeningsregelTest {
 
     @Test
     fun `selvstendig næringsdrivende har alltid oppfylt opptjening`() {
-        assertEquals(OPPTJENING_MINST_4_UKER, Opptjeningsregel.vurder(1.februar, Opptjeningsgrunnlag.SelvstendigNæringsdrivende))
+        val resultat = Opptjeningsregel.vurder(1.februar, Opptjeningsgrunnlag.SelvstendigNæringsdrivende)
+
+        assertEquals(OPPTJENING_MINST_4_UKER, resultat.kodeverkkode)
+        assertEquals(null, resultat.opptjeningsperiode)
+        assertEquals(null, resultat.opptjeningsdager)
+    }
+
+    @Test
+    fun `resultatet inneholder perioden som vurderes og antall opptjeningsdager`() {
+        val resultat =
+            Opptjeningsregel.vurder(
+                1.februar,
+                Opptjeningsgrunnlag.Arbeidstaker(
+                    listOf(
+                        arbeidsforhold(1.desember(2017) til 15.desember(2017)),
+                        arbeidsforhold(4.januar til 31.januar),
+                    ),
+                ),
+            )
+
+        assertEquals(4.januar, resultat.opptjeningsperiode?.start)
+        assertEquals(31.januar, resultat.opptjeningsperiode?.endInclusive)
+        assertEquals(28, resultat.opptjeningsdager)
+        assertEquals(OPPTJENING_MINST_4_UKER, resultat.kodeverkkode)
+    }
+
+    @Test
+    fun `resultatet har null periode og dager når ingen periode treffer dagen før skjæringstidspunktet`() {
+        val resultat =
+            Opptjeningsregel.vurder(
+                1.februar,
+                Opptjeningsgrunnlag.Arbeidstaker(listOf(arbeidsforhold(1.januar til 30.januar))),
+            )
+
+        assertEquals(null, resultat.opptjeningsperiode)
+        assertEquals(null, resultat.opptjeningsdager)
+        assertEquals(IKKE_OPPTJENING_ARBEID_ELLER_YTELSE, resultat.kodeverkkode)
     }
 
     // ---------------------------------------------------------------------
@@ -230,6 +266,6 @@ internal class OpptjeningsregelTest {
         fun vurderArbeidstaker(
             skjæringstidspunkt: LocalDate,
             vararg arbeidsforhold: Arbeidsforhold,
-        ) = Opptjeningsregel.vurder(skjæringstidspunkt, Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold.toList()))
+        ) = Opptjeningsregel.vurder(skjæringstidspunkt, Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold.toList())).kodeverkkode
     }
 }
