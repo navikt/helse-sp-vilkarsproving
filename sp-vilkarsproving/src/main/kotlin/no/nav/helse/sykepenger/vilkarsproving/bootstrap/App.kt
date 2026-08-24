@@ -9,6 +9,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskA
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingResultatRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClient
 
 enum class AppRolle(
     override val navn: String,
@@ -17,6 +18,7 @@ enum class AppRolle(
 }
 
 fun main() {
+    val spleisClient = SpleisClient.fromEnv()
     startApp(
         konfigurasjon = AppKonfigurasjon.fraEnv("sp-vilkarsproving"),
         brukerroller = TilgangsgrupperTilBrukerroller<AppRolle>(emptyMap()),
@@ -34,6 +36,7 @@ fun main() {
             OpptjeningsvurderingResultatRiver(
                 rapidsConnection = this,
                 transaksjonProvider = transaksjonProvider,
+                spleisClient = spleisClient,
             )
         },
         endepunkter = {

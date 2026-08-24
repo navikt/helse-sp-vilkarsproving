@@ -1,8 +1,8 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.spleis
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
 import java.time.LocalDate
-import java.util.UUID
 
 /**
  * Responsen fra `POST /api/opptjeningsvurderinger` i spleis-api.
@@ -14,7 +14,7 @@ internal data class OpptjeningsvurderingerResponse(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 internal data class OpptjeningsvurderingDto(
-    val opptjeningsvurderingId: UUID,
+    val opptjeningsvurderingId: VurderingId,
     val type: OpptjeningsvurderingTypeDto,
     val skjæringstidspunkt: LocalDate,
     val kilde: OpptjeningsvurderingKildeDto,
@@ -28,6 +28,7 @@ internal data class OpptjeningsvurderingDto(
 
 internal enum class OpptjeningsvurderingTypeDto {
     ARBEIDSTAKER,
+    SELVSTENDIG,
 }
 
 internal enum class OpptjeningsvurderingKildeDto {

@@ -9,6 +9,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.post
 import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
+import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.AnsettelsesperiodeDto
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ArbeidsforholdDto
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.OpptjeningsvurderingKildeDto
@@ -71,10 +72,10 @@ internal class SpleisClientTest {
 
         val opptjeningsvurderinger = client.hentOpptjeningsvurderinger("11111111111")
 
-        assertEquals(3, opptjeningsvurderinger.size)
+        assertEquals(4, opptjeningsvurderinger.size)
 
         val infotrygdvurdering = opptjeningsvurderinger[0]
-        assertEquals(UUID.fromString("b89e2ae5-59e3-388e-98cd-42a8e7350773"), infotrygdvurdering.opptjeningsvurderingId)
+        assertEquals(VurderingId(UUID.fromString("b89e2ae5-59e3-388e-98cd-42a8e7350773")), infotrygdvurdering.opptjeningsvurderingId)
         assertEquals(OpptjeningsvurderingTypeDto.ARBEIDSTAKER, infotrygdvurdering.type)
         assertEquals(LocalDate.of(2018, 1, 1), infotrygdvurdering.skjæringstidspunkt)
         assertEquals(OpptjeningsvurderingKildeDto.INFOTRYGD, infotrygdvurdering.kilde)
@@ -98,6 +99,15 @@ internal class SpleisClientTest {
             listOf(ArbeidsforholdDto("987654322", listOf(AnsettelsesperiodeDto(LocalDate.of(2017, 4, 1), null)))),
             oppfyltSpleisvurdering.arbeidsforhold,
         )
+
+        val selvstendigvurdering = opptjeningsvurderinger[3]
+        assertEquals(OpptjeningsvurderingTypeDto.SELVSTENDIG, selvstendigvurdering.type)
+        assertEquals(LocalDate.of(2018, 4, 1), selvstendigvurdering.skjæringstidspunkt)
+        assertEquals(OpptjeningsvurderingKildeDto.SPLEIS, selvstendigvurdering.kilde)
+        assertNull(selvstendigvurdering.oppfylt)
+        assertNull(selvstendigvurdering.antallDager)
+        assertNull(selvstendigvurdering.opptjeningsperiode)
+        assertEquals(emptyList<ArbeidsforholdDto>(), selvstendigvurdering.arbeidsforhold)
 
         server.verify(
             postRequestedFor(urlEqualTo("/api/opptjeningsvurderinger"))
@@ -130,7 +140,7 @@ internal class SpleisClientTest {
                   "kilde": "INFOTRYGD"
                 },
                 {
-                  "opptjeningsvurderingId": "00000000-0000-0000-0000-000000000000",
+                  "opptjeningsvurderingId": "00000000-0000-0000-0000-000000000001",
                   "type": "ARBEIDSTAKER",
                   "skjæringstidspunkt": "2018-04-01",
                   "kilde": "SPLEIS",
@@ -140,7 +150,7 @@ internal class SpleisClientTest {
                   "arbeidsforhold": []
                 },
                 {
-                  "opptjeningsvurderingId": "00000000-0000-0000-0000-000000000000",
+                  "opptjeningsvurderingId": "00000000-0000-0000-0000-000000000002",
                   "type": "ARBEIDSTAKER",
                   "skjæringstidspunkt": "2018-04-01",
                   "kilde": "SPLEIS",
@@ -161,7 +171,13 @@ internal class SpleisClientTest {
                   },
                   "oppfylt": true,
                   "antallDager": 365
-                }
+                },
+                {
+                  "opptjeningsvurderingId": "00000000-0000-0000-0000-000000000003",
+                  "skjæringstidspunkt": "2018-04-01",
+                  "kilde": "SPLEIS",
+                  "type": "SELVSTENDIG"
+                }                
               ]
             }
             """

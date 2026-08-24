@@ -98,3 +98,4 @@ spec:
           namespace: nais-system
         - application: populasjonstilgangskontroll
           namespace: tilgangsmaskin
+        - application: spleis-api

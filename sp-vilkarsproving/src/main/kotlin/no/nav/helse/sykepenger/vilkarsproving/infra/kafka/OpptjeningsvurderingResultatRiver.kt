@@ -8,11 +8,13 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
 import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
-import no.nav.helse.sykepenger.vilkarsproving.application.VilkårsprøvingService
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.sikkerLogg
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
 import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.OpptjeningsvurderingKildeDto
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.OpptjeningsvurderingTypeDto
 
 /**
  * Svarer på spørsmål om utfallet av en ferdig vurdering.
@@ -20,13 +22,15 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
  * Fordi en vurdering ser likt ut uansett vilkår, er denne riveren felles: den slår opp resultatet
  * direkte, uten å gå veien om prøvingen. Det er hele poenget med å skille resultat fra prosess.
  */
-internal open class VilkårsvurderingResultatRiver(
+internal open class OpptjeningsvurderingResultatRiver(
     rapidsConnection: RapidsConnection,
     private val transaksjonProvider: TransaksjonProvider<Transaksjonskontekst>,
-    private val vilkår: Vilkår,
-    private val behovnavn: String,
-    private val idFelt: String,
+    private val spleisClient: ISpleisClient,
 ) : River.PacketListener {
+    private val vilkår = Vilkår.Opptjening
+    private val behovnavn = "OpptjeningsvurderingResultat"
+    private val idFelt = "OpptjeningsvurderingResultat.opptjeningsvurderingId"
+
     init {
         River(rapidsConnection)
             .apply {
@@ -48,13 +52,36 @@ internal open class VilkårsvurderingResultatRiver(
         val vurderingId = VurderingId(packet[idFelt].asUUID())
         val fødselsnummer = packet["fødselsnummer"].asString()
         sikkerLogg.info("Mottatt behov for $behovnavn for $idFelt $vurderingId")
-        val vurdering =
-            transaksjonProvider.transaksjon { kontekst ->
-                VilkårsprøvingService(kontekst).finnVurdering(vilkår, vurderingId, fødselsnummer)
+
+        val vilkårsvurdering =
+            transaksjonProvider.transaksjon {
+                it.vilkårsvurderinger.finn(vilkår, vurderingId)
             }
 
+        val utfall =
+            vilkårsvurdering?.utfall ?: spleisClient
+                .hentOpptjeningsvurderinger(
+                    fødselsnummer = fødselsnummer,
+                ).find { it.opptjeningsvurderingId == vurderingId }
+                ?.let { vurdering ->
+                    when (vurdering.type) {
+                        OpptjeningsvurderingTypeDto.ARBEIDSTAKER -> {
+                            when (vurdering.kilde) {
+                                OpptjeningsvurderingKildeDto.SPLEIS -> vurdering.oppfylt!!
+                                OpptjeningsvurderingKildeDto.INFOTRYGD -> true
+                            }
+                        }
+                        OpptjeningsvurderingTypeDto.SELVSTENDIG -> true
+                    }
+                }?.let { ok ->
+                    when (ok) {
+                        true -> Utfall.Oppfylt
+                        false -> Utfall.IkkeOppfylt
+                    }
+                } ?: error("Fant ikke vurdering med id $vurderingId")
+
         val ok =
-            when (vurdering.utfall) {
+            when (utfall) {
                 Utfall.Oppfylt -> true
                 Utfall.IkkeOppfylt -> false
             }
@@ -64,14 +91,3 @@ internal open class VilkårsvurderingResultatRiver(
         context.publish(packet.toJson())
     }
 }
-
-internal class OpptjeningsvurderingResultatRiver(
-    rapidsConnection: RapidsConnection,
-    transaksjonProvider: TransaksjonProvider<Transaksjonskontekst>,
-) : VilkårsvurderingResultatRiver(
-        rapidsConnection = rapidsConnection,
-        transaksjonProvider = transaksjonProvider,
-        vilkår = Vilkår.Opptjening,
-        behovnavn = "OpptjeningsvurderingResultat",
-        idFelt = "OpptjeningsvurderingResultat.opptjeningsvurderingId",
-    )

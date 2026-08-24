@@ -12,12 +12,16 @@ import java.net.http.HttpResponse
 import java.time.Duration
 import java.util.UUID
 
+internal interface ISpleisClient {
+    fun hentOpptjeningsvurderinger(fødselsnummer: String): List<OpptjeningsvurderingDto>
+}
+
 internal class SpleisClient(
     private val scope: String,
     private val baseUrl: String,
     private val tokenProvider: AccessTokenProvider,
     private val httpClient: HttpClient = HttpClient.newHttpClient(),
-) {
+) : ISpleisClient {
     companion object {
         private val objectMapper = jacksonObjectMapper()
 
@@ -37,7 +41,7 @@ internal class SpleisClient(
         )
     }
 
-    fun hentOpptjeningsvurderinger(fødselsnummer: String): List<OpptjeningsvurderingDto> {
+    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<OpptjeningsvurderingDto> {
         val m2mToken = tokenProvider.machineToken(scope)
 
         val body = PersonRequest(fødselsnummer)

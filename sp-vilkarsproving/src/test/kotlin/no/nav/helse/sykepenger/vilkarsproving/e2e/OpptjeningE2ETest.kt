@@ -8,6 +8,8 @@ import no.nav.helse.sykepenger.vilkarsproving.db.DatabaseTest
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingResultatRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.OpptjeningsvurderingDto
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -35,7 +37,15 @@ internal class OpptjeningE2ETest : DatabaseTest() {
         TestRapid().apply {
             OpptjeningsvurderingRiver(this, transaksjon)
             GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(this, transaksjon)
-            OpptjeningsvurderingResultatRiver(this, transaksjon)
+            OpptjeningsvurderingResultatRiver(
+                this,
+                transaksjon,
+                object : ISpleisClient {
+                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<OpptjeningsvurderingDto> {
+                        TODO("Not yet implemented")
+                    }
+                },
+            )
         }
 
     // === Arbeidstaker-flyt ===
