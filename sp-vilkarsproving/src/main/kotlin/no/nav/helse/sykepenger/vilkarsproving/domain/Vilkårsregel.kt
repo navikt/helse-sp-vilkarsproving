@@ -15,5 +15,9 @@ internal interface Vilkårsregel {
     fun vurder(
         skjæringstidspunkt: LocalDate,
         grunnlag: Vilkårsgrunnlag,
-    ): Kodeverkkode
+    ): Vilkårsregelresultat
+}
+
+internal interface Vilkårsregelresultat {
+    val kodeverkkode: Kodeverkkode
 }

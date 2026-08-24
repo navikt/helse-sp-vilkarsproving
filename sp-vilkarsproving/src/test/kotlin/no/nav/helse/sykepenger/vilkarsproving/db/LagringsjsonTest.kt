@@ -2,11 +2,11 @@ package no.nav.helse.sykepenger.vilkarsproving.db
 
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kilde
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opphav
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
-import no.nav.helse.sykepenger.vilkarsproving.infra.db.Grunnlagsjson
-import no.nav.helse.sykepenger.vilkarsproving.infra.db.Kildejson
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsgrunnlag
+import no.nav.helse.sykepenger.vilkarsproving.infra.db.Opphavsjson
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.arbeidstakergrunnlag
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -24,18 +24,21 @@ internal class LagringsjsonTest {
         val grunnlag = arbeidstakergrunnlag(arbeidsforhold(ansattFom = 1.januar, ansattTom = 31.januar))
 
         assertEquals(
-            """{"type":"ARBEIDSTAKER","arbeidsforhold":[{"orgnummer":"987654321","fom":"2018-01-01","tom":"2018-01-31","type":"ORDINÆRT"}]}""",
-            Grunnlagsjson.tilJson(grunnlag),
+            """{"type":"AUTOMATISK","grunnlag":{"type":"ARBEIDSTAKER","arbeidsforhold":[{"orgnummer":"987654321","fom":"2018-01-01","tom":"2018-01-31","type":"ORDINÆRT"}]},"versjonAvKildekode":"1"}""",
+            Opphavsjson.tilJson(automatisk(grunnlag)),
         )
-        assertEquals(grunnlag, grunnlagFraJson(grunnlag))
+        assertEquals(grunnlag, grunnlagEtterRundtur(grunnlag))
     }
 
     @Test
     fun `selvstendig næringsdrivende lagres på avtalt format`() {
         val grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende
 
-        assertEquals("""{"type":"SELVSTENDIG_NÆRINGSDRIVENDE"}""", Grunnlagsjson.tilJson(grunnlag))
-        assertEquals(grunnlag, grunnlagFraJson(grunnlag))
+        assertEquals(
+            """{"type":"AUTOMATISK","grunnlag":{"type":"SELVSTENDIG_NÆRINGSDRIVENDE"},"versjonAvKildekode":"1"}""",
+            Opphavsjson.tilJson(automatisk(grunnlag)),
+        )
+        assertEquals(grunnlag, grunnlagEtterRundtur(grunnlag))
     }
 
     // Et løpende arbeidsforhold har ansettelseperiode til LocalDate.MAX, som må overleve lagringen
@@ -44,10 +47,10 @@ internal class LagringsjsonTest {
         val grunnlag = arbeidstakergrunnlag(arbeidsforhold(ansattFom = 1.januar, ansattTom = null))
 
         assertEquals(
-            """{"type":"ARBEIDSTAKER","arbeidsforhold":[{"orgnummer":"987654321","fom":"2018-01-01","tom":"+999999999-12-31","type":"ORDINÆRT"}]}""",
-            Grunnlagsjson.tilJson(grunnlag),
+            """{"type":"AUTOMATISK","grunnlag":{"type":"ARBEIDSTAKER","arbeidsforhold":[{"orgnummer":"987654321","fom":"2018-01-01","tom":"+999999999-12-31","type":"ORDINÆRT"}]},"versjonAvKildekode":"1"}""",
+            Opphavsjson.tilJson(automatisk(grunnlag)),
         )
-        assertEquals(grunnlag, grunnlagFraJson(grunnlag))
+        assertEquals(grunnlag, grunnlagEtterRundtur(grunnlag))
     }
 
     // Mappingen mellom domeneenum og dto-enum er skrevet ut for hånd; her sjekkes at ingen verdi er glemt
@@ -56,7 +59,7 @@ internal class LagringsjsonTest {
         Arbeidsforhold.Arbeidsforholdtype.entries.forEach { type ->
             val grunnlag =
                 arbeidstakergrunnlag(arbeidsforhold(ansattFom = 1.januar, ansattTom = 31.januar, type = type))
-            assertEquals(grunnlag, grunnlagFraJson(grunnlag))
+            assertEquals(grunnlag, grunnlagEtterRundtur(grunnlag))
         }
     }
 
@@ -68,50 +71,58 @@ internal class LagringsjsonTest {
                 arbeidsforhold(orgnummer = "222222222", ansattFom = 16.januar, ansattTom = 31.januar),
             )
 
-        assertEquals(grunnlag, grunnlagFraJson(grunnlag))
+        assertEquals(grunnlag, grunnlagEtterRundtur(grunnlag))
     }
 
     @Test
-    fun `automatisk kilde lagres på avtalt format`() {
-        val kilde = Kilde.Automatisk(regelversjon = "1")
-
-        assertEquals("""{"type":"AUTOMATISK","regelversjon":"1"}""", Kildejson.tilJson(kilde))
-        assertEquals(kilde, Kildejson.fraJson(Kildejson.tilJson(kilde)))
-    }
-
-    @Test
-    fun `manuell kilde lagres på avtalt format`() {
-        val kilde = Kilde.Manuell(saksbehandlerIdent = "A123456", fritekstbegrunnelse = "vurdert etter dialog med bruker")
+    fun `saksbehandleropphav lagres på avtalt format`() {
+        val opphav = Opphav.Saksbehandler(Vilkår.Opptjening, ident = "A123456", fritekstbegrunnelse = "vurdert etter dialog med bruker")
 
         assertEquals(
-            """{"type":"MANUELL","saksbehandlerIdent":"A123456","fritekstbegrunnelse":"vurdert etter dialog med bruker"}""",
-            Kildejson.tilJson(kilde),
+            """{"type":"SAKSBEHANDLER","ident":"A123456","fritekstbegrunnelse":"vurdert etter dialog med bruker"}""",
+            Opphavsjson.tilJson(opphav),
         )
-        assertEquals(kilde, Kildejson.fraJson(Kildejson.tilJson(kilde)))
+        assertEquals(opphav, rundtur(opphav))
+    }
+
+    // Fra Infotrygd har vi verken grunnlag eller saksbehandler; opphavet er kun en markør
+    @Test
+    fun `infotrygdopphav lagres på avtalt format`() {
+        val opphav = Opphav.Infotrygd(Vilkår.Opptjening)
+
+        assertEquals("""{"type":"INFOTRYGD"}""", Opphavsjson.tilJson(opphav))
+        assertEquals(opphav, rundtur(opphav))
     }
 
     // Ukjent type betyr at raden er skrevet av en annen versjon enn den som leser: da skal vi feile, ikke gjette
     @Test
     fun `ukjent grunnlagstype gir feil`() {
         assertThrows<JacksonException> {
-            Grunnlagsjson.fraJson(Vilkår.Opptjening, """{"type":"FISKER"}""")
+            Opphavsjson.fraJson(Vilkår.Opptjening, """{"type":"AUTOMATISK","grunnlag":{"type":"FISKER"},"versjonAvKildekode":"1"}""")
         }
     }
 
     @Test
-    fun `ukjent kildetype gir feil`() {
+    fun `ukjent opphavstype gir feil`() {
         assertThrows<JacksonException> {
-            Kildejson.fraJson("""{"type":"MASKINELT"}""")
+            Opphavsjson.fraJson(Vilkår.Opptjening, """{"type":"MASKINELT"}""")
         }
     }
 
     // Under en rullering leser gamle podder rader skrevet av nye: et felt vi ikke kjenner skal ikke velte lesingen
     @Test
     fun `ukjent felt i lagret json ignoreres`() {
-        val json = """{"type":"AUTOMATISK","regelversjon":"1","vurdertAv":"noe vi ikke kjenner"}"""
+        val json = """{"type":"SAKSBEHANDLER","ident":"A123456","fritekstbegrunnelse":"","vurdertAv":"noe vi ikke kjenner"}"""
 
-        assertEquals(Kilde.Automatisk(regelversjon = "1"), Kildejson.fraJson(json))
+        assertEquals(
+            Opphav.Saksbehandler(Vilkår.Opptjening, ident = "A123456", fritekstbegrunnelse = ""),
+            Opphavsjson.fraJson(Vilkår.Opptjening, json),
+        )
     }
 
-    private fun grunnlagFraJson(grunnlag: Opptjeningsgrunnlag) = Grunnlagsjson.fraJson(grunnlag.vilkår, Grunnlagsjson.tilJson(grunnlag))
+    private fun automatisk(grunnlag: Vilkårsgrunnlag) = Opphav.Automatisk(grunnlag, versjonAvKildekode = "1")
+
+    private fun rundtur(opphav: Opphav) = Opphavsjson.fraJson(opphav.vilkår, Opphavsjson.tilJson(opphav))
+
+    private fun grunnlagEtterRundtur(grunnlag: Vilkårsgrunnlag) = (rundtur(automatisk(grunnlag)) as Opphav.Automatisk).grunnlag
 }

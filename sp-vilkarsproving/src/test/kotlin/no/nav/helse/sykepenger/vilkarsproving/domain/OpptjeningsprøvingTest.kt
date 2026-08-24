@@ -32,12 +32,12 @@ internal class OpptjeningsprøvingTest {
         assertTrue(prøving.erAvsluttet)
         assertNull(prøving.uteståendeBehov)
         assertEquals(Vilkårsprøving.Tilstand.Fullført(vurdering!!.id), prøving.tilstand)
-        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, vurdering.grunnlag)
+        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (vurdering.opphav as Opphav.Automatisk).grunnlag)
     }
 
     // Vurderingen peker tilbake på prøvingen som produserte den
     @Test
-    fun `vurderingen bærer med seg prøvingen, grunnlaget og kilden`() {
+    fun `vurderingen bærer med seg prøvingen, grunnlaget og opphavet`() {
         val prøving = påbegyntArbeidstakerprøving()
         val arbeidsforhold = listOf(arbeidsforhold())
 
@@ -46,8 +46,10 @@ internal class OpptjeningsprøvingTest {
         assertEquals(prøving.id, vurdering.prøvingId)
         assertEquals(FØDSELSNUMMER, vurdering.fødselsnummer)
         assertEquals(1.februar, vurdering.skjæringstidspunkt)
-        assertEquals(arbeidsforhold, (vurdering.grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold)
-        assertEquals(Kilde.Automatisk(Opptjeningsregel.versjon), vurdering.kilde)
+        assertEquals(
+            Opphav.Automatisk(Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold), Opptjeningsregel.versjon),
+            vurdering.opphav,
+        )
         assertEquals(Kodeverkkode.OPPTJENING_MINST_4_UKER, vurdering.kodeverkkode)
         assertEquals(Utfall.Oppfylt, vurdering.utfall)
     }

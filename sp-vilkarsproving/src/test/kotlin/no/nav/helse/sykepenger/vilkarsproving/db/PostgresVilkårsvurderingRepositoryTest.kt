@@ -6,8 +6,8 @@ import no.nav.helse.mars
 import no.nav.helse.sykepenger.vilkarsproving.db.Database
 import no.nav.helse.sykepenger.vilkarsproving.db.DatabaseTest
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kilde
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opphav
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
@@ -44,10 +44,9 @@ internal class PostgresVilkårsvurderingRepositoryTest : DatabaseTest() {
         assertEquals(Vilkår.Opptjening, lagret.vilkår)
         assertEquals(FØDSELSNUMMER, lagret.fødselsnummer)
         assertEquals(1.februar, lagret.skjæringstidspunkt)
-        assertEquals(grunnlag, lagret.grunnlag)
         assertEquals(vurdering.kodeverkkode, lagret.kodeverkkode)
         assertEquals(vurdering.utfall, lagret.utfall)
-        assertEquals(Kilde.Automatisk("1"), lagret.kilde)
+        assertEquals(Opphav.Automatisk(grunnlag, "1"), lagret.opphav)
         assertEquals(vurdering.vurdertTidspunkt.truncatedTo(ChronoUnit.MILLIS), lagret.vurdertTidspunkt.truncatedTo(ChronoUnit.MILLIS))
     }
 
@@ -57,20 +56,20 @@ internal class PostgresVilkårsvurderingRepositoryTest : DatabaseTest() {
 
         val lagret = transaksjon { it.vilkårsvurderinger.finn(Vilkår.Opptjening, vurdering.id) }!!
 
-        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, lagret.grunnlag)
+        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (lagret.opphav as Opphav.Automatisk).grunnlag)
         assertEquals(Kodeverkkode.OPPTJENING_MINST_4_UKER, lagret.kodeverkkode)
     }
 
-    // Manuell vurdering er en kilde, ikke en egen resultattype — også den må overleve lagringen
+    // Manuell vurdering er samme resultattype som automatisk, bare med et annet opphav — og uten grunnlag
     @Test
-    fun `manuell kilde lagres og hentes tilbake`() {
+    fun `saksbehandleropphav lagres og hentes tilbake`() {
         val automatisk = lagreVurdering(arbeidstakergrunnlag())
         val vurdering =
-            Vilkårsvurdering.manuell(
+            Vilkårsvurdering.avSaksbehandler(
                 prøvingId = automatisk.prøvingId,
+                vilkår = Vilkår.Opptjening,
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                grunnlag = arbeidstakergrunnlag(),
                 kodeverkkode = Kodeverkkode.IKKE_OPPTJENING_ARBEID_ELLER_YTELSE,
                 saksbehandlerIdent = "A123456",
                 fritekstbegrunnelse = "Ikke nok opptjening",
@@ -80,8 +79,28 @@ internal class PostgresVilkårsvurderingRepositoryTest : DatabaseTest() {
 
         val lagret = transaksjon { it.vilkårsvurderinger.finn(Vilkår.Opptjening, vurdering.id) }!!
 
-        assertEquals(Kilde.Manuell("A123456", "Ikke nok opptjening"), lagret.kilde)
+        assertEquals(Opphav.Saksbehandler(Vilkår.Opptjening, "A123456", "Ikke nok opptjening"), lagret.opphav)
         assertEquals(Kodeverkkode.IKKE_OPPTJENING_ARBEID_ELLER_YTELSE, lagret.kodeverkkode)
+    }
+
+    // En vurdering overført fra Infotrygd har ingen prøving hos oss, og må kunne lagres uten
+    @Test
+    fun `infotrygdvurdering lagres uten prøving`() {
+        val vurdering =
+            Vilkårsvurdering.fraInfotrygd(
+                vilkår = Vilkår.Opptjening,
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                kodeverkkode = Kodeverkkode.OPPTJENING_ARBEID_ELLER_YTELSE,
+                vurdertTidspunkt = Instant.now(),
+            )
+        transaksjon { it.vilkårsvurderinger.lagre(vurdering) }
+
+        val lagret = transaksjon { it.vilkårsvurderinger.finn(Vilkår.Opptjening, vurdering.id) }!!
+
+        assertNull(lagret.prøvingId)
+        assertEquals(Opphav.Infotrygd(Vilkår.Opptjening), lagret.opphav)
+        assertEquals(Kodeverkkode.OPPTJENING_ARBEID_ELLER_YTELSE, lagret.kodeverkkode)
     }
 
     // Vurderinger oppdateres aldri: en ny prøving gir en ny rad, og den nyeste er den gjeldende

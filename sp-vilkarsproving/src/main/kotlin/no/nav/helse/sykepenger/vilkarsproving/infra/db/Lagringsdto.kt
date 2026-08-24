@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import java.time.LocalDate
 
 /**
- * Lagringsformatet for grunnlag og kilde, uttrykt som dataklasser.
+ * Lagringsformatet for opphav og grunnlag, uttrykt som dataklasser.
  *
  * Dtoene er kontrakten mot databasen, og er bevisst skilt fra domenetypene: domenet kan
  * refaktoreres — nye felter, andre navn, delt opp i flere typer — uten at lagrede vurderinger blir
@@ -20,7 +20,14 @@ import java.time.LocalDate
     JsonSubTypes.Type(value = OpptjeningsgrunnlagDto.Arbeidstaker::class, name = "ARBEIDSTAKER"),
     JsonSubTypes.Type(value = OpptjeningsgrunnlagDto.SelvstendigNæringsdrivende::class, name = "SELVSTENDIG_NÆRINGSDRIVENDE"),
 )
-internal sealed interface OpptjeningsgrunnlagDto {
+internal sealed interface VilkårsgrunnlagDto
+
+/**
+ * Grunnlaget er nøstet inni [OpphavDto.Automatisk], og deserialiseres derfor via [VilkårsgrunnlagDto].
+ * Diskriminatoren er unik på tvers av vilkår, slik at vi ikke trenger å vite hvilket vilkår raden
+ * gjelder for å lese den.
+ */
+internal sealed interface OpptjeningsgrunnlagDto : VilkårsgrunnlagDto {
     data class Arbeidstaker(
         val arbeidsforhold: List<ArbeidsforholdDto>,
     ) : OpptjeningsgrunnlagDto
@@ -46,18 +53,29 @@ internal enum class ArbeidsforholdtypeDto {
     ORDINÆRT,
 }
 
+/**
+ * Opphavet lagres som én json-verdi som også inneholder grunnlaget, slik at en rad aldri kan havne i
+ * en tilstand domenet ikke kan uttrykke — som et grunnlag på en vurdering vi ikke har gjort selv.
+ *
+ * Hvilket vilkår raden gjelder står i egen kolonne, og gjentas derfor ikke her.
+ */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
-    JsonSubTypes.Type(value = KildeDto.Automatisk::class, name = "AUTOMATISK"),
-    JsonSubTypes.Type(value = KildeDto.Manuell::class, name = "MANUELL"),
+    JsonSubTypes.Type(value = OpphavDto.Automatisk::class, name = "AUTOMATISK"),
+    JsonSubTypes.Type(value = OpphavDto.Saksbehandler::class, name = "SAKSBEHANDLER"),
+    JsonSubTypes.Type(value = OpphavDto.Infotrygd::class, name = "INFOTRYGD"),
 )
-internal sealed interface KildeDto {
+internal sealed interface OpphavDto {
     data class Automatisk(
-        val regelversjon: String,
-    ) : KildeDto
+        val grunnlag: VilkårsgrunnlagDto,
+        val versjonAvKildekode: String,
+    ) : OpphavDto
 
-    data class Manuell(
-        val saksbehandlerIdent: String,
+    data class Saksbehandler(
+        val ident: String,
         val fritekstbegrunnelse: String,
-    ) : KildeDto
+    ) : OpphavDto
+
+    /** Se kommentaren på [OpptjeningsgrunnlagDto.SelvstendigNæringsdrivende] for hvorfor dette ikke er et objekt. */
+    class Infotrygd : OpphavDto
 }

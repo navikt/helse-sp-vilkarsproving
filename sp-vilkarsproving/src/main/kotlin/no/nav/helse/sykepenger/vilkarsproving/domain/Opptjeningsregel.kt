@@ -1,6 +1,7 @@
 package no.nav.helse.sykepenger.vilkarsproving.domain
 
 import no.nav.helse.forrigeDag
+import no.nav.helse.hendelser.Periode
 import no.nav.helse.hendelser.Periode.Companion.grupperSammenhengendePerioderMedHensynTilHelg
 import no.nav.helse.hendelser.til
 import java.time.LocalDate
@@ -14,28 +15,46 @@ internal object Opptjeningsregel : Vilkårsregel {
     override fun vurder(
         skjæringstidspunkt: LocalDate,
         grunnlag: Vilkårsgrunnlag,
-    ): Kodeverkkode =
+    ): Resultat =
         when (grunnlag) {
             is Opptjeningsgrunnlag.Arbeidstaker -> vurderArbeidstaker(skjæringstidspunkt, grunnlag.arbeidsforhold)
-            Opptjeningsgrunnlag.SelvstendigNæringsdrivende -> Kodeverkkode.OPPTJENING_MINST_4_UKER
+            Opptjeningsgrunnlag.SelvstendigNæringsdrivende ->
+                Resultat(
+                    opptjeningsperiode = null,
+                    opptjeningsdager = null,
+                    kodeverkkode = Kodeverkkode.OPPTJENING_MINST_4_UKER,
+                )
         }
 
     private fun vurderArbeidstaker(
         skjæringstidspunkt: LocalDate,
         arbeidsforhold: List<Arbeidsforhold>,
-    ): Kodeverkkode {
-        val opptjeningsdagerFørSkjæringstidspunktet =
+    ): Resultat {
+        val opptjeningsperiode =
             arbeidsforhold
                 .map { it.ansettelseperiode }
                 .grupperSammenhengendePerioderMedHensynTilHelg()
                 .find { skjæringstidspunkt.forrigeDag in it }
-                ?.let { it.subset(it.start til skjæringstidspunkt.forrigeDag) }
-                ?.count() ?: 0
+        val opptjeningsdager =
+            opptjeningsperiode
+                ?.subset(opptjeningsperiode.start til skjæringstidspunkt.forrigeDag)
+                ?.count()
 
-        return if (opptjeningsdagerFørSkjæringstidspunktet >= ANTALL_OPPTJENINGSDAGER_SOM_KREVES) {
-            Kodeverkkode.OPPTJENING_MINST_4_UKER
-        } else {
-            Kodeverkkode.IKKE_OPPTJENING_ARBEID_ELLER_YTELSE
-        }
+        return Resultat(
+            opptjeningsperiode = opptjeningsperiode,
+            opptjeningsdager = opptjeningsdager,
+            kodeverkkode =
+                if ((opptjeningsdager ?: 0) >= ANTALL_OPPTJENINGSDAGER_SOM_KREVES) {
+                    Kodeverkkode.OPPTJENING_MINST_4_UKER
+                } else {
+                    Kodeverkkode.IKKE_OPPTJENING_ARBEID_ELLER_YTELSE
+                },
+        )
     }
+
+    data class Resultat(
+        val opptjeningsperiode: Periode?,
+        val opptjeningsdager: Int?,
+        override val kodeverkkode: Kodeverkkode,
+    ) : Vilkårsregelresultat
 }

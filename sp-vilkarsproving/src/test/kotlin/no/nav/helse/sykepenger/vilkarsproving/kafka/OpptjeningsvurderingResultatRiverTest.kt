@@ -4,7 +4,6 @@ import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
 import no.nav.helse.februar
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
@@ -171,14 +170,14 @@ internal class OpptjeningsvurderingResultatRiverTest {
         assertEquals(0, rapid.inspektør.size)
     }
 
-    // Manuell vurdering er samme resultattype som automatisk – bare med en annen kilde
+    // Manuell vurdering er samme resultattype som automatisk – bare med et annet opphav
     private fun manuellVurdering(kodeverkkode: Kodeverkkode): Vilkårsvurdering =
         Vilkårsvurdering
-            .manuell(
+            .avSaksbehandler(
                 prøvingId = PrøvingId.ny(),
+                vilkår = Vilkår.Opptjening,
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                grunnlag = Opptjeningsgrunnlag.Arbeidstaker(emptyList()),
                 kodeverkkode = kodeverkkode,
                 saksbehandlerIdent = "Z999999",
                 fritekstbegrunnelse = "",

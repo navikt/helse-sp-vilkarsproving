@@ -19,8 +19,8 @@ internal class PostgresVilkårsvurderingRepository(
     override fun lagre(vurdering: Vilkårsvurdering) {
         @Language("PostgreSQL")
         val sql = """
-            insert into vilkarsvurdering (id, prøving_id, vilkår, fødselsnummer, skjæringstidspunkt, grunnlag, kodeverkkode, kilde, vurdert_tidspunkt)
-            values (:id, :provingId, :vilkar, :fodselsnummer, :skjaeringstidspunkt, cast(:grunnlag as jsonb), :kodeverkkode, cast(:kilde as jsonb), :vurdertTidspunkt)
+            insert into vilkarsvurdering (id, prøving_id, vilkår, fødselsnummer, skjæringstidspunkt, kodeverkkode, opphav, vurdert_tidspunkt)
+            values (:id, :provingId, :vilkar, :fodselsnummer, :skjaeringstidspunkt, :kodeverkkode, cast(:opphav as jsonb), :vurdertTidspunkt)
         """
         try {
             session.run(
@@ -28,13 +28,12 @@ internal class PostgresVilkårsvurderingRepository(
                     sql,
                     mapOf(
                         "id" to vurdering.id.value,
-                        "provingId" to vurdering.prøvingId.value,
+                        "provingId" to vurdering.prøvingId?.value,
                         "vilkar" to vurdering.vilkår.name,
                         "fodselsnummer" to vurdering.fødselsnummer,
                         "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
-                        "grunnlag" to Grunnlagsjson.tilJson(vurdering.grunnlag),
                         "kodeverkkode" to vurdering.kodeverkkode.name,
-                        "kilde" to Kildejson.tilJson(vurdering.kilde),
+                        "opphav" to Opphavsjson.tilJson(vurdering.opphav),
                         "vurdertTidspunkt" to vurdering.vurdertTidspunkt,
                     ),
                 ).asUpdate,
@@ -99,12 +98,11 @@ internal class PostgresVilkårsvurderingRepository(
         val vilkår = Vilkår.valueOf(row.string("vilkår"))
         return Vilkårsvurdering.fraLagring(
             id = VurderingId(row.uuid("id")),
-            prøvingId = PrøvingId(row.uuid("prøving_id")),
+            prøvingId = row.uuidOrNull("prøving_id")?.let(::PrøvingId),
             fødselsnummer = row.string("fødselsnummer"),
             skjæringstidspunkt = row.localDate("skjæringstidspunkt"),
-            grunnlag = Grunnlagsjson.fraJson(vilkår, row.string("grunnlag")),
             kodeverkkode = Kodeverkkode.valueOf(row.string("kodeverkkode")),
-            kilde = Kildejson.fraJson(row.string("kilde")),
+            opphav = Opphavsjson.fraJson(vilkår, row.string("opphav")),
             vurdertTidspunkt = row.instant("vurdert_tidspunkt"),
         )
     }
@@ -114,7 +112,7 @@ internal class PostgresVilkårsvurderingRepository(
 
         @Language("PostgreSQL")
         const val SELECT = """
-            select id, prøving_id, vilkår, fødselsnummer, skjæringstidspunkt, grunnlag, kodeverkkode, kilde, vurdert_tidspunkt
+            select id, prøving_id, vilkår, fødselsnummer, skjæringstidspunkt, kodeverkkode, opphav, vurdert_tidspunkt
             from vilkarsvurdering
         """
     }

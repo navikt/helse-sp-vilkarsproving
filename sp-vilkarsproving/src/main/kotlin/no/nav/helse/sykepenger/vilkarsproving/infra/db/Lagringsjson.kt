@@ -2,7 +2,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
 import no.nav.helse.hendelser.Periode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kilde
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opphav
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsgrunnlag
@@ -12,31 +12,44 @@ import tools.jackson.module.kotlin.readValue
 private val objectMapper = jacksonObjectMapper()
 
 /**
- * Grunnlaget lagres som json. Hvilken dto json-en skal leses som følger av vilkåret raden gjelder,
- * så vi trenger ikke en felles typediskriminator på tvers av vilkår.
+ * Opphavet — inkludert grunnlaget, for vurderinger som har et — lagres som json i én kolonne.
+ *
+ * Vilkåret raden gjelder står i egen kolonne og sendes inn ved lesing, slik at vi ikke lagrer det to
+ * ganger. Selve json-en er selvbeskrivende for øvrig: hvilken dto den skal leses som følger av
+ * `type`-diskriminatorene.
  */
-internal object Grunnlagsjson {
-    fun tilJson(grunnlag: Vilkårsgrunnlag): String =
-        objectMapper.writeValueAsString(
-            when (grunnlag) {
-                is Opptjeningsgrunnlag -> grunnlag.tilDto()
-            },
-        )
+internal object Opphavsjson {
+    fun tilJson(opphav: Opphav): String = objectMapper.writeValueAsString(opphav.tilDto())
 
     fun fraJson(
         vilkår: Vilkår,
         json: String,
-    ): Vilkårsgrunnlag =
-        when (vilkår) {
-            Vilkår.Opptjening -> objectMapper.readValue<OpptjeningsgrunnlagDto>(json).tilOpptjeningsgrunnlag()
-        }
+    ): Opphav = objectMapper.readValue<OpphavDto>(json).tilOpphav(vilkår)
 }
 
-internal object Kildejson {
-    fun tilJson(kilde: Kilde): String = objectMapper.writeValueAsString(kilde.tilDto())
+private fun Opphav.tilDto(): OpphavDto =
+    when (this) {
+        is Opphav.Automatisk -> OpphavDto.Automatisk(grunnlag = grunnlag.tilDto(), versjonAvKildekode = versjonAvKildekode)
+        is Opphav.Saksbehandler -> OpphavDto.Saksbehandler(ident = ident, fritekstbegrunnelse = fritekstbegrunnelse)
+        is Opphav.Infotrygd -> OpphavDto.Infotrygd()
+    }
 
-    fun fraJson(json: String): Kilde = objectMapper.readValue<KildeDto>(json).tilKilde()
-}
+private fun OpphavDto.tilOpphav(vilkår: Vilkår): Opphav =
+    when (this) {
+        is OpphavDto.Automatisk -> Opphav.Automatisk(grunnlag = grunnlag.tilVilkårsgrunnlag(), versjonAvKildekode = versjonAvKildekode)
+        is OpphavDto.Saksbehandler -> Opphav.Saksbehandler(vilkår = vilkår, ident = ident, fritekstbegrunnelse = fritekstbegrunnelse)
+        is OpphavDto.Infotrygd -> Opphav.Infotrygd(vilkår)
+    }
+
+private fun Vilkårsgrunnlag.tilDto(): VilkårsgrunnlagDto =
+    when (this) {
+        is Opptjeningsgrunnlag -> tilDto()
+    }
+
+private fun VilkårsgrunnlagDto.tilVilkårsgrunnlag(): Vilkårsgrunnlag =
+    when (this) {
+        is OpptjeningsgrunnlagDto -> tilOpptjeningsgrunnlag()
+    }
 
 private fun Opptjeningsgrunnlag.tilDto(): OpptjeningsgrunnlagDto =
     when (this) {
@@ -76,15 +89,3 @@ private fun ArbeidsforholdDto.tilArbeidsforhold() =
                 ArbeidsforholdtypeDto.ORDINÆRT -> Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT
             },
     )
-
-private fun Kilde.tilDto(): KildeDto =
-    when (this) {
-        is Kilde.Automatisk -> KildeDto.Automatisk(regelversjon)
-        is Kilde.Manuell -> KildeDto.Manuell(saksbehandlerIdent = saksbehandlerIdent, fritekstbegrunnelse = fritekstbegrunnelse)
-    }
-
-private fun KildeDto.tilKilde(): Kilde =
-    when (this) {
-        is KildeDto.Automatisk -> Kilde.Automatisk(regelversjon)
-        is KildeDto.Manuell -> Kilde.Manuell(saksbehandlerIdent = saksbehandlerIdent, fritekstbegrunnelse = fritekstbegrunnelse)
-    }
