@@ -72,5 +72,13 @@ internal class OpptjeningService(
         data object IngenPrøvingFunnet : BehandleGrunnlagResultat()
     }
 
-    fun finnOpptjeningsvurdering(vurderingId: VurderingId): Vilkårsvurdering = vilkårsprøving.finnVurdering(Vilkår.Opptjening, vurderingId)
+    fun finnOpptjeningsvurdering(
+        vurderingId: VurderingId,
+        fødselsnummer: String,
+    ): Vilkårsvurdering =
+        vilkårsprøving.finnVurdering(
+            vilkår = Vilkår.Opptjening,
+            vurderingId = vurderingId,
+            fødselsnummer = fødselsnummer,
+        )
 }

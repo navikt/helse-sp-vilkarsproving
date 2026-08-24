@@ -34,6 +34,7 @@ internal open class VilkårsvurderingResultatRiver(
                     it.requireValue("@event_name", "behov")
                     it.requireAllOrAny("@behov", listOf(behovnavn))
                     it.requireKey(idFelt)
+                    it.requireKey("fødselsnummer")
                 }
             }.register(this)
     }
@@ -45,10 +46,11 @@ internal open class VilkårsvurderingResultatRiver(
         meterRegistry: MeterRegistry,
     ) {
         val vurderingId = VurderingId(packet[idFelt].asUUID())
+        val fødselsnummer = packet["fødselsnummer"].asString()
         sikkerLogg.info("Mottatt behov for $behovnavn for $idFelt $vurderingId")
         val vurdering =
             transaksjonProvider.transaksjon { kontekst ->
-                VilkårsprøvingService(kontekst).finnVurdering(vilkår, vurderingId)
+                VilkårsprøvingService(kontekst).finnVurdering(vilkår, vurderingId, fødselsnummer)
             }
 
         val ok =

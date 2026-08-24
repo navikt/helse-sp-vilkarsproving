@@ -247,14 +247,14 @@ internal class OpptjeningServiceTest {
     fun `finner lagret opptjeningsvurdering`() {
         val vurderingId = fullførtPrøving(1.februar)
 
-        assertEquals(vurderingId, service.finnOpptjeningsvurdering(vurderingId).id)
+        assertEquals(vurderingId, service.finnOpptjeningsvurdering(vurderingId, "whatever").id)
     }
 
     @Test
     fun `ukjent opptjeningsvurdering gir feil`() {
         val ukjentId = VurderingId.ny()
 
-        val feil = assertThrows<IllegalStateException> { service.finnOpptjeningsvurdering(ukjentId) }
+        val feil = assertThrows<IllegalStateException> { service.finnOpptjeningsvurdering(ukjentId, "whatever") }
         assertEquals("Fant ikke vurdering av Opptjening med id $ukjentId", feil.message)
     }
 

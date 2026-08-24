@@ -103,5 +103,6 @@ internal class VilkårsprøvingService(
     fun finnVurdering(
         vilkår: Vilkår,
         vurderingId: VurderingId,
+        fødselsnummer: String,
     ): Vilkårsvurdering = vilkårsvurderingRepository.finn(vilkår, vurderingId) ?: error("Fant ikke vurdering av $vilkår med id $vurderingId")
 }

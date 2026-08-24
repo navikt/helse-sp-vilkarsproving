@@ -380,6 +380,7 @@ internal class OpptjeningE2ETest : DatabaseTest() {
         {
           "@event_name": "behov",
           "@id": "${UUID.randomUUID()}",
+          "fødselsnummer": "$FØDSELSNUMMER",
           "@behov": ["OpptjeningsvurderingResultat"],
           "OpptjeningsvurderingResultat": {
             "opptjeningsvurderingId": "$opptjeningsvurderingId"

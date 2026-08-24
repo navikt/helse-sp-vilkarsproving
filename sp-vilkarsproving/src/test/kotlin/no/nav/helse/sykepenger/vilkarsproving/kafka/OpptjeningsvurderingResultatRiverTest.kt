@@ -191,6 +191,7 @@ internal class OpptjeningsvurderingResultatRiverTest {
           "@event_name": "behov",
           "@id": "${UUID.randomUUID()}",
           "@behov": ["OpptjeningsvurderingResultat"],
+          "fødselsnummer": "01018099999",
           "OpptjeningsvurderingResultat": {
             "opptjeningsvurderingId": "$opptjeningsvurderingId"
           }
