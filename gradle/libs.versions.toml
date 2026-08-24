@@ -15,6 +15,7 @@ cloud-sql-postgres-socket-factory = "com.google.cloud.sql:postgres-socket-factor
 kotliquery = "com.github.seratch:kotliquery:1.9.1"
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
 tbd-libs-speil-backend-app = {module = "com.github.navikt.tbd-libs:speil-backend-app", version.ref = "tbd-libs"}
+tbd-libs-access-token-provider-texas = {module = "com.github.navikt.tbd-libs:access-token-provider-texas", version.ref = "tbd-libs"}
 postgresql = "org.postgresql:postgresql:42.7.13"
 rapids-and-rivers = {module = "com.github.navikt:rapids-and-rivers", version.ref = "rapidsAndRivers"}
 rapids-and-rivers-test = {module = "com.github.navikt.rapids-and-rivers:rapids-and-rivers-test", version.ref = "rapidsAndRivers"}

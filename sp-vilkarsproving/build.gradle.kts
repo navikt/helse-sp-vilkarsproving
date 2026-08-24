@@ -11,6 +11,7 @@ sasDeployable {
 
 dependencies {
     implementation(libs.tbd.libs.speil.backend.app)
+    implementation(libs.tbd.libs.access.token.provider.texas)
 
     implementation(libs.kotliquery)
     implementation(project(":migreringer"))
