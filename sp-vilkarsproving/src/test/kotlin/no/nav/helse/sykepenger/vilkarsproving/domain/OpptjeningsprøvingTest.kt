@@ -32,7 +32,7 @@ internal class OpptjeningsprøvingTest {
         assertTrue(prøving.erAvsluttet)
         assertNull(prøving.uteståendeBehov)
         assertEquals(Kravprøving.Tilstand.Fullført(vurdering!!.id), prøving.tilstand)
-        val ledd = vurdering.sti.single()
+        val ledd = vurdering.vilkårsvurderinger.single()
         assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (ledd.kilde as Vurderingskilde.Automatisk).grunnlag)
     }
 
@@ -47,7 +47,7 @@ internal class OpptjeningsprøvingTest {
         assertEquals(FØDSELSNUMMER, vurdering.fødselsnummer)
         assertEquals(1.februar, vurdering.skjæringstidspunkt)
 
-        val ledd = vurdering.sti.single()
+        val ledd = vurdering.vilkårsvurderinger.single()
         val kilde = ledd.kilde as Vurderingskilde.Automatisk
         assertEquals(prøving.id, kilde.prøvingId)
         assertEquals(Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold), kilde.grunnlag)

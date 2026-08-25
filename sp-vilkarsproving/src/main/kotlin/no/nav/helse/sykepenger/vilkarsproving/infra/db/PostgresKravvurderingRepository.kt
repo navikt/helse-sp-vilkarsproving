@@ -57,7 +57,7 @@ internal class PostgresKravvurderingRepository(
             insert into vilkarsvurdering (id, kravvurdering_id, vilkårskode, utfall, vurdert_tidspunkt, kilde)
             values (:id, :kravvurderingId, :vilkarskode, :utfall, :vurdertTidspunkt, cast(:kilde as jsonb))
         """
-        vurdering.sti.forEach { ledd ->
+        vurdering.vilkårsvurderinger.forEach { ledd ->
             session.run(
                 queryOf(
                     vilkårsvurderingSql,

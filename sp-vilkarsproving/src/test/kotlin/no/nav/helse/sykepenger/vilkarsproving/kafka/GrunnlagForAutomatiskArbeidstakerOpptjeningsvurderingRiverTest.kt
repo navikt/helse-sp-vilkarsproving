@@ -37,7 +37,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
 
         assertTrue(påbegynt.erAvsluttet)
         val vurdering = vurdert()
-        val kilde = vurdering.sti.single().kilde as Vurderingskilde.Automatisk
+        val kilde = vurdering.vilkårsvurderinger.single().kilde as Vurderingskilde.Automatisk
         assertEquals(påbegynt.id, kilde.prøvingId)
         assertEquals(OPPTJENING_ARBEID_MINST_4_UKER, vurdering.avgjørendeVilkårskode)
         assertEquals(Utfall.Oppfylt, vurdering.utfall)
@@ -191,7 +191,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         rapid.sendTestMessage(arbeidsforholdløsning(arbeidsforhold(ansattSiden = "2018-01-01", ansattTil = "2018-01-31")))
 
         assertEquals(0, rapid.inspektør.size)
-        val kilde = vurdert().sti.single().kilde as Vurderingskilde.Automatisk
+        val kilde = vurdert().vilkårsvurderinger.single().kilde as Vurderingskilde.Automatisk
         assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, kilde.grunnlag)
     }
 
@@ -199,7 +199,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
 
     private fun vurdert() = vurderinger.alleVurderinger.single() as Kravvurdering.VurdertISpeil
 
-    private fun arbeidsforholdPåVurdering() = ((vurdert().sti.single().kilde as Vurderingskilde.Automatisk).grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold
+    private fun arbeidsforholdPåVurdering() = ((vurdert().vilkårsvurderinger.single().kilde as Vurderingskilde.Automatisk).grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold
 
     private companion object {
         const val FØDSELSNUMMER = "12029240045"

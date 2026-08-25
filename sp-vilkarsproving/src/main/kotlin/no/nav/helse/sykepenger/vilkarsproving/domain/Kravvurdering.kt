@@ -15,20 +15,20 @@ internal sealed interface Kravvurdering {
         override val krav: Krav,
         override val fødselsnummer: String,
         override val skjæringstidspunkt: LocalDate,
-        val sti: List<Vilkårsvurdering>,
+        val vilkårsvurderinger: List<Vilkårsvurdering>,
     ) : Kravvurdering {
         init {
-            require(sti.isNotEmpty()) { "Kravvurdering $id må ha minst én vilkårsvurdering" }
-            sti.forEach { ledd ->
+            require(vilkårsvurderinger.isNotEmpty()) { "Kravvurdering $id må ha minst én vilkårsvurdering" }
+            vilkårsvurderinger.forEach { ledd ->
                 check(ledd.vilkårskode.krav == krav) {
                     "Vilkårskode ${ledd.vilkårskode} hører ikke til kravet $krav i kravvurdering $id"
                 }
             }
         }
 
-        override val utfall: Utfall get() = sti.last().utfall
+        override val utfall: Utfall get() = vilkårsvurderinger.last().utfall
 
-        val avgjørendeVilkårskode: Vilkårskode get() = sti.last().vilkårskode
+        val avgjørendeVilkårskode: Vilkårskode get() = vilkårsvurderinger.last().vilkårskode
     }
 
     data class OverførtFraInfotrygd(
@@ -50,11 +50,11 @@ internal sealed interface Kravvurdering {
         ): VurdertISpeil {
             val regel = grunnlag.krav.regel
             val resultat = regel.vurder(skjæringstidspunkt, grunnlag)
-            val sti =
+            val vilkårsvurderinger =
                 resultat.sti.map { ledd ->
                     Vilkårsvurdering.automatisk(prøvingId, ledd, grunnlag, regel.versjon, vurdertTidspunkt)
                 }
-            return VurdertISpeil(id, grunnlag.krav, fødselsnummer, skjæringstidspunkt, sti)
+            return VurdertISpeil(id, grunnlag.krav, fødselsnummer, skjæringstidspunkt, vilkårsvurderinger)
         }
 
         fun avSaksbehandler(

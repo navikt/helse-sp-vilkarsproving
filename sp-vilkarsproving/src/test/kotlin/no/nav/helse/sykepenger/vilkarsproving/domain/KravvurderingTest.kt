@@ -45,7 +45,7 @@ internal class KravvurderingTest {
 
         assertEquals(Utfall.Oppfylt, vurdering.utfall)
         assertEquals(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE, vurdering.avgjørendeVilkårskode)
-        val kilde = vurdering.sti.single().kilde
+        val kilde = vurdering.vilkårsvurderinger.single().kilde
         assertInstanceOf(Vurderingskilde.Saksbehandler::class.java, kilde)
         assertEquals("Z999999", (kilde as Vurderingskilde.Saksbehandler).ident)
     }
@@ -79,7 +79,7 @@ internal class KravvurderingTest {
 
         assertEquals(Utfall.Oppfylt, vurdering.utfall)
         assertEquals(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE, vurdering.avgjørendeVilkårskode)
-        assertEquals(2, vurdering.sti.size)
+        assertEquals(2, vurdering.vilkårsvurderinger.size)
     }
 
     @Test

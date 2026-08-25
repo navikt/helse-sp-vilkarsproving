@@ -45,11 +45,11 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
         assertEquals(vurdering.utfall, lagret.utfall)
         assertEquals(vurdering.avgjørendeVilkårskode, lagret.avgjørendeVilkårskode)
 
-        val ledd = lagret.sti.single()
+        val ledd = lagret.vilkårsvurderinger.single()
         val kilde = ledd.kilde as Vurderingskilde.Automatisk
         assertEquals(grunnlag, kilde.grunnlag)
         assertEquals(
-            vurdering.sti
+            vurdering.vilkårsvurderinger
                 .single()
                 .vurdertTidspunkt!!
                 .truncatedTo(ChronoUnit.MILLIS),
@@ -62,7 +62,7 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
         val vurdering = lagreVurdering(Opptjeningsgrunnlag.SelvstendigNæringsdrivende)
 
         val lagret = transaksjon { it.kravvurderinger.finn(Krav.Opptjening, vurdering.id) } as Kravvurdering.VurdertISpeil
-        val kilde = lagret.sti.single().kilde as Vurderingskilde.Automatisk
+        val kilde = lagret.vilkårsvurderinger.single().kilde as Vurderingskilde.Automatisk
 
         assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, kilde.grunnlag)
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, lagret.avgjørendeVilkårskode)
@@ -88,7 +88,7 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
         transaksjon { it.kravvurderinger.lagre(vurdering) }
 
         val lagret = transaksjon { it.kravvurderinger.finn(Krav.Opptjening, vurdering.id) } as Kravvurdering.VurdertISpeil
-        val kilde = lagret.sti.single().kilde
+        val kilde = lagret.vilkårsvurderinger.single().kilde
 
         assertInstanceOf(Vurderingskilde.Saksbehandler::class.java, kilde)
         assertEquals("A123456", (kilde as Vurderingskilde.Saksbehandler).ident)

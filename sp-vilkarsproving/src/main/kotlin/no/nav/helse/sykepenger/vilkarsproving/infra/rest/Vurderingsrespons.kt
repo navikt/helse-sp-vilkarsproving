@@ -35,7 +35,7 @@ private fun Kravvurdering.tilApi(): ApiKravvurdering =
                 kravkode = krav.tilApi(),
                 rettTilSykepenger = utfall.tilApi() == ApiUtfall.OPPFYLT,
                 avgjørendeVilkårskode = avgjørendeVilkårskode.tilApi(),
-                vurderinger = sti.map { it.tilApi() },
+                vurderinger = vilkårsvurderinger.map { it.tilApi() },
             )
     }
 
