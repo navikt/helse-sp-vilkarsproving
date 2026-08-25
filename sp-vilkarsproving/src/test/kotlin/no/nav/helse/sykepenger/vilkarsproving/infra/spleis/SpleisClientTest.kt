@@ -1,31 +1,21 @@
-package no.nav.helse.sykepenger.vilkarsproving.spleis
+package no.nav.helse.sykepenger.vilkarsproving.infra.spleis
 
 import com.github.navikt.tbd_libs.access_token.AccessTokenProvider
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.equalTo
-import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
-import com.github.tomakehurst.wiremock.client.WireMock.post
-import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
-import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import no.nav.helse.hendelser.til
 import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering.SpleisArbeidstaker.Ansettelsesperiode
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClient
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
 /**
  * Tester SpleisClient mot en WireMock-stubbet spleis-api, i stedet for den ekte tjenesten.

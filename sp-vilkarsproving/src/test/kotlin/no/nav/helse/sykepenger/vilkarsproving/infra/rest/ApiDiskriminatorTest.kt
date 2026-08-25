@@ -1,18 +1,11 @@
-package no.nav.helse.sykepenger.vilkarsproving.rest
+package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiKravkode
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiKravvurdering
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiUtfall
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiVilkårskode
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiVilkårsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiVurderingsgrunnlag
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiVurderingskilde
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 class ApiDiskriminatorTest {
     @Test

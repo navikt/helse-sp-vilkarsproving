@@ -1,4 +1,4 @@
-package no.nav.helse.sykepenger.vilkarsproving.rest
+package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import no.nav.helse.februar
 import no.nav.helse.hendelser.Periode
@@ -13,15 +13,6 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiKravkode
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiKravvurdering
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiUtfall
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiVilkårskode
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiVilkårsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiVilkårsvurderingerForPersonResponse
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiVurderingsgrunnlag
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiVurderingskilde
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.Vurderingsrespons
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test

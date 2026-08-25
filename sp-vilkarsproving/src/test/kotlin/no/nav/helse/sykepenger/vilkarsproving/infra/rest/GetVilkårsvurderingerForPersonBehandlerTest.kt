@@ -1,4 +1,4 @@
-package no.nav.helse.sykepenger.vilkarsproving.rest
+package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangSomMangler
@@ -13,12 +13,7 @@ import io.ktor.server.auth.authentication
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
 import no.nav.helse.speil.backend.app.auditlogg.Auditlogger
-import no.nav.helse.speil.backend.app.auth.AccessToken
-import no.nav.helse.speil.backend.app.auth.NavIdent
-import no.nav.helse.speil.backend.app.auth.Saksbehandler
-import no.nav.helse.speil.backend.app.auth.SaksbehandlerOid
-import no.nav.helse.speil.backend.app.auth.SaksbehandlerPrincipal
-import no.nav.helse.speil.backend.app.auth.Tilgang
+import no.nav.helse.speil.backend.app.auth.*
 import no.nav.helse.speil.backend.app.person.Identitetsnummer
 import no.nav.helse.speil.backend.app.plugins.configureContentNegotiation
 import no.nav.helse.speil.backend.app.plugins.configureResources
@@ -32,14 +27,13 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
 class GetVilkårsvurderingerForPersonBehandlerTest {
     private val saksbehandler = Saksbehandler(NavIdent("Z999999"), SaksbehandlerOid("oid"), "Test Testesen")

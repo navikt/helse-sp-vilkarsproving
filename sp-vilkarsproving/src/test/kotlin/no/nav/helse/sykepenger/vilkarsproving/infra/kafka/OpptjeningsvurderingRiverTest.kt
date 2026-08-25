@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import tools.jackson.databind.node.ObjectNode
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.util.UUID
 
 internal class OpptjeningsvurderingRiverTest {
@@ -116,8 +117,7 @@ internal class OpptjeningsvurderingRiverTest {
         assertInstanceOf(ObjectNode::class.java, opprinneligBehov) { "opprinneligBehov skal være et JSON-objekt, ikke en string" }
 
         val objectMapper =
-            tools.jackson.module.kotlin
-                .jacksonObjectMapper()
+            jacksonObjectMapper()
         val forventet = objectMapper.readTree(innkommendeBehov)
         // Rapids beriker meldingen med metadata-felter — vi sjekker at alle opprinnelige felter er bevart
         forventet.properties().forEach { (key, value) ->

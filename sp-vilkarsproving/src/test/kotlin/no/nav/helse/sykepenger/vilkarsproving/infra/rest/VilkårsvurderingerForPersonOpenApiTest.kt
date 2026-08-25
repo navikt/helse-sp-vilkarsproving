@@ -1,5 +1,7 @@
-package no.nav.helse.sykepenger.vilkarsproving.rest
+package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
+import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
+import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
@@ -17,7 +19,6 @@ import no.nav.helse.speil.backend.app.testfixtures.InMemoryPersonPseudoIdProvide
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -31,21 +32,21 @@ class VilkårsvurderingerForPersonOpenApiTest {
             RestAdapter<AppRolle, Transaksjonskontekst>(
                 personPseudoIdProvider = InMemoryPersonPseudoIdProvider(),
                 populasjonstilgangskontrollProvider =
-                    object : com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider {
+                    object : PopulasjonstilgangskontrollProvider {
                         override fun kontrollerKomplettTilgang(
                             accessToken: String,
                             fødselsnummer: String,
-                        ) = com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat.Ok
+                        ) = TilgangskontrollResultat.Ok
 
                         override fun kontrollerKjerneTilgang(
                             accessToken: String,
                             fødselsnummer: String,
-                        ) = com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat.Ok
+                        ) = TilgangskontrollResultat.Ok
 
                         override fun kontrollerKjerneTilgangForAnsatt(
                             ansattId: String,
                             fødselsnummer: String,
-                        ) = com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat.Ok
+                        ) = TilgangskontrollResultat.Ok
                     },
                 auditlogger = Auditlogger("test"),
                 transaksjonProvider = InMemoryTransaksjonProvider(),
