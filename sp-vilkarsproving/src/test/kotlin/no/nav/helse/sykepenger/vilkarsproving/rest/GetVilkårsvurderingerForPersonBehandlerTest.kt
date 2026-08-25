@@ -226,7 +226,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
 
             val krav = json["krav"].single()
             assertEquals("OPPTJENING", krav["kravkode"].asString())
-            assertEquals("OPPFYLT", krav["utfall"].asString())
+            assertEquals(true, krav["rettTilSykepenger"].asBoolean())
             assertEquals("VURDERT_I_SPEIL", krav["kravkilde"].asString())
             assertEquals("OPPTJENING_ARBEID_MINST_4_UKER", krav["avgjørendeVilkårskode"].asString())
 
@@ -274,7 +274,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             val krav = jacksonObjectMapper().readTree(response.bodyAsText())["krav"].single()
 
             assertEquals("OVERFOERT_FRA_INFOTRYGD", krav["kravkilde"].asString())
-            assertEquals("OPPFYLT", krav["utfall"].asString())
+            assertEquals(true, krav["rettTilSykepenger"].asBoolean())
             assertFalse(krav.has("vurderinger")) { "Infotrygd-kravet skal ikke ha en sti: $krav" }
             assertFalse(krav.has("avgjørendeVilkårskode")) { "Vi kjenner ikke det avgjørende vilkåret: $krav" }
         }

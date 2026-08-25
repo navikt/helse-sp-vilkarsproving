@@ -19,10 +19,10 @@ class ApiDiskriminatorTest {
     fun `ApiKravvurdering - navn i JsonSubTypes stemmer med faktisk kravkilde`() {
         verifiserDiskriminator(
             ApiKravvurdering::class.java,
-            ApiKravvurdering.Vurdert(
+            ApiKravvurdering.VurdertISpeil(
                 id = UUID.randomUUID(),
                 kravkode = ApiKravkode.OPPTJENING,
-                utfall = ApiUtfall.OPPFYLT,
+                rettTilSykepenger = true,
                 avgjørendeVilkårskode = ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                 vurderinger =
                     listOf(
@@ -42,7 +42,7 @@ class ApiDiskriminatorTest {
             ApiKravvurdering.OverførtFraInfotrygd(
                 id = UUID.randomUUID(),
                 kravkode = ApiKravkode.OPPTJENING,
-                utfall = ApiUtfall.OPPFYLT,
+                rettTilSykepenger = true,
             ),
         )
     }
@@ -91,7 +91,11 @@ class ApiDiskriminatorTest {
             val forventetNavn =
                 forventetNavnPerKlasse[instans::class.java]
                     ?: error("Ingen @JsonSubTypes.Type registrert for ${instans::class.java} i $unionstype")
-            val faktiskVerdi = instans::class.java.getMethod(gettermetode).invoke(instans).toString()
+            val faktiskVerdi =
+                instans::class.java
+                    .getMethod(gettermetode)
+                    .invoke(instans)
+                    .toString()
 
             assertEquals(forventetNavn, faktiskVerdi) {
                 "@JsonSubTypes sier ${instans::class.simpleName} skal skrive ${typeInfo.property}=$forventetNavn, " +

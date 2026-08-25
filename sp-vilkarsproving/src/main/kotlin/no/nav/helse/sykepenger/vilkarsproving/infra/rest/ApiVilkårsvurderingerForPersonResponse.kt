@@ -18,22 +18,22 @@ internal data class ApiVilkårsvurderingerForPersonResponse(
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "kravkilde", visible = true)
 @JsonSubTypes(
-    JsonSubTypes.Type(value = ApiKravvurdering.Vurdert::class, name = "VURDERT_I_SPEIL"),
+    JsonSubTypes.Type(value = ApiKravvurdering.VurdertISpeil::class, name = "VURDERT_I_SPEIL"),
     JsonSubTypes.Type(value = ApiKravvurdering.OverførtFraInfotrygd::class, name = "OVERFOERT_FRA_INFOTRYGD"),
 )
 @Serializable
 internal sealed interface ApiKravvurdering {
     val id: UUID
     val kravkode: ApiKravkode
-    val utfall: ApiUtfall
+    val rettTilSykepenger: Boolean
 
     val kravkilde: ApiKravkilde
 
     @Serializable
-    data class Vurdert(
+    data class VurdertISpeil(
         override val id: UUID,
         override val kravkode: ApiKravkode,
-        override val utfall: ApiUtfall,
+        override val rettTilSykepenger: Boolean,
         val avgjørendeVilkårskode: ApiVilkårskode,
         val vurderinger: List<ApiVilkårsvurdering>,
     ) : ApiKravvurdering {
@@ -51,7 +51,7 @@ internal sealed interface ApiKravvurdering {
     data class OverførtFraInfotrygd(
         override val id: UUID,
         override val kravkode: ApiKravkode,
-        override val utfall: ApiUtfall,
+        override val rettTilSykepenger: Boolean,
     ) : ApiKravvurdering {
         override val kravkilde: ApiKravkilde = ApiKravkilde.OVERFOERT_FRA_INFOTRYGD
     }

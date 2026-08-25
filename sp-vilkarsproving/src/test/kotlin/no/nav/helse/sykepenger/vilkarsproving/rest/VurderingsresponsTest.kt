@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import kotlin.test.assertTrue
 
 internal class VurderingsresponsTest {
     private val vurdertTidspunkt = Instant.parse("2024-02-01T12:00:00Z")
@@ -51,10 +52,10 @@ internal class VurderingsresponsTest {
     @Test
     fun `kravet peker paa vilkaaret som avgjorde det`() {
         val respons = Vurderingsrespons.fra(automatiskArbeidstakervurdering(4.januar til 31.januar))
-        val krav = respons.krav.single() as ApiKravvurdering.Vurdert
+        val krav = respons.krav.single() as ApiKravvurdering.VurdertISpeil
 
         assertEquals(ApiKravkode.OPPTJENING, krav.kravkode)
-        assertEquals(ApiUtfall.OPPFYLT, krav.utfall)
+        assertTrue(krav.rettTilSykepenger)
         assertEquals(ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, krav.avgjørendeVilkårskode)
         assertEquals(listOf(krav.avgjørendeVilkårskode), krav.vurderinger.map { it.vilkårskode })
     }
@@ -132,7 +133,7 @@ internal class VurderingsresponsTest {
 
         assertInstanceOf(ApiKravvurdering.OverførtFraInfotrygd::class.java, krav)
         assertEquals(ApiKravkode.OPPTJENING, krav.kravkode)
-        assertEquals(ApiUtfall.OPPFYLT, krav.utfall)
+        assertTrue(krav.rettTilSykepenger)
     }
 
     @Test
@@ -164,6 +165,6 @@ internal class VurderingsresponsTest {
         )
 }
 
-private fun ApiVilkårsvurderingerForPersonResponse.enesteVurdering() = (krav.single() as ApiKravvurdering.Vurdert).vurderinger.single()
+private fun ApiVilkårsvurderingerForPersonResponse.enesteVurdering() = (krav.single() as ApiKravvurdering.VurdertISpeil).vurderinger.single()
 
 private fun ApiVilkårsvurdering.automatiskGrunnlag() = (kilde as ApiVurderingskilde.Automatisk).grunnlag as ApiVurderingsgrunnlag.Arbeidsforhold
