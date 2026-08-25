@@ -5,7 +5,7 @@ import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
-import no.nav.helse.sykepenger.vilkarsproving.domain.Utledet
+import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.Vurderingskildejson
@@ -21,7 +21,7 @@ internal class LagringsjsonTest {
     @Test
     fun `automatisk arbeidstakervurdering lagres på avtalt format`() {
         val grunnlag = arbeidstakergrunnlag(arbeidsforhold(ansattFom = 1.januar, ansattTom = 31.januar))
-        val kilde = automatisk(grunnlag, Utledet.Opptjeningstid(null, 0))
+        val kilde = automatisk(grunnlag, UtledetFakta.Opptjeningstid(null, 0))
 
         assertEquals(
             """{"type":"AUTOMATISK","prøvingId":"$PRØVING_ID",""" +
@@ -35,7 +35,7 @@ internal class LagringsjsonTest {
 
     @Test
     fun `selvstendig næringsdrivende lagres på avtalt format`() {
-        val kilde = automatisk(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, Utledet.IngenUtledning)
+        val kilde = automatisk(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, UtledetFakta.Ingen)
 
         assertEquals(
             """{"type":"AUTOMATISK","prøvingId":"$PRØVING_ID",""" +
@@ -50,7 +50,7 @@ internal class LagringsjsonTest {
     @Test
     fun `løpende arbeidsforhold beholder åpen sluttdato`() {
         val grunnlag = arbeidstakergrunnlag(arbeidsforhold(ansattFom = 1.januar, ansattTom = null))
-        val kilde = automatisk(grunnlag, Utledet.Opptjeningstid(null, 0))
+        val kilde = automatisk(grunnlag, UtledetFakta.Opptjeningstid(null, 0))
 
         assertEquals(
             """{"type":"AUTOMATISK","prøvingId":"$PRØVING_ID",""" +
@@ -67,7 +67,7 @@ internal class LagringsjsonTest {
         Arbeidsforhold.Arbeidsforholdtype.entries.forEach { type ->
             val grunnlag =
                 arbeidstakergrunnlag(arbeidsforhold(ansattFom = 1.januar, ansattTom = 31.januar, type = type))
-            val kilde = automatisk(grunnlag, Utledet.IngenUtledning)
+            val kilde = automatisk(grunnlag, UtledetFakta.Ingen)
             assertEquals(kilde, rundtur(kilde))
         }
     }
@@ -79,7 +79,7 @@ internal class LagringsjsonTest {
                 arbeidsforhold(orgnummer = "111111111", ansattFom = 1.januar, ansattTom = 15.januar),
                 arbeidsforhold(orgnummer = "222222222", ansattFom = 16.januar, ansattTom = 31.januar),
             )
-        val kilde = automatisk(grunnlag, Utledet.IngenUtledning)
+        val kilde = automatisk(grunnlag, UtledetFakta.Ingen)
 
         assertEquals(kilde, rundtur(kilde))
     }
@@ -87,13 +87,13 @@ internal class LagringsjsonTest {
     @Test
     fun `opptjeningsperiode og opptjeningsdager lagres sammen med grunnlaget`() {
         val grunnlag = arbeidstakergrunnlag(arbeidsforhold(ansattFom = 4.januar, ansattTom = 31.januar))
-        val kilde = automatisk(grunnlag, Utledet.Opptjeningstid(4.januar til 31.januar, 28))
+        val kilde = automatisk(grunnlag, UtledetFakta.Opptjeningstid(4.januar til 31.januar, 28))
 
         val etterRundtur = rundtur(kilde) as Vurderingskilde.Automatisk
-        val utledet = etterRundtur.utledet as Utledet.Opptjeningstid
-        assertEquals(4.januar, utledet.opptjeningsperiode?.start)
-        assertEquals(31.januar, utledet.opptjeningsperiode?.endInclusive)
-        assertEquals(28, utledet.opptjeningsdager)
+        val utledetFakta = etterRundtur.utledetFakta as UtledetFakta.Opptjeningstid
+        assertEquals(4.januar, utledetFakta.opptjeningsperiode?.start)
+        assertEquals(31.januar, utledetFakta.opptjeningsperiode?.endInclusive)
+        assertEquals(28, utledetFakta.opptjeningsdager)
     }
 
     @Test
@@ -110,7 +110,7 @@ internal class LagringsjsonTest {
     @Test
     fun `overført fra spleis lagres på avtalt format`() {
         val grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende
-        val kilde = Vurderingskilde.OverførtFraSpleis(grunnlag = grunnlag, utledet = Utledet.IngenUtledning)
+        val kilde = Vurderingskilde.OverførtFraSpleis(grunnlag = grunnlag, utledetFakta = UtledetFakta.Ingen)
 
         assertEquals(
             """{"type":"OVERFOERT_FRA_SPLEIS",""" +
@@ -150,8 +150,8 @@ internal class LagringsjsonTest {
 
     private fun automatisk(
         grunnlag: Vilkårsgrunnlag,
-        utledet: Utledet,
-    ) = Vurderingskilde.Automatisk(PRØVING_ID, grunnlag, utledet, versjonAvKildekode = "1")
+        utledetFakta: UtledetFakta,
+    ) = Vurderingskilde.Automatisk(PRØVING_ID, grunnlag, utledetFakta, versjonAvKildekode = "1")
 
     private fun rundtur(kilde: Vurderingskilde) = Vurderingskildejson.fraJson(Vurderingskildejson.tilJson(kilde))
 

@@ -4,7 +4,7 @@ internal sealed interface Vurderingskilde {
     data class Automatisk(
         val prøvingId: PrøvingId,
         val grunnlag: Vilkårsgrunnlag,
-        val utledet: Utledet,
+        val utledetFakta: UtledetFakta,
         val versjonAvKildekode: String,
     ) : Vurderingskilde
 
@@ -15,6 +15,6 @@ internal sealed interface Vurderingskilde {
 
     data class OverførtFraSpleis(
         val grunnlag: Vilkårsgrunnlag,
-        val utledet: Utledet,
+        val utledetFakta: UtledetFakta,
     ) : Vurderingskilde
 }

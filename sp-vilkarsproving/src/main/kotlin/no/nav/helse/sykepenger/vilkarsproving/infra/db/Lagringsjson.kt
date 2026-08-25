@@ -4,7 +4,7 @@ import no.nav.helse.hendelser.Periode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
-import no.nav.helse.sykepenger.vilkarsproving.domain.Utledet
+import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
 import tools.jackson.module.kotlin.jacksonObjectMapper
@@ -29,14 +29,14 @@ private fun Vurderingskilde.tilDto(): VurderingskildeDto =
             VurderingskildeDto.Automatisk(
                 prøvingId = prøvingId.value,
                 grunnlag = grunnlag.tilDto(),
-                utledet = utledet.tilDto(),
+                utledet = utledetFakta.tilDto(),
                 versjonAvKildekode = versjonAvKildekode,
             )
 
         is Vurderingskilde.Saksbehandler -> VurderingskildeDto.Saksbehandler(ident = ident, fritekstbegrunnelse = fritekstbegrunnelse)
 
         is Vurderingskilde.OverførtFraSpleis ->
-            VurderingskildeDto.OverførtFraSpleis(grunnlag = grunnlag.tilDto(), utledet = utledet.tilDto())
+            VurderingskildeDto.OverførtFraSpleis(grunnlag = grunnlag.tilDto(), utledet = utledetFakta.tilDto())
     }
 
 private fun VurderingskildeDto.tilVurderingskilde(): Vurderingskilde =
@@ -45,14 +45,14 @@ private fun VurderingskildeDto.tilVurderingskilde(): Vurderingskilde =
             Vurderingskilde.Automatisk(
                 prøvingId = PrøvingId(prøvingId),
                 grunnlag = grunnlag.tilVilkårsgrunnlag(),
-                utledet = utledet.tilUtledet(),
+                utledetFakta = utledet.tilUtledet(),
                 versjonAvKildekode = versjonAvKildekode,
             )
 
         is VurderingskildeDto.Saksbehandler -> Vurderingskilde.Saksbehandler(ident = ident, fritekstbegrunnelse = fritekstbegrunnelse)
 
         is VurderingskildeDto.OverførtFraSpleis ->
-            Vurderingskilde.OverførtFraSpleis(grunnlag = grunnlag.tilVilkårsgrunnlag(), utledet = utledet.tilUtledet())
+            Vurderingskilde.OverførtFraSpleis(grunnlag = grunnlag.tilVilkårsgrunnlag(), utledetFakta = utledet.tilUtledet())
     }
 
 private fun Vilkårsgrunnlag.tilDto(): VilkårsgrunnlagDto =
@@ -77,10 +77,10 @@ private fun OpptjeningsgrunnlagDto.tilOpptjeningsgrunnlag(): Opptjeningsgrunnlag
         is OpptjeningsgrunnlagDto.SelvstendigNæringsdrivende -> Opptjeningsgrunnlag.SelvstendigNæringsdrivende
     }
 
-private fun Utledet.tilDto(): UtledetDto =
+private fun UtledetFakta.tilDto(): UtledetDto =
     when (this) {
-        Utledet.IngenUtledning -> UtledetDto.IngenUtledning()
-        is Utledet.Opptjeningstid ->
+        UtledetFakta.Ingen -> UtledetDto.IngenUtledning()
+        is UtledetFakta.Opptjeningstid ->
             UtledetDto.Opptjeningstid(
                 opptjeningsperiodeFom = opptjeningsperiode?.start,
                 opptjeningsperiodeTom = opptjeningsperiode?.endInclusive,
@@ -88,11 +88,11 @@ private fun Utledet.tilDto(): UtledetDto =
             )
     }
 
-private fun UtledetDto.tilUtledet(): Utledet =
+private fun UtledetDto.tilUtledet(): UtledetFakta =
     when (this) {
-        is UtledetDto.IngenUtledning -> Utledet.IngenUtledning
+        is UtledetDto.IngenUtledning -> UtledetFakta.Ingen
         is UtledetDto.Opptjeningstid ->
-            Utledet.Opptjeningstid(
+            UtledetFakta.Opptjeningstid(
                 opptjeningsperiode =
                     if (opptjeningsperiodeFom != null && opptjeningsperiodeTom != null) {
                         Periode(opptjeningsperiodeFom, opptjeningsperiodeTom)

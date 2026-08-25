@@ -2,11 +2,11 @@ package no.nav.helse.sykepenger.vilkarsproving.domain
 
 import no.nav.helse.hendelser.Periode
 
-internal sealed interface Utledet {
-    data object IngenUtledning : Utledet
+internal sealed interface UtledetFakta {
+    data object Ingen : UtledetFakta
 
     data class Opptjeningstid(
         val opptjeningsperiode: Periode?,
         val opptjeningsdager: Int,
-    ) : Utledet
+    ) : UtledetFakta
 }

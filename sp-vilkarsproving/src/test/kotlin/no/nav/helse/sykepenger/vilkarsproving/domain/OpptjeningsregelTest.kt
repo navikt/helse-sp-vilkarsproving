@@ -118,7 +118,7 @@ internal class OpptjeningsregelTest {
         assertEquals(Utfall.Oppfylt, resultat.utfall)
         val ledd = resultat.sti.single()
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
-        assertInstanceOf(Utledet.IngenUtledning::class.java, ledd.utledet)
+        assertInstanceOf(UtledetFakta.Ingen::class.java, ledd.utledetFakta)
     }
 
     @Test
@@ -134,10 +134,10 @@ internal class OpptjeningsregelTest {
                 ),
             )
 
-        val utledet = resultat.sti.single().utledet as Utledet.Opptjeningstid
-        assertEquals(4.januar, utledet.opptjeningsperiode?.start)
-        assertEquals(31.januar, utledet.opptjeningsperiode?.endInclusive)
-        assertEquals(28, utledet.opptjeningsdager)
+        val utledetFakta = resultat.sti.single().utledetFakta as UtledetFakta.Opptjeningstid
+        assertEquals(4.januar, utledetFakta.opptjeningsperiode?.start)
+        assertEquals(31.januar, utledetFakta.opptjeningsperiode?.endInclusive)
+        assertEquals(28, utledetFakta.opptjeningsdager)
         assertEquals(Utfall.Oppfylt, resultat.utfall)
     }
 
@@ -149,9 +149,9 @@ internal class OpptjeningsregelTest {
                 Opptjeningsgrunnlag.Arbeidstaker(listOf(arbeidsforhold(1.januar til 30.januar))),
             )
 
-        val utledet = resultat.sti.single().utledet as Utledet.Opptjeningstid
-        assertEquals(null, utledet.opptjeningsperiode)
-        assertEquals(0, utledet.opptjeningsdager)
+        val utledetFakta = resultat.sti.single().utledetFakta as UtledetFakta.Opptjeningstid
+        assertEquals(null, utledetFakta.opptjeningsperiode)
+        assertEquals(0, utledetFakta.opptjeningsdager)
         assertEquals(Utfall.IkkeOppfylt, resultat.utfall)
     }
 

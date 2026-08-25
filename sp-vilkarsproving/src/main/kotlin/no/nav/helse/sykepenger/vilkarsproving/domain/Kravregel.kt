@@ -25,5 +25,5 @@ internal data class Kravregelresultat(
 internal data class Vilkårsutfall(
     val vilkårskode: Vilkårskode,
     val utfall: Utfall,
-    val utledet: Utledet,
+    val utledetFakta: UtledetFakta,
 )

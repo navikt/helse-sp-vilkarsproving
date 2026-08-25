@@ -39,7 +39,7 @@ internal object Opptjeningsregel : Kravregel {
                 Vilkårsutfall(
                     vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                     utfall = if (opptjeningsdager >= ANTALL_OPPTJENINGSDAGER_SOM_KREVES) Utfall.Oppfylt else Utfall.IkkeOppfylt,
-                    utledet = Utledet.Opptjeningstid(opptjeningsperiode, opptjeningsdager),
+                    utledetFakta = UtledetFakta.Opptjeningstid(opptjeningsperiode, opptjeningsdager),
                 ),
             ),
         )
@@ -51,7 +51,7 @@ internal object Opptjeningsregel : Kravregel {
                 Vilkårsutfall(
                     vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                     utfall = Utfall.Oppfylt,
-                    utledet = Utledet.IngenUtledning,
+                    utledetFakta = UtledetFakta.Ingen,
                 ),
             ),
         )

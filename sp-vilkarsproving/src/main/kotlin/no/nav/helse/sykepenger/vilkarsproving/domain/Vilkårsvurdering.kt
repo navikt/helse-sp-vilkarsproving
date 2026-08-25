@@ -12,16 +12,16 @@ internal data class Vilkårsvurdering(
     companion object {
         internal fun automatisk(
             prøvingId: PrøvingId,
-            ledd: Vilkårsutfall,
+            vilkårsutfall: Vilkårsutfall,
             grunnlag: Vilkårsgrunnlag,
             versjonAvKildekode: String,
             vurdertTidspunkt: Instant,
         ) = Vilkårsvurdering(
             id = VurderingId.ny(),
-            vilkårskode = ledd.vilkårskode,
-            utfall = ledd.utfall,
+            vilkårskode = vilkårsutfall.vilkårskode,
+            utfall = vilkårsutfall.utfall,
             vurdertTidspunkt = vurdertTidspunkt,
-            kilde = Vurderingskilde.Automatisk(prøvingId, grunnlag, ledd.utledet, versjonAvKildekode),
+            kilde = Vurderingskilde.Automatisk(prøvingId, grunnlag, vilkårsutfall.utledetFakta, versjonAvKildekode),
         )
 
         fun avSaksbehandler(

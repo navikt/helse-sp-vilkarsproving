@@ -5,7 +5,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
-import no.nav.helse.sykepenger.vilkarsproving.domain.Utledet
+import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
@@ -73,26 +73,26 @@ private fun Vurderingskilde.tilApi(): ApiVurderingskilde =
         is Vurderingskilde.Automatisk ->
             ApiVurderingskilde.Automatisk(
                 versjonAvKildekode = versjonAvKildekode,
-                grunnlag = grunnlag.tilApi(utledet),
+                grunnlag = grunnlag.tilApi(utledetFakta),
             )
 
         is Vurderingskilde.Saksbehandler ->
             ApiVurderingskilde.Saksbehandler(ident = ident, fritekstbegrunnelse = fritekstbegrunnelse)
 
         is Vurderingskilde.OverførtFraSpleis ->
-            ApiVurderingskilde.OverførtFraSpleis(grunnlag = grunnlag.tilApi(utledet))
+            ApiVurderingskilde.OverførtFraSpleis(grunnlag = grunnlag.tilApi(utledetFakta))
     }
 
-private fun Vilkårsgrunnlag.tilApi(utledet: Utledet): ApiVurderingsgrunnlag =
+private fun Vilkårsgrunnlag.tilApi(utledetFakta: UtledetFakta): ApiVurderingsgrunnlag =
     when (this) {
         is Opptjeningsgrunnlag.Arbeidstaker -> {
-            check(utledet is Utledet.Opptjeningstid) {
-                "Arbeidstaker-grunnlag skal ha utledet opptjeningstid, fikk $utledet"
+            check(utledetFakta is UtledetFakta.Opptjeningstid) {
+                "Arbeidstaker-grunnlag skal ha utledet opptjeningstid, fikk $utledetFakta"
             }
             ApiVurderingsgrunnlag.Arbeidsforhold(
                 arbeidsforhold = arbeidsforhold.map { it.tilApi() },
-                opptjeningsperiode = utledet.opptjeningsperiode?.tilApi(),
-                opptjeningsdager = utledet.opptjeningsdager,
+                opptjeningsperiode = utledetFakta.opptjeningsperiode?.tilApi(),
+                opptjeningsdager = utledetFakta.opptjeningsdager,
             )
         }
 
