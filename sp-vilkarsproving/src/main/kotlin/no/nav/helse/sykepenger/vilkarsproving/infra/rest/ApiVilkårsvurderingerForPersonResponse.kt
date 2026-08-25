@@ -2,55 +2,177 @@
 
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseContextualSerialization
-import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opphav
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsregel
-import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
 @Serializable
 internal data class ApiVilkårsvurderingerForPersonResponse(
-    val opptjeningsvurdering: ApiOpptjeningsvurdering,
+    /** Ett kall gjelder alltid ett skjæringstidspunkt, så det står på rota og ikke per krav. */
+    val skjæringstidspunkt: LocalDate,
+    val krav: List<ApiKravvurdering>,
+)
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "kravkilde", visible = true)
+@JsonSubTypes(
+    JsonSubTypes.Type(value = ApiKravvurdering.Vurdert::class, name = "VURDERT_I_SPEIL"),
+    JsonSubTypes.Type(value = ApiKravvurdering.OverførtFraInfotrygd::class, name = "OVERFOERT_FRA_INFOTRYGD"),
+)
+@Serializable
+internal sealed interface ApiKravvurdering {
+    val id: UUID
+    val kravkode: ApiKravkode
+    val utfall: ApiUtfall
+
+    val kravkilde: ApiKravkilde
+
+    @Serializable
+    data class Vurdert(
+        override val id: UUID,
+        override val kravkode: ApiKravkode,
+        override val utfall: ApiUtfall,
+        val avgjørendeVilkårskode: ApiVilkårskode,
+        val vurderinger: List<ApiVilkårsvurdering>,
+    ) : ApiKravvurdering {
+        override val kravkilde: ApiKravkilde = ApiKravkilde.VURDERT_HOS_OSS
+
+        init {
+            require(vurderinger.isNotEmpty()) { "En kravvurdering gjort hos oss må ha minst én vilkårsvurdering" }
+            require(vurderinger.any { it.vilkårskode == avgjørendeVilkårskode }) {
+                "Det avgjørende vilkåret $avgjørendeVilkårskode må finnes i stien"
+            }
+        }
+    }
+
+    @Serializable
+    data class OverførtFraInfotrygd(
+        override val id: UUID,
+        override val kravkode: ApiKravkode,
+        override val utfall: ApiUtfall,
+    ) : ApiKravvurdering {
+        override val kravkilde: ApiKravkilde = ApiKravkilde.OVERFOERT_FRA_INFOTRYGD
+    }
+}
+
+@Serializable
+internal enum class ApiKravkilde {
+    VURDERT_HOS_OSS,
+    OVERFOERT_FRA_INFOTRYGD,
+}
+
+@Serializable
+internal data class ApiVilkårsvurdering(
+    val id: UUID,
+    val vilkårskode: ApiVilkårskode,
+    val utfall: ApiUtfall,
+    val vurdertTidspunkt: Instant,
+    val kilde: ApiVurderingskilde,
 )
 
 @Serializable
-internal data class ApiOpptjeningsvurdering(
-    val id: UUID,
-    val skjæringstidspunkt: LocalDate,
-    val rettTilSykepenger: Boolean,
-    val kodeverkkode: String,
-    val opphav: ApiOpphav,
-    val vurdertTidspunkt: Instant,
+internal enum class ApiUtfall {
+    OPPFYLT,
+    IKKE_OPPFYLT,
+}
+
+@Serializable
+internal enum class ApiKravkode {
+    OPPTJENING,
+}
+
+@Serializable
+internal enum class ApiVilkårskode {
+    /** Minst fire sammenhengende uker i arbeid umiddelbart før skjæringstidspunktet. */
+    OPPTJENING_ARBEID_MINST_4_UKER,
+
+    /** Ytelse likestilt med arbeid i opptjeningstiden. Prøves når arbeidsvilkåret ikke er oppfylt. */
+    OPPTJENING_LIKESTILT_YTELSE,
+
+    /** Unntak fra [OPPTJENING_LIKESTILT_YTELSE]: foreldrepenger uten forutgående AAP. */
+    OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP,
+
+    /** Yrkesaktiv før foreldrepengeperioden. */
+    OPPTJENING_YRKESAKTIV_FOER_FORELDREPENGER,
+
+    /** Generell: opptjeningen er vurdert, men vi vet ikke hvilket alternativ som traff. */
+    OPPTJENING_ARBEID_ELLER_YTELSE,
+}
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "kildetype", visible = true)
+@JsonSubTypes(
+    JsonSubTypes.Type(value = ApiVurderingskilde.Automatisk::class, name = "AUTOMATISK"),
+    JsonSubTypes.Type(value = ApiVurderingskilde.Saksbehandler::class, name = "SAKSBEHANDLER"),
 )
+@Serializable
+internal sealed interface ApiVurderingskilde {
+    val kildetype: ApiKildetype
+
+    @Serializable
+    data class Automatisk(
+        val versjonAvKildekode: String,
+        val grunnlag: ApiVurderingsgrunnlag,
+    ) : ApiVurderingskilde {
+        override val kildetype: ApiKildetype = ApiKildetype.AUTOMATISK
+    }
+
+    @Serializable
+    data class Saksbehandler(
+        val ident: String,
+        val fritekstbegrunnelse: String,
+    ) : ApiVurderingskilde {
+        override val kildetype: ApiKildetype = ApiKildetype.SAKSBEHANDLER
+    }
+}
+
+@Serializable
+internal enum class ApiKildetype {
+    AUTOMATISK,
+    SAKSBEHANDLER,
+}
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "grunnlagstype", visible = true)
+@JsonSubTypes(
+    JsonSubTypes.Type(value = ApiVurderingsgrunnlag.Arbeidsforhold::class, name = "ARBEIDSFORHOLD"),
+    JsonSubTypes.Type(value = ApiVurderingsgrunnlag.SelvstendigNæringsdrivende::class, name = "SELVSTENDIG_NAERINGSDRIVENDE"),
+)
+@Serializable
+internal sealed interface ApiVurderingsgrunnlag {
+    val grunnlagstype: ApiGrunnlagstype
+
+    @Serializable
+    data class Arbeidsforhold(
+        val arbeidsforhold: List<ApiArbeidsforhold>,
+        val opptjeningsperiode: ApiPeriode?,
+        val opptjeningsdager: Int,
+    ) : ApiVurderingsgrunnlag {
+        override val grunnlagstype: ApiGrunnlagstype = ApiGrunnlagstype.ARBEIDSFORHOLD
+    }
+
+    @Serializable
+    data class SelvstendigNæringsdrivende(
+        override val grunnlagstype: ApiGrunnlagstype = ApiGrunnlagstype.SELVSTENDIG_NAERINGSDRIVENDE,
+    ) : ApiVurderingsgrunnlag {
+        init {
+            require(grunnlagstype == ApiGrunnlagstype.SELVSTENDIG_NAERINGSDRIVENDE) { "Diskriminatoren må stemme med varianten" }
+        }
+    }
+}
+
+@Serializable
+internal enum class ApiGrunnlagstype {
+    ARBEIDSFORHOLD,
+    SELVSTENDIG_NAERINGSDRIVENDE,
+}
 
 @Serializable
 internal data class ApiPeriode(
     val fom: LocalDate,
     val tom: LocalDate,
 )
-
-@Serializable
-internal sealed interface ApiOpptjeningsgrunnlag {
-    @Serializable
-    data class Arbeidstaker(
-        val arbeidsforhold: List<ApiArbeidsforhold>,
-        val opptjeningsperiode: ApiPeriode?,
-        val opptjeningsdager: Int,
-    ) : ApiOpptjeningsgrunnlag
-
-    @Serializable
-    data object InfotrygdVurdert : ApiOpptjeningsgrunnlag
-
-    @Serializable
-    data object SelvstendigNæringsdrivende : ApiOpptjeningsgrunnlag
-}
 
 @Serializable
 internal data class ApiArbeidsforhold(
@@ -68,88 +190,3 @@ internal enum class ApiArbeidsforholdtype {
     MARITIMT,
     ORDINÆRT,
 }
-
-@Serializable
-internal sealed interface ApiOpphav {
-    @Serializable
-    data class Automatisk(
-        val grunnlag: ApiOpptjeningsgrunnlag,
-        val versjonAvKildekode: String,
-    ) : ApiOpphav
-
-    @Serializable
-    data class Saksbehandler(
-        val ident: String,
-        val fritekstbegrunnelse: String,
-    ) : ApiOpphav
-
-    @Serializable
-    object Infotrygd : ApiOpphav
-}
-
-/**
- * Krever at [vilkår] er [Vilkår.Opptjening] — kalles kun fra steder som allerede
- * vet dette (oppslag på et konkret vilkår, eller filtrert gruppering som i [tilResponse]).
- */
-internal fun Vilkårsvurdering.tilApiOpptjeningsvurderingResponse(): ApiOpptjeningsvurdering {
-    check(vilkår == Vilkår.Opptjening) { "Kan ikke bygge en opptjeningsvurdering-respons av en vurdering av $vilkår" }
-    return ApiOpptjeningsvurdering(
-        id = id.value,
-        skjæringstidspunkt = skjæringstidspunkt,
-        rettTilSykepenger =
-            when (utfall) {
-                Utfall.Oppfylt -> true
-                Utfall.IkkeOppfylt -> false
-            },
-        kodeverkkode = kodeverkkode.name,
-        opphav =
-            when (val opphav = opphav) {
-                is Opphav.Automatisk ->
-                    ApiOpphav.Automatisk(
-                        // Trygt: klasseinvarianten i Vilkårsvurdering garanterer at grunnlaget hører
-                        // til vurderingens vilkår, og vi har akkurat sjekket at det er Opptjening.
-                        grunnlag = (opphav.grunnlag as Opptjeningsgrunnlag).tilResponse(skjæringstidspunkt),
-                        versjonAvKildekode = opphav.versjonAvKildekode,
-                    )
-
-                is Opphav.Saksbehandler -> ApiOpphav.Saksbehandler(opphav.ident, opphav.fritekstbegrunnelse)
-                is Opphav.Infotrygd -> ApiOpphav.Infotrygd
-            },
-        vurdertTidspunkt = vurdertTidspunkt,
-    )
-}
-
-/**
- * Opptjeningsperioden og antall opptjeningsdager er ikke lagret; de utledes ved å kjøre regelen på
- * nytt på det lagrede grunnlaget.
- */
-private fun Opptjeningsgrunnlag.tilResponse(skjæringstidspunkt: LocalDate): ApiOpptjeningsgrunnlag =
-    when (this) {
-        is Opptjeningsgrunnlag.Arbeidstaker -> {
-            val resultat = Opptjeningsregel.vurder(skjæringstidspunkt, this)
-            ApiOpptjeningsgrunnlag.Arbeidstaker(
-                arbeidsforhold = arbeidsforhold.map { it.tilResponse() },
-                opptjeningsperiode = resultat.opptjeningsperiode?.tilResponse(),
-                // Uten en opptjeningsperiode fram til skjæringstidspunktet er det null dager opptjening.
-                opptjeningsdager = resultat.opptjeningsdager ?: 0,
-            )
-        }
-
-        Opptjeningsgrunnlag.SelvstendigNæringsdrivende -> ApiOpptjeningsgrunnlag.SelvstendigNæringsdrivende
-    }
-
-private fun no.nav.helse.hendelser.Periode.tilResponse() = ApiPeriode(fom = start, tom = endInclusive)
-
-private fun Arbeidsforhold.tilResponse() =
-    ApiArbeidsforhold(
-        organisasjonsnummer = orgnummer,
-        fom = ansettelseperiode.start,
-        tom = ansettelseperiode.endInclusive.takeUnless { it == LocalDate.MAX },
-        type =
-            when (type) {
-                Arbeidsforhold.Arbeidsforholdtype.FORENKLET_OPPGJØRSORDNING -> ApiArbeidsforholdtype.FORENKLET_OPPGJØRSORDNING
-                Arbeidsforhold.Arbeidsforholdtype.FRILANSER -> ApiArbeidsforholdtype.FRILANSER
-                Arbeidsforhold.Arbeidsforholdtype.MARITIMT -> ApiArbeidsforholdtype.MARITIMT
-                Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT -> ApiArbeidsforholdtype.ORDINÆRT
-            },
-    )
