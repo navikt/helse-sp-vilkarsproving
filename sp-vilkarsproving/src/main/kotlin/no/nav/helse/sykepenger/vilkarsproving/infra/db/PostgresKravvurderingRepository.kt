@@ -135,19 +135,6 @@ internal class PostgresKravvurderingRepository(
             )?.let(::hydrer)
     }
 
-    override fun finnAlle(fødselsnummer: String): List<Kravvurdering> {
-        @Language("PostgreSQL")
-        val sql = """
-            $SELECT_KRAVVURDERING
-            where fødselsnummer = :fodselsnummer
-            order by løpenummer
-        """
-        return session
-            .run(
-                queryOf(sql, mapOf("fodselsnummer" to fødselsnummer)).map(::tilKravvurderingRad).asList,
-            ).map(::hydrer)
-    }
-
     private fun hydrer(rad: KravvurderingRad): Kravvurdering =
         when (rad.kravkilde) {
             KRAVKILDE_OVERFOERT_FRA_INFOTRYGD ->

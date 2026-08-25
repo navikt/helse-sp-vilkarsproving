@@ -26,6 +26,4 @@ internal class InMemoryKravvurderingRepository : KravvurderingRepository {
         krav: Krav,
         kravvurderingId: KravvurderingId,
     ) = vurderinger.firstOrNull { it.krav == krav && it.id == kravvurderingId }
-
-    override fun finnAlle(fødselsnummer: String): List<Kravvurdering> = vurderinger.filter { it.fødselsnummer == fødselsnummer }
 }

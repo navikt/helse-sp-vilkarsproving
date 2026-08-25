@@ -151,23 +151,6 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
         assertNull(transaksjon { it.kravvurderinger.finn(Krav.Opptjening, KravvurderingId.ny()) })
     }
 
-    @Test
-    fun `finnAlle henter alle vurderinger for personen, eldste foerst`() {
-        val første = lagreVurdering(arbeidstakergrunnlag(), skjæringstidspunkt = 1.januar)
-        val andre = lagreVurdering(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, skjæringstidspunkt = 1.februar)
-
-        val alle = transaksjon { it.kravvurderinger.finnAlle(FØDSELSNUMMER) }
-
-        assertEquals(listOf(første.id, andre.id), alle.map { it.id })
-    }
-
-    @Test
-    fun `finnAlle skiller paa fødselsnummer`() {
-        lagreVurdering(arbeidstakergrunnlag())
-
-        assertEquals(emptyList<Any>(), transaksjon { it.kravvurderinger.finnAlle("12029240046") })
-    }
-
     private fun lagreVurdering(
         grunnlag: Vilkårsgrunnlag,
         skjæringstidspunkt: LocalDate = 1.februar,

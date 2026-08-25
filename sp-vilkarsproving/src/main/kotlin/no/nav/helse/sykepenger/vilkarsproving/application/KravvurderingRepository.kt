@@ -18,6 +18,4 @@ internal interface KravvurderingRepository {
         krav: Krav,
         kravvurderingId: KravvurderingId,
     ): Kravvurdering?
-
-    fun finnAlle(fødselsnummer: String): List<Kravvurdering>
 }
