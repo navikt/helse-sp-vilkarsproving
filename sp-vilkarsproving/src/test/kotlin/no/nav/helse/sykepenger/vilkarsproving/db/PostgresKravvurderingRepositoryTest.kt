@@ -25,6 +25,8 @@ import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
     @Test
@@ -42,7 +44,7 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
         assertEquals(Krav.Opptjening, lagret.krav)
         assertEquals(FØDSELSNUMMER, lagret.fødselsnummer)
         assertEquals(1.februar, lagret.skjæringstidspunkt)
-        assertEquals(vurdering.utfall, lagret.utfall)
+        assertEquals(vurdering.girRettTilSykepenger, lagret.girRettTilSykepenger)
         assertEquals(vurdering.avgjørendeVilkårskode, lagret.avgjørendeVilkårskode)
 
         val ledd = lagret.vilkårsvurderinger.single()
@@ -93,7 +95,7 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
         assertInstanceOf(Vurderingskilde.Saksbehandler::class.java, kilde)
         assertEquals("A123456", (kilde as Vurderingskilde.Saksbehandler).ident)
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, lagret.avgjørendeVilkårskode)
-        assertEquals(Utfall.IkkeOppfylt, lagret.utfall)
+        assertFalse(lagret.girRettTilSykepenger)
     }
 
     @Test
@@ -103,14 +105,14 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
                 krav = Krav.Opptjening,
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                utfall = Utfall.Oppfylt,
+                girRettTilSykepenger = true,
             )
         transaksjon { it.kravvurderinger.lagre(vurdering) }
 
         val lagret = transaksjon { it.kravvurderinger.finn(Krav.Opptjening, vurdering.id) }
 
         assertInstanceOf(Kravvurdering.OverførtFraInfotrygd::class.java, lagret)
-        assertEquals(Utfall.Oppfylt, lagret!!.utfall)
+        assertTrue(lagret!!.girRettTilSykepenger)
     }
 
     @Test

@@ -126,7 +126,7 @@ internal class VurderingsresponsTest {
                 krav = Krav.Opptjening,
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
-                utfall = Utfall.Oppfylt,
+                girRettTilSykepenger = true,
             )
 
         val krav = Vurderingsrespons.fra(vurdering).krav.single()

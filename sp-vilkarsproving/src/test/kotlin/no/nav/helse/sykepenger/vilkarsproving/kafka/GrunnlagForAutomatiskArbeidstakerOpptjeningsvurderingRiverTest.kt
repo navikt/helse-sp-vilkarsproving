@@ -4,21 +4,14 @@ import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
 import no.nav.helse.februar
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
+import no.nav.helse.sykepenger.vilkarsproving.domain.*
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype
-import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
-import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
 import org.intellij.lang.annotations.Language
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
 internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
     private val transaksjon = InMemoryTransaksjonProvider()
@@ -40,7 +33,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         val kilde = vurdering.vilkårsvurderinger.single().kilde as Vurderingskilde.Automatisk
         assertEquals(påbegynt.id, kilde.prøvingId)
         assertEquals(OPPTJENING_ARBEID_MINST_4_UKER, vurdering.avgjørendeVilkårskode)
-        assertEquals(Utfall.Oppfylt, vurdering.utfall)
+        assertTrue(vurdering.girRettTilSykepenger)
 
         assertEquals(1, rapid.inspektør.size)
         val svar = rapid.inspektør.message(0)
@@ -66,7 +59,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
 
         val vurdering = vurdert()
         assertEquals(OPPTJENING_ARBEID_MINST_4_UKER, vurdering.avgjørendeVilkårskode)
-        assertEquals(Utfall.IkkeOppfylt, vurdering.utfall)
+        assertFalse(vurdering.girRettTilSykepenger)
     }
 
     @Test
@@ -78,7 +71,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         val arbeidsforhold = arbeidsforholdPåVurdering().single()
         assertEquals(1.januar, arbeidsforhold.ansettelseperiode.start)
         assertEquals(LocalDate.MAX, arbeidsforhold.ansettelseperiode.endInclusive)
-        assertEquals(Utfall.Oppfylt, vurdert().utfall)
+        assertTrue(vurdert().girRettTilSykepenger)
     }
 
     @Test

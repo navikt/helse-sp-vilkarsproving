@@ -16,11 +16,11 @@ internal class KravvurderingTest {
                 krav = Krav.Opptjening,
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                utfall = Utfall.Oppfylt,
+                girRettTilSykepenger = true,
             )
 
         assertInstanceOf(Kravvurdering.OverførtFraInfotrygd::class.java, vurdering)
-        assertEquals(Utfall.Oppfylt, vurdering.utfall)
+        assertTrue(vurdering.girRettTilSykepenger)
         assertEquals(Krav.Opptjening, vurdering.krav)
     }
 
@@ -43,7 +43,7 @@ internal class KravvurderingTest {
                 sti = listOf(ledd),
             )
 
-        assertEquals(Utfall.Oppfylt, vurdering.utfall)
+        assertTrue(vurdering.girRettTilSykepenger)
         assertEquals(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE, vurdering.avgjørendeVilkårskode)
         val kilde = vurdering.vilkårsvurderinger.single().kilde
         assertInstanceOf(Vurderingskilde.Saksbehandler::class.java, kilde)
@@ -77,7 +77,7 @@ internal class KravvurderingTest {
                 sti = listOf(ikkeOppfylt, avgjørende),
             )
 
-        assertEquals(Utfall.Oppfylt, vurdering.utfall)
+        assertTrue(vurdering.girRettTilSykepenger)
         assertEquals(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE, vurdering.avgjørendeVilkårskode)
         assertEquals(2, vurdering.vilkårsvurderinger.size)
     }

@@ -11,7 +11,6 @@ import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.sikkerLogg
 import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
 import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
-import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
 
@@ -62,30 +61,20 @@ internal open class OpptjeningsvurderingResultatRiver(
                 }
 
             val utfall =
-                kravvurdering?.utfall ?: spleisClient
+                kravvurdering?.girRettTilSykepenger ?: spleisClient
                     .hentOpptjeningsvurderinger(fødselsnummer = fødselsnummer)
                     .find { it.opptjeningsvurderingId == kravvurderingId }
                     ?.let { vurdering ->
                         when (vurdering) {
-                            is Opptjeningsvurdering.SpleisArbeidstaker ->
-                                when (vurdering.oppfylt) {
-                                    true -> Utfall.Oppfylt
-                                    false -> Utfall.IkkeOppfylt
-                                }
+                            is Opptjeningsvurdering.SpleisArbeidstaker -> vurdering.oppfylt
 
                             is Opptjeningsvurdering.SpleisSelvstendig,
                             is Opptjeningsvurdering.InfotrygdArbeidstaker,
-                            -> Utfall.Oppfylt
+                            -> true
                         }
                     } ?: error("Fant ikke vurdering med id $kravvurderingId")
 
-            val ok =
-                when (utfall) {
-                    Utfall.Oppfylt -> true
-                    Utfall.IkkeOppfylt -> false
-                }
-
-            packet["@løsning"] = mapOf(behovnavn to mapOf("ok" to ok))
+            packet["@løsning"] = mapOf(behovnavn to mapOf("ok" to utfall))
             sikkerLogg.info("Publiserer løsning for $behovnavn for $idFelt $kravvurderingId. Løsning:\n\t${packet.toJson()}")
             context.publish(packet.toJson())
         } catch (ex: Exception) {

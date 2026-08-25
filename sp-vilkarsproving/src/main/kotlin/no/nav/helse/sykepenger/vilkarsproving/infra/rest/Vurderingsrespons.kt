@@ -26,14 +26,14 @@ private fun Kravvurdering.tilApi(): ApiKravvurdering =
             ApiKravvurdering.OverførtFraInfotrygd(
                 id = id.value,
                 kravkode = krav.tilApi(),
-                rettTilSykepenger = utfall.tilApi() == ApiUtfall.OPPFYLT,
+                rettTilSykepenger = girRettTilSykepenger,
             )
 
         is Kravvurdering.VurdertISpeil ->
             ApiKravvurdering.VurdertISpeil(
                 id = id.value,
                 kravkode = krav.tilApi(),
-                rettTilSykepenger = utfall.tilApi() == ApiUtfall.OPPFYLT,
+                rettTilSykepenger = girRettTilSykepenger,
                 avgjørendeVilkårskode = avgjørendeVilkårskode.tilApi(),
                 vurderinger = vilkårsvurderinger.map { it.tilApi() },
             )

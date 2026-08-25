@@ -8,7 +8,7 @@ internal sealed interface Kravvurdering {
     val krav: Krav
     val fødselsnummer: String
     val skjæringstidspunkt: LocalDate
-    val utfall: Utfall
+    val girRettTilSykepenger: Boolean
 
     data class VurdertISpeil(
         override val id: KravvurderingId,
@@ -26,7 +26,7 @@ internal sealed interface Kravvurdering {
             }
         }
 
-        override val utfall: Utfall get() = vilkårsvurderinger.last().utfall
+        override val girRettTilSykepenger: Boolean get() = vilkårsvurderinger.last().utfall == Utfall.Oppfylt
 
         val avgjørendeVilkårskode: Vilkårskode get() = vilkårsvurderinger.last().vilkårskode
     }
@@ -36,7 +36,7 @@ internal sealed interface Kravvurdering {
         override val krav: Krav,
         override val fødselsnummer: String,
         override val skjæringstidspunkt: LocalDate,
-        override val utfall: Utfall,
+        override val girRettTilSykepenger: Boolean,
     ) : Kravvurdering
 
     companion object {
@@ -70,8 +70,8 @@ internal sealed interface Kravvurdering {
             krav: Krav,
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
-            utfall: Utfall,
-        ) = OverførtFraInfotrygd(id, krav, fødselsnummer, skjæringstidspunkt, utfall)
+            girRettTilSykepenger: Boolean,
+        ) = OverførtFraInfotrygd(id, krav, fødselsnummer, skjæringstidspunkt, girRettTilSykepenger)
 
         fun fraLagring(
             id: KravvurderingId,
@@ -86,7 +86,7 @@ internal sealed interface Kravvurdering {
             krav: Krav,
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
-            utfall: Utfall,
-        ) = OverførtFraInfotrygd(id, krav, fødselsnummer, skjæringstidspunkt, utfall)
+            girRettTilSykepenger: Boolean,
+        ) = OverførtFraInfotrygd(id, krav, fødselsnummer, skjæringstidspunkt, girRettTilSykepenger)
     }
 }

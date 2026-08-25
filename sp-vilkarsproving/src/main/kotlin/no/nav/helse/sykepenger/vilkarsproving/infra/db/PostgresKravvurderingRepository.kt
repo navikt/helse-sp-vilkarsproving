@@ -36,8 +36,8 @@ internal class PostgresKravvurderingRepository(
     private fun lagreVurdertISpeil(vurdering: Kravvurdering.VurdertISpeil) {
         @Language("PostgreSQL")
         val kravvurderingSql = """
-            insert into kravvurdering (id, krav, fødselsnummer, skjæringstidspunkt, kravkilde, utfall)
-            values (:id, :krav, :fodselsnummer, :skjaeringstidspunkt, :kravkilde, null)
+            insert into kravvurdering (id, krav, fødselsnummer, skjæringstidspunkt, kravkilde, rett_til_sykepenger)
+            values (:id, :krav, :fodselsnummer, :skjaeringstidspunkt, :kravkilde, :rett_til_sykepenger)
         """
         session.run(
             queryOf(
@@ -48,6 +48,7 @@ internal class PostgresKravvurderingRepository(
                     "fodselsnummer" to vurdering.fødselsnummer,
                     "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
                     "kravkilde" to KRAVKILDE_VURDERT_I_SPEIL,
+                    "rett_til_sykepenger" to vurdering.girRettTilSykepenger,
                 ),
             ).asUpdate,
         )
@@ -77,8 +78,8 @@ internal class PostgresKravvurderingRepository(
     private fun lagreInfotrygd(vurdering: Kravvurdering.OverførtFraInfotrygd) {
         @Language("PostgreSQL")
         val sql = """
-            insert into kravvurdering (id, krav, fødselsnummer, skjæringstidspunkt, kravkilde, utfall)
-            values (:id, :krav, :fodselsnummer, :skjaeringstidspunkt, :kravkilde, :utfall)
+            insert into kravvurdering (id, krav, fødselsnummer, skjæringstidspunkt, kravkilde, rett_til_sykepenger)
+            values (:id, :krav, :fodselsnummer, :skjaeringstidspunkt, :kravkilde, :rett_til_sykepenger)
         """
         session.run(
             queryOf(
@@ -89,7 +90,7 @@ internal class PostgresKravvurderingRepository(
                     "fodselsnummer" to vurdering.fødselsnummer,
                     "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
                     "kravkilde" to KRAVKILDE_OVERFOERT_FRA_INFOTRYGD,
-                    "utfall" to vurdering.utfall.name,
+                    "rett_til_sykepenger" to vurdering.girRettTilSykepenger,
                 ),
             ).asUpdate,
         )
@@ -143,10 +144,7 @@ internal class PostgresKravvurderingRepository(
                     krav = rad.krav,
                     fødselsnummer = rad.fødselsnummer,
                     skjæringstidspunkt = rad.skjæringstidspunkt,
-                    utfall =
-                        Utfall.valueOf(
-                            requireNotNull(rad.utfall) { "Kravvurdering ${rad.id} overført fra Infotrygd mangler utfall" },
-                        ),
+                    girRettTilSykepenger = rad.girRettTilSykepenger,
                 )
 
             else ->
@@ -188,7 +186,7 @@ internal class PostgresKravvurderingRepository(
             fødselsnummer = row.string("fødselsnummer"),
             skjæringstidspunkt = row.localDate("skjæringstidspunkt"),
             kravkilde = row.string("kravkilde"),
-            utfall = row.stringOrNull("utfall"),
+            girRettTilSykepenger = row.boolean("rett_til_sykepenger"),
         )
 
     private data class KravvurderingRad(
@@ -197,7 +195,7 @@ internal class PostgresKravvurderingRepository(
         val fødselsnummer: String,
         val skjæringstidspunkt: LocalDate,
         val kravkilde: String,
-        val utfall: String?,
+        val girRettTilSykepenger: Boolean,
     )
 
     private companion object {
@@ -205,7 +203,7 @@ internal class PostgresKravvurderingRepository(
 
         @Language("PostgreSQL")
         const val SELECT_KRAVVURDERING = """
-            select id, krav, fødselsnummer, skjæringstidspunkt, kravkilde, utfall
+            select id, krav, fødselsnummer, skjæringstidspunkt, kravkilde, rett_til_sykepenger
             from kravvurdering
         """
     }
