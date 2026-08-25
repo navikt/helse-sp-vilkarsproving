@@ -6,11 +6,12 @@ import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode.IKKE_OPPTJENING_ARBEID_ELLER_YTELSE
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode.OPPTJENING_MINST_4_UKER
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opphav
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
+import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -21,15 +22,13 @@ import java.util.UUID
 
 internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
     private val transaksjon = InMemoryTransaksjonProvider()
-    private val vurderinger = transaksjon.vilkårsvurderinger
-    private val prøvinger = transaksjon.vilkårsprøvinger
+    private val vurderinger = transaksjon.kravvurderinger
+    private val prøvinger = transaksjon.kravprøvinger
     private val rapid =
         TestRapid().apply {
             GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(this, transaksjon)
         }
 
-    // Normalflyten: løsningen fullfører prøvingen, vurderingen oppstår, og det opprinnelige
-    // behovet sendes videre med løsningen påført
     @Test
     fun `løsning fullfører prøvingen og besvarer opprinnelig behov`() {
         val påbegynt = påbegyntPrøving()
@@ -37,9 +36,11 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         rapid.sendTestMessage(arbeidsforholdløsning(arbeidsforhold(ansattSiden = "2018-01-01", ansattTil = "2018-01-31")), "123")
 
         assertTrue(påbegynt.erAvsluttet)
-        val vurdering = vurderinger.alleVurderinger.single()
-        assertEquals(påbegynt.id, vurdering.prøvingId)
-        assertEquals(OPPTJENING_MINST_4_UKER, vurdering.kodeverkkode)
+        val vurdering = vurdert()
+        val kilde = vurdering.sti.single().kilde as Vurderingskilde.Automatisk
+        assertEquals(påbegynt.id, kilde.prøvingId)
+        assertEquals(OPPTJENING_ARBEID_MINST_4_UKER, vurdering.avgjørendeVilkårskode)
+        assertEquals(Utfall.Oppfylt, vurdering.utfall)
 
         assertEquals(1, rapid.inspektør.size)
         val svar = rapid.inspektør.message(0)
@@ -57,17 +58,17 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         )
     }
 
-    // Kodeverkkoden skal utledes av arbeidsforholdene som kom inn på løsningen
     @Test
     fun `for kort opptjening gir ikke oppfylt`() {
         påbegyntPrøving()
 
         rapid.sendTestMessage(arbeidsforholdløsning(arbeidsforhold(ansattSiden = "2018-01-05", ansattTil = "2018-01-31")))
 
-        assertEquals(IKKE_OPPTJENING_ARBEID_ELLER_YTELSE, vurderinger.alleVurderinger.single().kodeverkkode)
+        val vurdering = vurdert()
+        assertEquals(OPPTJENING_ARBEID_MINST_4_UKER, vurdering.avgjørendeVilkårskode)
+        assertEquals(Utfall.IkkeOppfylt, vurdering.utfall)
     }
 
-    // Løpende arbeidsforhold kommer uten ansattTil, og skal mappes til null
     @Test
     fun `arbeidsforhold uten ansattTil er løpende`() {
         påbegyntPrøving()
@@ -77,10 +78,9 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         val arbeidsforhold = arbeidsforholdPåVurdering().single()
         assertEquals(1.januar, arbeidsforhold.ansettelseperiode.start)
         assertEquals(LocalDate.MAX, arbeidsforhold.ansettelseperiode.endInclusive)
-        assertEquals(OPPTJENING_MINST_4_UKER, vurderinger.alleVurderinger.single().kodeverkkode)
+        assertEquals(Utfall.Oppfylt, vurdert().utfall)
     }
 
-    // Aareg kan sende arbeidsforhold uten orgnummer; de skal filtreres bort
     @Test
     fun `arbeidsforhold uten orgnummer filtreres bort`() {
         påbegyntPrøving()
@@ -95,8 +95,6 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         assertEquals(listOf(ORGNUMMER), arbeidsforholdPåVurdering().map { it.orgnummer })
     }
 
-    // Ugyldige perioder (ansattTil før ansattSiden) skal filtreres bort framfor å
-    // krasje domenemodellen
     @Test
     fun `arbeidsforhold med ansattTil før ansattSiden filtreres bort`() {
         påbegyntPrøving()
@@ -135,7 +133,6 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         )
     }
 
-    // Løsning uten treff på en påbegynt prøving skal ikke gi noe utgående svar
     @Test
     fun `løsning uten påbegynt prøving gir ingen melding`() {
         rapid.sendTestMessage(arbeidsforholdløsning(arbeidsforhold(ansattSiden = "2018-01-01", ansattTil = "2018-01-31")))
@@ -144,7 +141,6 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         assertEquals(0, vurderinger.antallLagringer)
     }
 
-    // Duplikate løsninger skal ikke gi dobbelt svar eller en ny vurdering
     @Test
     fun `duplikat løsning gir ingen ny melding`() {
         påbegyntPrøving()
@@ -156,10 +152,9 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         rapid.sendTestMessage(melding)
         assertEquals(1, rapid.inspektør.size)
         assertEquals(1, vurderinger.antallLagringer)
-        assertEquals(OPPTJENING_MINST_4_UKER, vurderinger.alleVurderinger.single().kodeverkkode)
+        assertEquals(OPPTJENING_ARBEID_MINST_4_UKER, vurdert().avgjørendeVilkårskode)
     }
 
-    // Riveren skal bare behandle det endelige svaret på behovet
     @Test
     fun `løsning som ikke er final ignoreres`() {
         val påbegynt = påbegyntPrøving()
@@ -175,7 +170,6 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         assertFalse(påbegynt.erAvsluttet)
     }
 
-    // En ukjent arbeidsforholdtype skal stoppes av valideringen, ikke krasje mappingen
     @Test
     fun `ukjent arbeidsforholdtype ignoreres av valideringen`() {
         val påbegynt = påbegyntPrøving()
@@ -188,7 +182,6 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         assertFalse(påbegynt.erAvsluttet)
     }
 
-    // Prøvinger som allerede er avsluttet skal ikke behandles på nytt
     @Test
     fun `løsning på allerede avsluttet prøving gir ingen melding`() {
         val (prøving, vurdering) = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
@@ -198,12 +191,16 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         rapid.sendTestMessage(arbeidsforholdløsning(arbeidsforhold(ansattSiden = "2018-01-01", ansattTil = "2018-01-31")))
 
         assertEquals(0, rapid.inspektør.size)
-        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (vurderinger.alleVurderinger.single().opphav as Opphav.Automatisk).grunnlag)
+        val kilde = vurdert().sti.single().kilde as Vurderingskilde.Automatisk
+        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, kilde.grunnlag)
     }
 
     private fun påbegyntPrøving() = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving.also { prøvinger.lagre(it) }
 
-    private fun arbeidsforholdPåVurdering() = ((vurderinger.alleVurderinger.single().opphav as Opphav.Automatisk).grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold
+    private fun vurdert() = vurderinger.alleVurderinger.single() as Kravvurdering.Vurdert
+
+    private fun arbeidsforholdPåVurdering() =
+        ((vurdert().sti.single().kilde as Vurderingskilde.Automatisk).grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold
 
     private companion object {
         const val FØDSELSNUMMER = "12029240045"

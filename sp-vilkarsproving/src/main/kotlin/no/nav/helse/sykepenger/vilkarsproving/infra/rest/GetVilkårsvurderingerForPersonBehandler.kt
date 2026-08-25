@@ -11,11 +11,11 @@ import no.nav.helse.speil.backend.app.rest.RestResponse
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
+import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
 import java.time.Instant
 
 internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<ApiVilkårsvurderingerForPersonResource, ApiVilkårsvurderingerForPersonResponse, ApiVilkårsvurderingerForPersonFeil, AppRolle, Transaksjonskontekst> {
@@ -40,8 +40,8 @@ internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<ApiVilkå
             }
 
             val vurdering =
-                kallKontekst.transaksjon.vilkårsvurderinger
-                    .finn(Vilkår.Opptjening, VurderingId(resource.opptjeningsvurderingId))
+                kallKontekst.transaksjon.kravvurderinger
+                    .finn(Krav.Opptjening, KravvurderingId(resource.opptjeningsvurderingId))
 
             if (vurdering == null || vurdering.fødselsnummer != identitetsnummer.value) {
                 return@medPerson RestResponse.feil(ApiVilkårsvurderingerForPersonFeil.VurderingIkkeFunnet)
@@ -57,7 +57,7 @@ private object Demodata {
 
     fun respons(): ApiVilkårsvurderingerForPersonResponse =
         Vurderingsrespons.fra(
-            Vilkårsvurdering.automatisk(
+            Kravvurdering.automatisk(
                 prøvingId = PrøvingId.ny(),
                 fødselsnummer = "00000000000",
                 skjæringstidspunkt = 1.januar(2018),

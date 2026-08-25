@@ -31,27 +31,29 @@ internal class OpptjeningsprøvingTest {
         assertNotNull(vurdering)
         assertTrue(prøving.erAvsluttet)
         assertNull(prøving.uteståendeBehov)
-        assertEquals(Vilkårsprøving.Tilstand.Fullført(vurdering!!.id), prøving.tilstand)
-        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (vurdering.opphav as Opphav.Automatisk).grunnlag)
+        assertEquals(Kravprøving.Tilstand.Fullført(vurdering!!.id), prøving.tilstand)
+        val ledd = vurdering.sti.single()
+        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (ledd.kilde as Vurderingskilde.Automatisk).grunnlag)
     }
 
     // Vurderingen peker tilbake på prøvingen som produserte den
     @Test
-    fun `vurderingen bærer med seg prøvingen, grunnlaget og opphavet`() {
+    fun `vurderingen bærer med seg prøvingen, grunnlaget og kilden`() {
         val prøving = påbegyntArbeidstakerprøving()
         val arbeidsforhold = listOf(arbeidsforhold())
 
         val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold))
 
-        assertEquals(prøving.id, vurdering.prøvingId)
         assertEquals(FØDSELSNUMMER, vurdering.fødselsnummer)
         assertEquals(1.februar, vurdering.skjæringstidspunkt)
-        assertEquals(
-            Opphav.Automatisk(Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold), Opptjeningsregel.versjon),
-            vurdering.opphav,
-        )
-        assertEquals(Kodeverkkode.OPPTJENING_MINST_4_UKER, vurdering.kodeverkkode)
-        assertEquals(Utfall.Oppfylt, vurdering.utfall)
+
+        val ledd = vurdering.sti.single()
+        val kilde = ledd.kilde as Vurderingskilde.Automatisk
+        assertEquals(prøving.id, kilde.prøvingId)
+        assertEquals(Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold), kilde.grunnlag)
+        assertEquals(Opptjeningsregel.versjon, kilde.versjonAvKildekode)
+        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
+        assertEquals(Utfall.Oppfylt, ledd.utfall)
     }
 
     // Prøvingen går til Fullført samtidig som vurderingen blir til – de to kan ikke komme i utakt
@@ -62,7 +64,7 @@ internal class OpptjeningsprøvingTest {
         val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(listOf(arbeidsforhold())))
 
         assertTrue(prøving.erAvsluttet)
-        assertEquals(Vilkårsprøving.Tilstand.Fullført(vurdering.id), prøving.tilstand)
+        assertEquals(Kravprøving.Tilstand.Fullført(vurdering.id), prøving.tilstand)
     }
 
     // En fullført prøving er endelig; duplikate svar skal ikke kunne overskrive resultatet

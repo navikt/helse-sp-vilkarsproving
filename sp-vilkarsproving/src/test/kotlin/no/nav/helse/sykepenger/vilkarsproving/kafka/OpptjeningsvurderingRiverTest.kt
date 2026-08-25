@@ -9,11 +9,12 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
 import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode.OPPTJENING_MINST_4_UKER
+import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
-import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -25,8 +26,8 @@ import java.util.UUID
 
 internal class OpptjeningsvurderingRiverTest {
     private val transaksjon = InMemoryTransaksjonProvider()
-    private val vurderinger = transaksjon.vilkårsvurderinger
-    private val prøvinger = transaksjon.vilkårsprøvinger
+    private val vurderinger = transaksjon.kravvurderinger
+    private val prøvinger = transaksjon.kravprøvinger
     private val rapid =
         TestRapid().apply {
             OpptjeningsvurderingRiver(this, transaksjon)
@@ -54,7 +55,7 @@ internal class OpptjeningsvurderingRiverTest {
     fun `arbeidstaker starter en prøving uten å produsere en vurdering`() {
         rapid.sendTestMessage(opptjeningsvurderingBehov(arbeidssituasjon = "Arbeidstaker"))
 
-        val prøving = prøvinger.alleProvinger.single()
+        val prøving = prøvinger.allePrøvinger.single()
         assertFalse(prøving.erAvsluttet)
         assertEquals(Grunnlagsbehov.Arbeidsforhold, prøving.uteståendeBehov)
         assertEquals(0, vurderinger.antallLagringer)
@@ -68,8 +69,8 @@ internal class OpptjeningsvurderingRiverTest {
 
         assertEquals(1, rapid.inspektør.size)
         val løsning = rapid.inspektør.message(0)
-        val vurderingId =
-            VurderingId(
+        val kravvurderingId =
+            KravvurderingId(
                 UUID.fromString(
                     løsning
                         .path("@løsning")
@@ -79,9 +80,9 @@ internal class OpptjeningsvurderingRiverTest {
                 ),
             )
 
-        val vurdering = vurderinger.finn(Vilkår.Opptjening, vurderingId)!!
-        assertEquals(OPPTJENING_MINST_4_UKER, vurdering.kodeverkkode)
-        assertTrue(prøvinger.alleProvinger.single().erAvsluttet)
+        val vurdering = vurderinger.finn(Krav.Opptjening, kravvurderingId) as Kravvurdering.Vurdert
+        assertEquals(OPPTJENING_ARBEID_MINST_4_UKER, vurdering.avgjørendeVilkårskode)
+        assertTrue(prøvinger.allePrøvinger.single().erAvsluttet)
     }
 
     // Har vi allerede en vurdering svarer vi med den eksisterende id-en
@@ -180,7 +181,7 @@ internal class OpptjeningsvurderingRiverTest {
         assertEquals(0, rapid.inspektør.size)
     }
 
-    private fun fullførtPrøving(): VurderingId {
+    private fun fullførtPrøving(): KravvurderingId {
         val prøving = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving
         val arbeidsforhold = Arbeidsforhold(orgnummer = ORGNUMMER, ansettelseperiode = 1.januar til 31.januar, type = ORDINÆRT)
         val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(listOf(arbeidsforhold)))

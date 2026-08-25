@@ -73,14 +73,14 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(
                 // No-op. finn ut av lognivå
             }
             is OpptjeningService.BehandleGrunnlagResultat.NyVurderingForetatt -> {
-                sikkerLogg.info("Ny vurdering foretatt for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. VurderingId: ${resultat.vurderingId}")
+                sikkerLogg.info("Ny vurdering foretatt for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. VurderingId: ${resultat.kravvurderingId}")
                 val opprinneligBehov = packet["opprinneligBehov"] as ObjectNode
                 val løsning = opprinneligBehov.putObject("@løsning")
                 løsning
                     .putObject("Opptjeningsvurdering")
-                    .put("id", resultat.vurderingId.toString())
+                    .put("id", resultat.kravvurderingId.toString())
                 val løsningString = opprinneligBehov.toString()
-                sikkerLogg.info("Publiserer løsning for på behov for opptjeningsvurdering for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. VurderingId: ${resultat.vurderingId}. Løsning:\n\t$løsningString")
+                sikkerLogg.info("Publiserer løsning for på behov for opptjeningsvurdering for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. VurderingId: ${resultat.kravvurderingId}. Løsning:\n\t$løsningString")
                 context.publish(løsningString)
             }
 

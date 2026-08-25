@@ -2,8 +2,8 @@ package no.nav.helse.sykepenger.vilkarsproving.db
 
 import no.nav.helse.februar
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
+import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.FØDSELSNUMMER
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.arbeidstakergrunnlag
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -21,11 +21,12 @@ internal class PostgresTransaksjonProviderTest : DatabaseTest() {
     fun `alt arbeidet i transaksjonen lagres når blokken går gjennom`() {
         transaksjon { kontekst ->
             val påbegynt = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
-            kontekst.vilkårsprøvinger.lagre(påbegynt.prøving)
-            kontekst.vilkårsvurderinger.lagre(checkNotNull(påbegynt.vurdering))
+            kontekst.kravprøvinger.lagre(påbegynt.prøving)
+            kontekst.kravvurderinger.lagre(checkNotNull(påbegynt.vurdering))
         }
 
-        assertEquals(1, Database.antallRader("vilkarsproving"))
+        assertEquals(1, Database.antallRader("kravproving"))
+        assertEquals(1, Database.antallRader("kravvurdering"))
         assertEquals(1, Database.antallRader("vilkarsvurdering"))
     }
 
@@ -34,13 +35,14 @@ internal class PostgresTransaksjonProviderTest : DatabaseTest() {
         assertThrows<RuntimeException> {
             transaksjon { kontekst ->
                 val påbegynt = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
-                kontekst.vilkårsprøvinger.lagre(påbegynt.prøving)
-                kontekst.vilkårsvurderinger.lagre(checkNotNull(påbegynt.vurdering))
+                kontekst.kravprøvinger.lagre(påbegynt.prøving)
+                kontekst.kravvurderinger.lagre(checkNotNull(påbegynt.vurdering))
                 throw RuntimeException("noe gikk galt etter at arbeidet var gjort")
             }
         }
 
-        assertEquals(0, Database.antallRader("vilkarsproving"))
+        assertEquals(0, Database.antallRader("kravproving"))
+        assertEquals(0, Database.antallRader("kravvurdering"))
         assertEquals(0, Database.antallRader("vilkarsvurdering"))
     }
 
@@ -49,18 +51,19 @@ internal class PostgresTransaksjonProviderTest : DatabaseTest() {
     @Test
     fun `delvis fullført prøving rulles tilbake i sin helhet`() {
         val prøving = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving
-        transaksjon { it.vilkårsprøvinger.lagre(prøving) }
+        transaksjon { it.kravprøvinger.lagre(prøving) }
 
         assertThrows<RuntimeException> {
             transaksjon { kontekst ->
-                kontekst.vilkårsvurderinger.lagre(prøving.motta(arbeidstakergrunnlag()))
-                kontekst.vilkårsprøvinger.lagre(prøving)
+                kontekst.kravvurderinger.lagre(prøving.motta(arbeidstakergrunnlag()))
+                kontekst.kravprøvinger.lagre(prøving)
                 throw RuntimeException("krasjer før commit")
             }
         }
 
+        assertEquals(0, Database.antallRader("kravvurdering"))
         assertEquals(0, Database.antallRader("vilkarsvurdering"))
-        val lagret = transaksjon { it.vilkårsprøvinger.finnSiste(Vilkår.Opptjening, FØDSELSNUMMER, 1.februar) }
+        val lagret = transaksjon { it.kravprøvinger.finnSiste(Krav.Opptjening, FØDSELSNUMMER, 1.februar) }
         assertNotNull(lagret)
         assertEquals(false, lagret!!.erAvsluttet) { "Prøvingen skal fortsatt vente på grunnlag" }
     }
@@ -69,14 +72,14 @@ internal class PostgresTransaksjonProviderTest : DatabaseTest() {
     fun `skriving er ikke synlig utenfra før transaksjonen er commitet`() {
         transaksjon { kontekst ->
             val påbegynt = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
-            kontekst.vilkårsprøvinger.lagre(påbegynt.prøving)
+            kontekst.kravprøvinger.lagre(påbegynt.prøving)
 
             // Innenfor transaksjonen ser vi vår egen skriving ...
-            assertNotNull(kontekst.vilkårsprøvinger.finnSiste(Vilkår.Opptjening, FØDSELSNUMMER, 1.februar))
+            assertNotNull(kontekst.kravprøvinger.finnSiste(Krav.Opptjening, FØDSELSNUMMER, 1.februar))
             // ... men en annen forbindelse gjør det ikke.
-            assertEquals(0, Database.antallRader("vilkarsproving"))
+            assertEquals(0, Database.antallRader("kravproving"))
         }
 
-        assertEquals(1, Database.antallRader("vilkarsproving"))
+        assertEquals(1, Database.antallRader("kravproving"))
     }
 }

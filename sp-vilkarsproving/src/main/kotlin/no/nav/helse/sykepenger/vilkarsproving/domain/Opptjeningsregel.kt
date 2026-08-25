@@ -1,13 +1,12 @@
 package no.nav.helse.sykepenger.vilkarsproving.domain
 
 import no.nav.helse.forrigeDag
-import no.nav.helse.hendelser.Periode
 import no.nav.helse.hendelser.Periode.Companion.grupperSammenhengendePerioderMedHensynTilHelg
 import no.nav.helse.hendelser.til
 import java.time.LocalDate
 
-internal object Opptjeningsregel : Vilkårsregel {
-    override val vilkår = Vilkår.Opptjening
+internal object Opptjeningsregel : Kravregel {
+    override val krav = Krav.Opptjening
     override val versjon = "1"
 
     private const val ANTALL_OPPTJENINGSDAGER_SOM_KREVES = 28
@@ -15,21 +14,16 @@ internal object Opptjeningsregel : Vilkårsregel {
     override fun vurder(
         skjæringstidspunkt: LocalDate,
         grunnlag: Vilkårsgrunnlag,
-    ): Resultat =
+    ): Kravregelresultat =
         when (grunnlag) {
             is Opptjeningsgrunnlag.Arbeidstaker -> vurderArbeidstaker(skjæringstidspunkt, grunnlag.arbeidsforhold)
-            Opptjeningsgrunnlag.SelvstendigNæringsdrivende ->
-                Resultat(
-                    opptjeningsperiode = null,
-                    opptjeningsdager = null,
-                    kodeverkkode = Kodeverkkode.OPPTJENING_MINST_4_UKER,
-                )
+            Opptjeningsgrunnlag.SelvstendigNæringsdrivende -> vurderSelvstendigNæringsdrivende()
         }
 
     private fun vurderArbeidstaker(
         skjæringstidspunkt: LocalDate,
         arbeidsforhold: List<Arbeidsforhold>,
-    ): Resultat {
+    ): Kravregelresultat {
         val opptjeningsperiode =
             arbeidsforhold
                 .map { it.ansettelseperiode }
@@ -38,23 +32,27 @@ internal object Opptjeningsregel : Vilkårsregel {
         val opptjeningsdager =
             opptjeningsperiode
                 ?.subset(opptjeningsperiode.start til skjæringstidspunkt.forrigeDag)
-                ?.count()
+                ?.count() ?: 0
 
-        return Resultat(
-            opptjeningsperiode = opptjeningsperiode,
-            opptjeningsdager = opptjeningsdager,
-            kodeverkkode =
-                if ((opptjeningsdager ?: 0) >= ANTALL_OPPTJENINGSDAGER_SOM_KREVES) {
-                    Kodeverkkode.OPPTJENING_MINST_4_UKER
-                } else {
-                    Kodeverkkode.IKKE_OPPTJENING_ARBEID_ELLER_YTELSE
-                },
+        return Kravregelresultat(
+            listOf(
+                Vilkårsutfall(
+                    vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+                    utfall = if (opptjeningsdager >= ANTALL_OPPTJENINGSDAGER_SOM_KREVES) Utfall.Oppfylt else Utfall.IkkeOppfylt,
+                    utledet = Utledet.Opptjeningstid(opptjeningsperiode, opptjeningsdager),
+                ),
+            ),
         )
     }
 
-    data class Resultat(
-        val opptjeningsperiode: Periode?,
-        val opptjeningsdager: Int?,
-        override val kodeverkkode: Kodeverkkode,
-    ) : Vilkårsregelresultat
+    private fun vurderSelvstendigNæringsdrivende() =
+        Kravregelresultat(
+            listOf(
+                Vilkårsutfall(
+                    vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+                    utfall = Utfall.Oppfylt,
+                    utledet = Utledet.IngenUtledning,
+                ),
+            ),
+        )
 }

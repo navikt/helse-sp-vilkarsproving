@@ -28,11 +28,11 @@ import no.nav.helse.speil.backend.app.testfixtures.InMemoryPersonPseudoIdProvide
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode
+import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -170,14 +170,14 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             val enAnnenIdentitetsnummer = Identitetsnummer("98765432109")
             val transaksjonProvider = InMemoryTransaksjonProvider()
             val andresVurdering =
-                Vilkårsvurdering.automatisk(
+                Kravvurdering.automatisk(
                     prøvingId = PrøvingId.ny(),
                     fødselsnummer = enAnnenIdentitetsnummer.value,
                     skjæringstidspunkt = LocalDate.of(2024, 1, 1),
                     grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,
                     vurdertTidspunkt = Instant.now(),
                 )
-            transaksjonProvider.vilkårsvurderinger.lagre(andresVurdering)
+            transaksjonProvider.kravvurderinger.lagre(andresVurdering)
 
             val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
             val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
@@ -201,14 +201,14 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
         testApplication {
             val transaksjonProvider = InMemoryTransaksjonProvider()
             val vurdering =
-                Vilkårsvurdering.automatisk(
+                Kravvurdering.automatisk(
                     prøvingId = PrøvingId.ny(),
                     fødselsnummer = identitetsnummer.value,
                     skjæringstidspunkt = LocalDate.of(2024, 2, 1),
                     grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,
                     vurdertTidspunkt = Instant.parse("2024-02-01T12:00:00Z"),
                 )
-            transaksjonProvider.vilkårsvurderinger.lagre(vurdering)
+            transaksjonProvider.kravvurderinger.lagre(vurdering)
 
             val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
             val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
@@ -227,7 +227,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             val krav = json["krav"].single()
             assertEquals("OPPTJENING", krav["kravkode"].asString())
             assertEquals("OPPFYLT", krav["utfall"].asString())
-            assertEquals("VURDERT_HOS_OSS", krav["kravkilde"].asString())
+            assertEquals("VURDERT_I_SPEIL", krav["kravkilde"].asString())
             assertEquals("OPPTJENING_ARBEID_MINST_4_UKER", krav["avgjørendeVilkårskode"].asString())
 
             val vilkårsvurdering = krav["vurderinger"].single()
@@ -253,14 +253,13 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
         testApplication {
             val transaksjonProvider = InMemoryTransaksjonProvider()
             val vurdering =
-                Vilkårsvurdering.fraInfotrygd(
-                    vilkår = Vilkår.Opptjening,
+                Kravvurdering.fraInfotrygd(
+                    krav = Krav.Opptjening,
                     fødselsnummer = identitetsnummer.value,
                     skjæringstidspunkt = LocalDate.of(2024, 2, 1),
-                    kodeverkkode = Kodeverkkode.OPPTJENING_ARBEID_ELLER_YTELSE,
-                    vurdertTidspunkt = Instant.parse("2024-02-01T12:00:00Z"),
+                    utfall = Utfall.Oppfylt,
                 )
-            transaksjonProvider.vilkårsvurderinger.lagre(vurdering)
+            transaksjonProvider.kravvurderinger.lagre(vurdering)
 
             val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
             val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)

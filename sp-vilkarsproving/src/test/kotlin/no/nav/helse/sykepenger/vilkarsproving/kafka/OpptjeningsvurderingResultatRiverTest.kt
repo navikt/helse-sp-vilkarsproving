@@ -3,10 +3,10 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.kafka
 import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
 import no.nav.helse.februar
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode
-import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
@@ -23,7 +23,7 @@ import java.util.stream.Stream
 
 internal class OpptjeningsvurderingResultatRiverTest {
     private val transaksjon = InMemoryTransaksjonProvider()
-    private val repository = transaksjon.vilkårsvurderinger
+    private val repository = transaksjon.kravvurderinger
     private val rapid =
         TestRapid().apply {
             OpptjeningsvurderingResultatRiver(
@@ -37,10 +37,9 @@ internal class OpptjeningsvurderingResultatRiverTest {
             )
         }
 
-    // Riveren skal svare med ok=true når vurderingen er oppfylt
     @Test
     fun `oppfylt vurdering gir ok = true`() {
-        val vurdering = manuellVurdering(kodeverkkode = Kodeverkkode.OPPTJENING_MINST_4_UKER)
+        val vurdering = manuellVurdering(utfall = Utfall.Oppfylt)
 
         rapid.sendTestMessage(opptjeningsvurderingResultatBehov(vurdering.id.value))
 
@@ -55,10 +54,9 @@ internal class OpptjeningsvurderingResultatRiverTest {
         )
     }
 
-    // Riveren skal svare med ok=false når vurderingen ikke er oppfylt
     @Test
     fun `ikke-oppfylt vurdering gir ok = false`() {
-        val vurdering = manuellVurdering(kodeverkkode = Kodeverkkode.IKKE_OPPTJENING_ARBEID_ELLER_YTELSE)
+        val vurdering = manuellVurdering(utfall = Utfall.IkkeOppfylt)
 
         rapid.sendTestMessage(opptjeningsvurderingResultatBehov(vurdering.id.value))
 
@@ -73,12 +71,11 @@ internal class OpptjeningsvurderingResultatRiverTest {
         )
     }
 
-    // Alle kodeverkkoder med Utfall.Oppfylt skal gi ok=true
     @ParameterizedTest
-    @MethodSource("oppfylteKodeverkkoder")
-    fun `alle oppfylte kodeverkkoder gir ok = true`(kodeverkkode: Kodeverkkode) {
+    @MethodSource("opptjeningsVilkårskoder")
+    fun `oppfylt uansett avgjørende vilkårskode gir ok = true`(vilkårskode: Vilkårskode) {
         rapid.reset()
-        val vurdering = manuellVurdering(kodeverkkode = kodeverkkode)
+        val vurdering = manuellVurdering(vilkårskode = vilkårskode, utfall = Utfall.Oppfylt)
 
         rapid.sendTestMessage(opptjeningsvurderingResultatBehov(vurdering.id.value))
 
@@ -90,16 +87,15 @@ internal class OpptjeningsvurderingResultatRiverTest {
                 .path("ok")
                 .asBoolean(),
         ) {
-            "$kodeverkkode (${kodeverkkode.utfall}) skal gi ok=true"
+            "$vilkårskode oppfylt skal gi ok=true"
         }
     }
 
-    // Alle kodeverkkoder med Utfall.IkkeOppfylt skal gi ok=false
     @ParameterizedTest
-    @MethodSource("ikkeOppfylteKodeverkkoder")
-    fun `alle ikke-oppfylte kodeverkkoder gir ok = false`(kodeverkkode: Kodeverkkode) {
+    @MethodSource("opptjeningsVilkårskoder")
+    fun `ikke oppfylt uansett avgjørende vilkårskode gir ok = false`(vilkårskode: Vilkårskode) {
         rapid.reset()
-        val vurdering = manuellVurdering(kodeverkkode = kodeverkkode)
+        val vurdering = manuellVurdering(vilkårskode = vilkårskode, utfall = Utfall.IkkeOppfylt)
 
         rapid.sendTestMessage(opptjeningsvurderingResultatBehov(vurdering.id.value))
 
@@ -111,11 +107,10 @@ internal class OpptjeningsvurderingResultatRiverTest {
                 .path("ok")
                 .asBoolean(),
         ) {
-            "$kodeverkkode (${kodeverkkode.utfall}) skal gi ok=false"
+            "$vilkårskode ikke oppfylt skal gi ok=false"
         }
     }
 
-    // Behov uten opptjeningsvurderingId skal ikke plukkes opp av riveren
     @Test
     fun `behov uten opptjeningsvurderingId ignoreres`() {
         @Language("JSON")
@@ -132,7 +127,6 @@ internal class OpptjeningsvurderingResultatRiverTest {
         assertEquals(0, rapid.inspektør.size)
     }
 
-    // Behov av annen type skal ikke plukkes opp
     @Test
     fun `annet behov ignoreres`() {
         @Language("JSON")
@@ -151,7 +145,6 @@ internal class OpptjeningsvurderingResultatRiverTest {
         assertEquals(0, rapid.inspektør.size)
     }
 
-    // Meldinger som ikke er behov skal ikke behandles
     @Test
     fun `melding med feil event_name ignoreres`() {
         @Language("JSON")
@@ -170,28 +163,32 @@ internal class OpptjeningsvurderingResultatRiverTest {
         assertEquals(0, rapid.inspektør.size)
     }
 
-    // Manuell vurdering er samme resultattype som automatisk – bare med et annet opphav
-    private fun manuellVurdering(kodeverkkode: Kodeverkkode): Vilkårsvurdering =
-        Vilkårsvurdering
-            .avSaksbehandler(
-                prøvingId = PrøvingId.ny(),
-                vilkår = Vilkår.Opptjening,
-                fødselsnummer = FØDSELSNUMMER,
-                skjæringstidspunkt = 1.februar,
-                kodeverkkode = kodeverkkode,
+    private fun manuellVurdering(
+        vilkårskode: Vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+        utfall: Utfall,
+    ): Kravvurdering.Vurdert {
+        val ledd =
+            Vilkårsvurdering.avSaksbehandler(
+                vilkårskode = vilkårskode,
+                utfall = utfall,
                 saksbehandlerIdent = "Z999999",
                 fritekstbegrunnelse = "",
                 vurdertTidspunkt = Instant.parse("2018-02-01T09:00:00Z"),
+            )
+        return Kravvurdering
+            .avSaksbehandler(
+                krav = Krav.Opptjening,
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                sti = listOf(ledd),
             ).also { repository.lagre(it) }
+    }
 
     private companion object {
         const val FØDSELSNUMMER = "12029240045"
 
         @JvmStatic
-        fun oppfylteKodeverkkoder(): Stream<Kodeverkkode> = Kodeverkkode.entries.filter { it.vilkår == Vilkår.Opptjening && it.utfall == Utfall.Oppfylt }.stream()
-
-        @JvmStatic
-        fun ikkeOppfylteKodeverkkoder(): Stream<Kodeverkkode> = Kodeverkkode.entries.filter { it.vilkår == Vilkår.Opptjening && it.utfall == Utfall.IkkeOppfylt }.stream()
+        fun opptjeningsVilkårskoder(): Stream<Vilkårskode> = Vilkårskode.entries.filter { it.krav == Krav.Opptjening }.stream()
 
         @Language("JSON")
         fun opptjeningsvurderingResultatBehov(opptjeningsvurderingId: UUID) =
