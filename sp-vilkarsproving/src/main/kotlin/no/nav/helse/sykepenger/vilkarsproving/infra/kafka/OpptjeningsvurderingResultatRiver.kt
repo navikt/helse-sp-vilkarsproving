@@ -55,34 +55,41 @@ internal open class OpptjeningsvurderingResultatRiver(
         val fødselsnummer = packet["fødselsnummer"].asString()
         sikkerLogg.info("Mottatt behov for $behovnavn for $idFelt $vurderingId")
 
-        val vilkårsvurdering =
-            transaksjonProvider.transaksjon {
-                it.vilkårsvurderinger.finn(vilkår, vurderingId)
-            }
+        try {
+            val vilkårsvurdering =
+                transaksjonProvider.transaksjon {
+                    it.vilkårsvurderinger.finn(vilkår, vurderingId)
+                }
 
-        val utfall =
-            vilkårsvurdering?.utfall ?: spleisClient
-                .hentOpptjeningsvurderinger(fødselsnummer = fødselsnummer)
-                .find { it.opptjeningsvurderingId == vurderingId }
-                ?.let { vurdering ->
-                    when (vurdering) {
-                        is Opptjeningsvurdering.SpleisArbeidstaker -> when (vurdering.oppfylt) {
-                            true -> Utfall.Oppfylt
-                            false -> Utfall.IkkeOppfylt
+            val utfall =
+                vilkårsvurdering?.utfall ?: spleisClient
+                    .hentOpptjeningsvurderinger(fødselsnummer = fødselsnummer)
+                    .find { it.opptjeningsvurderingId == vurderingId }
+                    ?.let { vurdering ->
+                        when (vurdering) {
+                            is Opptjeningsvurdering.SpleisArbeidstaker ->
+                                when (vurdering.oppfylt) {
+                                    true -> Utfall.Oppfylt
+                                    false -> Utfall.IkkeOppfylt
+                                }
+
+                            is Opptjeningsvurdering.SpleisSelvstendig,
+                            is Opptjeningsvurdering.InfotrygdArbeidstaker,
+                            -> Utfall.Oppfylt
                         }
-                        is Opptjeningsvurdering.SpleisSelvstendig,
-                        is Opptjeningsvurdering.InfotrygdArbeidstaker -> Utfall.Oppfylt
-                    }
-                }?: error("Fant ikke vurdering med id $vurderingId")
+                    } ?: error("Fant ikke vurdering med id $vurderingId")
 
-        val ok =
-            when (utfall) {
-                Utfall.Oppfylt -> true
-                Utfall.IkkeOppfylt -> false
-            }
+            val ok =
+                when (utfall) {
+                    Utfall.Oppfylt -> true
+                    Utfall.IkkeOppfylt -> false
+                }
 
-        packet["@løsning"] = mapOf(behovnavn to mapOf("ok" to ok))
-        sikkerLogg.info("Publiserer løsning for $behovnavn for $idFelt $vurderingId. Løsning:\n\t${packet.toJson()}")
-        context.publish(packet.toJson())
+            packet["@løsning"] = mapOf(behovnavn to mapOf("ok" to ok))
+            sikkerLogg.info("Publiserer løsning for $behovnavn for $idFelt $vurderingId. Løsning:\n\t${packet.toJson()}")
+            context.publish(packet.toJson())
+        } catch (ex: Exception) {
+            sikkerLogg.error("Feil under håndtering av behov $behovnavn for $idFelt $vurderingId", ex)
+        }
     }
 }
