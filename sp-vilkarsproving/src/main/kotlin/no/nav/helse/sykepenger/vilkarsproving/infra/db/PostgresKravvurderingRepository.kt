@@ -24,7 +24,7 @@ internal class PostgresKravvurderingRepository(
     override fun lagre(vurdering: Kravvurdering) {
         try {
             when (vurdering) {
-                is Kravvurdering.VurdertISpeil -> lagreVurdert(vurdering)
+                is Kravvurdering.VurdertISpeil -> lagreVurdertISpeil(vurdering)
                 is Kravvurdering.OverførtFraInfotrygd -> lagreInfotrygd(vurdering)
             }
         } catch (e: PSQLException) {
@@ -33,7 +33,7 @@ internal class PostgresKravvurderingRepository(
         }
     }
 
-    private fun lagreVurdert(vurdering: Kravvurdering.VurdertISpeil) {
+    private fun lagreVurdertISpeil(vurdering: Kravvurdering.VurdertISpeil) {
         @Language("PostgreSQL")
         val kravvurderingSql = """
             insert into kravvurdering (id, krav, fødselsnummer, skjæringstidspunkt, kravkilde, utfall)
