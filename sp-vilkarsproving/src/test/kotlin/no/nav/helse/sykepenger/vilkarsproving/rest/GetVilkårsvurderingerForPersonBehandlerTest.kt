@@ -4,6 +4,7 @@ import com.github.navikt.tbd_libs.populasjonstilgang.api.Populasjonstilgangskont
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangSomMangler
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
 import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCallPipeline
@@ -27,12 +28,16 @@ import no.nav.helse.speil.backend.app.testfixtures.InMemoryPersonPseudoIdProvide
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -184,5 +189,94 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=${andresVurdering.id.value}")
 
             assertEquals(HttpStatusCode.NotFound, response.status)
+        }
+
+    /**
+     * Formen på json-en er selve kontrakten mot Speil, og den produseres av Jackson — ikke av
+     * kotlinx-annotasjonene, som kun styrer openapi-spec-en. Testen går derfor helt ut på wire, og
+     * ville ikke fanget en manglende `@JsonTypeInfo` om den bare sammenlignet kotlin-objekter.
+     */
+    @Test
+    fun `responsen har diskriminator paa kilde og grunnlag`() =
+        testApplication {
+            val transaksjonProvider = InMemoryTransaksjonProvider()
+            val vurdering =
+                Vilkårsvurdering.automatisk(
+                    prøvingId = PrøvingId.ny(),
+                    fødselsnummer = identitetsnummer.value,
+                    skjæringstidspunkt = LocalDate.of(2024, 2, 1),
+                    grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,
+                    vurdertTidspunkt = Instant.parse("2024-02-01T12:00:00Z"),
+                )
+            transaksjonProvider.vilkårsvurderinger.lagre(vurdering)
+
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+
+            application {
+                settOppTestapp(principal(), transaksjonProvider, personPseudoIdProvider = pseudoIdProvider)
+            }
+
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=${vurdering.id.value}")
+            assertEquals(HttpStatusCode.OK, response.status)
+
+            val json = jacksonObjectMapper().readTree(response.bodyAsText())
+
+            assertEquals("2024-02-01", json["skjæringstidspunkt"].asString())
+
+            val krav = json["krav"].single()
+            assertEquals("OPPTJENING", krav["kravkode"].asString())
+            assertEquals("OPPFYLT", krav["utfall"].asString())
+            assertEquals("VURDERT_HOS_OSS", krav["kravkilde"].asString())
+            assertEquals("OPPTJENING_ARBEID_MINST_4_UKER", krav["avgjørendeVilkårskode"].asString())
+
+            val vilkårsvurdering = krav["vurderinger"].single()
+            assertEquals("OPPTJENING_ARBEID_MINST_4_UKER", vilkårsvurdering["vilkårskode"].asString())
+            assertEquals("OPPFYLT", vilkårsvurdering["utfall"].asString())
+
+            val kilde = vilkårsvurdering["kilde"]
+            assertEquals("AUTOMATISK", kilde["kildetype"].asString()) { "Uten diskriminator kan Speil ikke se hvilken kilde den fikk: $kilde" }
+            assertEquals("SELVSTENDIG_NAERINGSDRIVENDE", kilde["grunnlag"]["grunnlagstype"].asString())
+
+            // Diskriminatoren er både en deklarert property og en Jackson-annotasjon. Skrives den to
+            // ganger, er json-en i praksis ødelagt for strengt validerende konsumenter.
+            assertEquals(1, Regex("\"kildetype\"").findAll(response.bodyAsText()).count())
+        }
+
+    /**
+     * Infotrygd-kravet har verken sti eller avgjørende vilkår. Feltene skal da være helt fraværende
+     * i json-en, ikke stå der som null eller tom liste — en konsument skal ikke måtte gjette om en
+     * tom sti betyr «overtatt fra Infotrygd» eller «noe er galt».
+     */
+    @Test
+    fun `infotrygdkrav sendes uten sti og uten avgjoerende vilkaar`() =
+        testApplication {
+            val transaksjonProvider = InMemoryTransaksjonProvider()
+            val vurdering =
+                Vilkårsvurdering.fraInfotrygd(
+                    vilkår = Vilkår.Opptjening,
+                    fødselsnummer = identitetsnummer.value,
+                    skjæringstidspunkt = LocalDate.of(2024, 2, 1),
+                    kodeverkkode = Kodeverkkode.OPPTJENING_ARBEID_ELLER_YTELSE,
+                    vurdertTidspunkt = Instant.parse("2024-02-01T12:00:00Z"),
+                )
+            transaksjonProvider.vilkårsvurderinger.lagre(vurdering)
+
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+
+            application {
+                settOppTestapp(principal(), transaksjonProvider, personPseudoIdProvider = pseudoIdProvider)
+            }
+
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=${vurdering.id.value}")
+            assertEquals(HttpStatusCode.OK, response.status)
+
+            val krav = jacksonObjectMapper().readTree(response.bodyAsText())["krav"].single()
+
+            assertEquals("OVERFOERT_FRA_INFOTRYGD", krav["kravkilde"].asString())
+            assertEquals("OPPFYLT", krav["utfall"].asString())
+            assertFalse(krav.has("vurderinger")) { "Infotrygd-kravet skal ikke ha en sti: $krav" }
+            assertFalse(krav.has("avgjørendeVilkårskode")) { "Vi kjenner ikke det avgjørende vilkåret: $krav" }
         }
 }

@@ -21,6 +21,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerF
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import tools.jackson.module.kotlin.jacksonObjectMapper
 
 class VilkårsvurderingerForPersonOpenApiTest {
     private fun Application.settOppTestapp() {
@@ -69,5 +70,37 @@ class VilkårsvurderingerForPersonOpenApiTest {
             assertTrue(spec.contains("/api/personer/{personId}/vilkarsvurderinger")) { "Forventet at ruten var dokumentert: $spec" }
             assertTrue(spec.contains("opptjeningsvurderingId")) { "Forventet query-parameteret opptjeningsvurderingId i spec-en: $spec" }
             assertTrue(spec.contains("\"format\" : \"uuid\"")) { "Forventet at UUID-parametrene var typet med format uuid: $spec" }
+        }
+
+    /**
+     * Kilde- og grunnlagsvariantene er unioner, og en union uten diskriminator er ubrukelig for en
+     * konsument som genererer typer fra spec-en: variantene ville ikke vært til å skille fra
+     * hverandre.
+     *
+     * Diskriminatoren settes av Jackson, mens spec-en genereres fra kotlinx-annotasjonene. De to kan
+     * altså komme i utakt uten at noe annet ryker, og denne testen er det eneste som fanger det.
+     */
+    @Test
+    fun `openapi-specen dokumenterer diskriminatoren paa alle unionsvarianter`() =
+        testApplication {
+            application { settOppTestapp() }
+            startApplication()
+
+            val schemas =
+                jacksonObjectMapper()
+                    .readTree(client.get("/api/openapi.json").bodyAsText())["components"]["schemas"]
+
+            listOf(
+                "ApiKravvurdering.Vurdert" to "kravkilde",
+                "ApiKravvurdering.OverførtFraInfotrygd" to "kravkilde",
+                "ApiVurderingskilde.Automatisk" to "kildetype",
+                "ApiVurderingskilde.Saksbehandler" to "kildetype",
+                "ApiVurderingsgrunnlag.Arbeidsforhold" to "grunnlagstype",
+                "ApiVurderingsgrunnlag.SelvstendigNæringsdrivende" to "grunnlagstype",
+            ).forEach { (skjema, diskriminator) ->
+                assertTrue(schemas[skjema]?.get("properties")?.has(diskriminator) == true) {
+                    "Forventet diskriminatoren $diskriminator i skjemaet $skjema: ${schemas[skjema]}"
+                }
+            }
         }
 }
