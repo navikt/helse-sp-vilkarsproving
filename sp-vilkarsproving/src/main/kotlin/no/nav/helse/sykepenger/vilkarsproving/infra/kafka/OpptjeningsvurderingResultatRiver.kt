@@ -13,8 +13,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
 import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.OpptjeningsvurderingKildeDto
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.OpptjeningsvurderingTypeDto
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
 
 /**
  * Svarer på spørsmål om utfallet av en ferdig vurdering.
@@ -63,25 +62,18 @@ internal open class OpptjeningsvurderingResultatRiver(
 
         val utfall =
             vilkårsvurdering?.utfall ?: spleisClient
-                .hentOpptjeningsvurderinger(
-                    fødselsnummer = fødselsnummer,
-                ).find { it.opptjeningsvurderingId == vurderingId }
+                .hentOpptjeningsvurderinger(fødselsnummer = fødselsnummer)
+                .find { it.opptjeningsvurderingId == vurderingId }
                 ?.let { vurdering ->
-                    when (vurdering.type) {
-                        OpptjeningsvurderingTypeDto.ARBEIDSTAKER -> {
-                            when (vurdering.kilde) {
-                                OpptjeningsvurderingKildeDto.SPLEIS -> vurdering.oppfylt!!
-                                OpptjeningsvurderingKildeDto.INFOTRYGD -> true
-                            }
+                    when (vurdering) {
+                        is Opptjeningsvurdering.SpleisArbeidstaker -> when (vurdering.oppfylt) {
+                            true -> Utfall.Oppfylt
+                            false -> Utfall.IkkeOppfylt
                         }
-                        OpptjeningsvurderingTypeDto.SELVSTENDIG -> true
+                        is Opptjeningsvurdering.SpleisSelvstendig,
+                        is Opptjeningsvurdering.InfotrygdArbeidstaker -> Utfall.Oppfylt
                     }
-                }?.let { ok ->
-                    when (ok) {
-                        true -> Utfall.Oppfylt
-                        false -> Utfall.IkkeOppfylt
-                    }
-                } ?: error("Fant ikke vurdering med id $vurderingId")
+                }?: error("Fant ikke vurdering med id $vurderingId")
 
         val ok =
             when (utfall) {
