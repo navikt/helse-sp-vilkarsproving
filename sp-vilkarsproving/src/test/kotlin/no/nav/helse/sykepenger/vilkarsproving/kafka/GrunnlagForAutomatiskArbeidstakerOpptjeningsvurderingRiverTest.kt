@@ -197,10 +197,9 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
 
     private fun påbegyntPrøving() = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving.also { prøvinger.lagre(it) }
 
-    private fun vurdert() = vurderinger.alleVurderinger.single() as Kravvurdering.Vurdert
+    private fun vurdert() = vurderinger.alleVurderinger.single() as Kravvurdering.VurdertISpeil
 
-    private fun arbeidsforholdPåVurdering() =
-        ((vurdert().sti.single().kilde as Vurderingskilde.Automatisk).grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold
+    private fun arbeidsforholdPåVurdering() = ((vurdert().sti.single().kilde as Vurderingskilde.Automatisk).grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold
 
     private companion object {
         const val FØDSELSNUMMER = "12029240045"

@@ -24,7 +24,7 @@ internal class PostgresKravvurderingRepository(
     override fun lagre(vurdering: Kravvurdering) {
         try {
             when (vurdering) {
-                is Kravvurdering.Vurdert -> lagreVurdert(vurdering)
+                is Kravvurdering.VurdertISpeil -> lagreVurdert(vurdering)
                 is Kravvurdering.OverførtFraInfotrygd -> lagreInfotrygd(vurdering)
             }
         } catch (e: PSQLException) {
@@ -33,7 +33,7 @@ internal class PostgresKravvurderingRepository(
         }
     }
 
-    private fun lagreVurdert(vurdering: Kravvurdering.Vurdert) {
+    private fun lagreVurdert(vurdering: Kravvurdering.VurdertISpeil) {
         @Language("PostgreSQL")
         val kravvurderingSql = """
             insert into kravvurdering (id, krav, fødselsnummer, skjæringstidspunkt, kravkilde, utfall)
@@ -107,16 +107,17 @@ internal class PostgresKravvurderingRepository(
             order by løpenummer desc
             limit 1
         """
-        return session.run(
-            queryOf(
-                sql,
-                mapOf(
-                    "krav" to krav.name,
-                    "fodselsnummer" to fødselsnummer,
-                    "skjaeringstidspunkt" to skjæringstidspunkt,
-                ),
-            ).map(::tilKravvurderingRad).asSingle,
-        )?.let(::hydrer)
+        return session
+            .run(
+                queryOf(
+                    sql,
+                    mapOf(
+                        "krav" to krav.name,
+                        "fodselsnummer" to fødselsnummer,
+                        "skjaeringstidspunkt" to skjæringstidspunkt,
+                    ),
+                ).map(::tilKravvurderingRad).asSingle,
+            )?.let(::hydrer)
     }
 
     override fun finn(
@@ -128,9 +129,10 @@ internal class PostgresKravvurderingRepository(
             $SELECT_KRAVVURDERING
             where krav = :krav and id = :id
         """
-        return session.run(
-            queryOf(sql, mapOf("krav" to krav.name, "id" to kravvurderingId.value)).map(::tilKravvurderingRad).asSingle,
-        )?.let(::hydrer)
+        return session
+            .run(
+                queryOf(sql, mapOf("krav" to krav.name, "id" to kravvurderingId.value)).map(::tilKravvurderingRad).asSingle,
+            )?.let(::hydrer)
     }
 
     override fun finnAlle(fødselsnummer: String): List<Kravvurdering> {
@@ -140,9 +142,10 @@ internal class PostgresKravvurderingRepository(
             where fødselsnummer = :fodselsnummer
             order by løpenummer
         """
-        return session.run(
-            queryOf(sql, mapOf("fodselsnummer" to fødselsnummer)).map(::tilKravvurderingRad).asList,
-        ).map(::hydrer)
+        return session
+            .run(
+                queryOf(sql, mapOf("fodselsnummer" to fødselsnummer)).map(::tilKravvurderingRad).asList,
+            ).map(::hydrer)
     }
 
     private fun hydrer(rad: KravvurderingRad): Kravvurdering =

@@ -80,7 +80,7 @@ internal class KravprøvingService(
 
     sealed interface GrunnlagResultat {
         data class NyVurderingForetatt(
-            val vurdering: Kravvurdering.Vurdert,
+            val vurdering: Kravvurdering.VurdertISpeil,
         ) : GrunnlagResultat
 
         data object AlleredeVurdert : GrunnlagResultat

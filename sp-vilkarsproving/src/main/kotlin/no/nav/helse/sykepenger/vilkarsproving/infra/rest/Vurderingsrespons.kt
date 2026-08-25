@@ -29,7 +29,7 @@ private fun Kravvurdering.tilApi(): ApiKravvurdering =
                 rettTilSykepenger = utfall.tilApi() == ApiUtfall.OPPFYLT,
             )
 
-        is Kravvurdering.Vurdert ->
+        is Kravvurdering.VurdertISpeil ->
             ApiKravvurdering.VurdertISpeil(
                 id = id.value,
                 kravkode = krav.tilApi(),

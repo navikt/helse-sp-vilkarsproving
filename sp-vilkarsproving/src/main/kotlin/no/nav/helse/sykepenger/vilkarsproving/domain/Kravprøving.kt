@@ -4,7 +4,7 @@ import java.time.Instant
 import java.time.LocalDate
 
 /**
- * Prosessen som leder fram til en [Kravvurdering.Vurdert].
+ * Prosessen som leder fram til en [Kravvurdering.VurdertISpeil].
  *
  * Prøvingen eier livssyklusen — hva vi venter på, hvor lenge, og om vi er ferdige — mens selve
  * vurderingen er resultatet den produserer. En prøving i denne appen *er* en automatisk prøving: det
@@ -50,7 +50,7 @@ internal class Kravprøving private constructor(
      * Tar imot grunnlaget prøvingen venter på og produserer kravvurderingen.
      * Vurderingen og den oppdaterte prøvingen må lagres i samme transaksjon.
      */
-    fun motta(grunnlag: Vilkårsgrunnlag): Kravvurdering.Vurdert {
+    fun motta(grunnlag: Vilkårsgrunnlag): Kravvurdering.VurdertISpeil {
         val venter =
             tilstand as? Tilstand.VenterPåGrunnlag
                 ?: error("Prøving $id venter ikke på grunnlag, men er i tilstand $tilstand")
@@ -60,7 +60,7 @@ internal class Kravprøving private constructor(
         return fullfør(grunnlag)
     }
 
-    private fun fullfør(grunnlag: Vilkårsgrunnlag): Kravvurdering.Vurdert {
+    private fun fullfør(grunnlag: Vilkårsgrunnlag): Kravvurdering.VurdertISpeil {
         check(grunnlag.krav == krav) { "Prøving $id gjelder $krav, men fikk grunnlag for ${grunnlag.krav}" }
         val vurdering =
             Kravvurdering.automatisk(
@@ -77,7 +77,7 @@ internal class Kravprøving private constructor(
     /** En påbegynt prøving. [vurdering] er satt dersom prøvingen kunne fullføres uten å innhente noe. */
     data class Påbegynt(
         val prøving: Kravprøving,
-        val vurdering: Kravvurdering.Vurdert?,
+        val vurdering: Kravvurdering.VurdertISpeil?,
     )
 
     companion object {

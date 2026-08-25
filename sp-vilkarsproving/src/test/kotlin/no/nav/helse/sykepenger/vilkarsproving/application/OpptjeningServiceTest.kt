@@ -58,7 +58,7 @@ internal class OpptjeningServiceTest {
         assertEquals(FØDSELSNUMMER, harVurdering.fødselsnummer)
         assertEquals(1.februar, harVurdering.skjæringstidspunkt)
 
-        val vurdering = vurderinger.finn(Krav.Opptjening, harVurdering.kravvurderingId) as Kravvurdering.Vurdert
+        val vurdering = vurderinger.finn(Krav.Opptjening, harVurdering.kravvurderingId) as Kravvurdering.VurdertISpeil
         val ledd = vurdering.sti.single()
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
         assertEquals(Utfall.Oppfylt, ledd.utfall)
@@ -144,7 +144,7 @@ internal class OpptjeningServiceTest {
         val prøving = prøvinger.allePrøvinger.single()
         assertEquals(Kravprøving.Tilstand.Fullført(nyVurdering.kravvurderingId), prøving.tilstand)
 
-        val vurdering = vurderinger.finn(Krav.Opptjening, nyVurdering.kravvurderingId) as Kravvurdering.Vurdert
+        val vurdering = vurderinger.finn(Krav.Opptjening, nyVurdering.kravvurderingId) as Kravvurdering.VurdertISpeil
         val ledd = vurdering.sti.single()
         val kilde = ledd.kilde as Vurderingskilde.Automatisk
         assertEquals(prøving.id, kilde.prøvingId)
@@ -163,7 +163,7 @@ internal class OpptjeningServiceTest {
             skjæringstidspunkt = 1.februar,
         )
 
-        val ledd = (vurderinger.alleVurderinger.single() as Kravvurdering.Vurdert).sti.single()
+        val ledd = (vurderinger.alleVurderinger.single() as Kravvurdering.VurdertISpeil).sti.single()
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
         assertEquals(Utfall.IkkeOppfylt, ledd.utfall)
     }
@@ -181,7 +181,7 @@ internal class OpptjeningServiceTest {
 
         assertInstanceOf(BehandleGrunnlagResultat.NyVurderingForetatt::class.java, resultat)
         assertTrue(prøvinger.allePrøvinger.single().erAvsluttet)
-        val ledd = (vurderinger.alleVurderinger.single() as Kravvurdering.Vurdert).sti.single()
+        val ledd = (vurderinger.alleVurderinger.single() as Kravvurdering.VurdertISpeil).sti.single()
         assertEquals(Utfall.IkkeOppfylt, ledd.utfall)
     }
 

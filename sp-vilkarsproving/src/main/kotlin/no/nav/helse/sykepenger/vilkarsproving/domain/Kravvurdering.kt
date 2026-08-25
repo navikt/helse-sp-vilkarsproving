@@ -10,7 +10,7 @@ internal sealed interface Kravvurdering {
     val skjæringstidspunkt: LocalDate
     val utfall: Utfall
 
-    data class Vurdert(
+    data class VurdertISpeil(
         override val id: KravvurderingId,
         override val krav: Krav,
         override val fødselsnummer: String,
@@ -47,14 +47,14 @@ internal sealed interface Kravvurdering {
             skjæringstidspunkt: LocalDate,
             grunnlag: Vilkårsgrunnlag,
             vurdertTidspunkt: Instant,
-        ): Vurdert {
+        ): VurdertISpeil {
             val regel = grunnlag.krav.regel
             val resultat = regel.vurder(skjæringstidspunkt, grunnlag)
             val sti =
                 resultat.sti.map { ledd ->
                     Vilkårsvurdering.automatisk(prøvingId, ledd, grunnlag, regel.versjon, vurdertTidspunkt)
                 }
-            return Vurdert(id, grunnlag.krav, fødselsnummer, skjæringstidspunkt, sti)
+            return VurdertISpeil(id, grunnlag.krav, fødselsnummer, skjæringstidspunkt, sti)
         }
 
         fun avSaksbehandler(
@@ -63,7 +63,7 @@ internal sealed interface Kravvurdering {
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
             sti: List<Vilkårsvurdering>,
-        ) = Vurdert(id, krav, fødselsnummer, skjæringstidspunkt, sti)
+        ) = VurdertISpeil(id, krav, fødselsnummer, skjæringstidspunkt, sti)
 
         fun fraInfotrygd(
             id: KravvurderingId = KravvurderingId.ny(),
@@ -79,7 +79,7 @@ internal sealed interface Kravvurdering {
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
             sti: List<Vilkårsvurdering>,
-        ) = Vurdert(id, krav, fødselsnummer, skjæringstidspunkt, sti)
+        ) = VurdertISpeil(id, krav, fødselsnummer, skjæringstidspunkt, sti)
 
         fun infotrygdFraLagring(
             id: KravvurderingId,

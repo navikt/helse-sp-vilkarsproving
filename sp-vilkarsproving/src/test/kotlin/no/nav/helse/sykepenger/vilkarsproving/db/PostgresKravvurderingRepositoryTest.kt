@@ -36,7 +36,7 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
             )
         val vurdering = lagreVurdering(grunnlag)
 
-        val lagret = transaksjon { it.kravvurderinger.finn(Krav.Opptjening, vurdering.id) } as Kravvurdering.Vurdert
+        val lagret = transaksjon { it.kravvurderinger.finn(Krav.Opptjening, vurdering.id) } as Kravvurdering.VurdertISpeil
 
         assertEquals(vurdering.id, lagret.id)
         assertEquals(Krav.Opptjening, lagret.krav)
@@ -49,7 +49,10 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
         val kilde = ledd.kilde as Vurderingskilde.Automatisk
         assertEquals(grunnlag, kilde.grunnlag)
         assertEquals(
-            vurdering.sti.single().vurdertTidspunkt!!.truncatedTo(ChronoUnit.MILLIS),
+            vurdering.sti
+                .single()
+                .vurdertTidspunkt!!
+                .truncatedTo(ChronoUnit.MILLIS),
             ledd.vurdertTidspunkt!!.truncatedTo(ChronoUnit.MILLIS),
         )
     }
@@ -58,7 +61,7 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
     fun `vurdering av selvstendig næringsdrivende lagres og hentes tilbake`() {
         val vurdering = lagreVurdering(Opptjeningsgrunnlag.SelvstendigNæringsdrivende)
 
-        val lagret = transaksjon { it.kravvurderinger.finn(Krav.Opptjening, vurdering.id) } as Kravvurdering.Vurdert
+        val lagret = transaksjon { it.kravvurderinger.finn(Krav.Opptjening, vurdering.id) } as Kravvurdering.VurdertISpeil
         val kilde = lagret.sti.single().kilde as Vurderingskilde.Automatisk
 
         assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, kilde.grunnlag)
@@ -84,7 +87,7 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
             )
         transaksjon { it.kravvurderinger.lagre(vurdering) }
 
-        val lagret = transaksjon { it.kravvurderinger.finn(Krav.Opptjening, vurdering.id) } as Kravvurdering.Vurdert
+        val lagret = transaksjon { it.kravvurderinger.finn(Krav.Opptjening, vurdering.id) } as Kravvurdering.VurdertISpeil
         val kilde = lagret.sti.single().kilde
 
         assertInstanceOf(Vurderingskilde.Saksbehandler::class.java, kilde)
@@ -168,7 +171,7 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
     private fun lagreVurdering(
         grunnlag: Vilkårsgrunnlag,
         skjæringstidspunkt: LocalDate = 1.februar,
-    ): Kravvurdering.Vurdert =
+    ): Kravvurdering.VurdertISpeil =
         transaksjon { kontekst ->
             when (grunnlag) {
                 is Opptjeningsgrunnlag.Arbeidstaker -> {

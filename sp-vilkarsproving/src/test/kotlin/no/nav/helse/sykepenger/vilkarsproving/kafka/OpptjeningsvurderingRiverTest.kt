@@ -80,7 +80,7 @@ internal class OpptjeningsvurderingRiverTest {
                 ),
             )
 
-        val vurdering = vurderinger.finn(Krav.Opptjening, kravvurderingId) as Kravvurdering.Vurdert
+        val vurdering = vurderinger.finn(Krav.Opptjening, kravvurderingId) as Kravvurdering.VurdertISpeil
         assertEquals(OPPTJENING_ARBEID_MINST_4_UKER, vurdering.avgjørendeVilkårskode)
         assertTrue(prøvinger.allePrøvinger.single().erAvsluttet)
     }
