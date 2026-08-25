@@ -1,17 +1,16 @@
 package no.nav.helse.sykepenger.vilkarsproving.domain
 
-internal enum class Vilkår {
+internal enum class Krav {
     Opptjening,
     ;
 
-    val regel: Vilkårsregel
+    val regel: Kravregel
         get() =
             when (this) {
                 Opptjening -> Opptjeningsregel
             }
 }
 
-/** Grunnlag vi må innhente fra andre før et vilkår kan vurderes. */
 internal enum class Grunnlagsbehov {
     Arbeidsforhold,
 }

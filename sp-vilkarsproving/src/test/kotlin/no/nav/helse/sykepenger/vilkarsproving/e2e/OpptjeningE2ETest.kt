@@ -63,8 +63,8 @@ internal class OpptjeningE2ETest : DatabaseTest() {
         assertEquals(listOf("ArbeidsforholdV2"), arbeidsforholdBehov.path("@behov").toList().map { it.asString() })
 
         // Prøvingen er lagret og venter på grunnlag; ingen vurdering ennå
-        assertEquals(1, Database.antallRader("vilkarsproving"))
-        assertEquals(0, Database.antallRader("vilkarsvurdering"))
+        assertEquals(1, Database.antallRader("kravproving"))
+        assertEquals(0, Database.antallRader("kravvurdering"))
 
         // Steg 2: Aareg svarer med arbeidsforhold som gir nok opptjening (28+ dager)
         rapid.sendTestMessage(
@@ -77,8 +77,8 @@ internal class OpptjeningE2ETest : DatabaseTest() {
         assertEquals(2, rapid.inspektør.size)
 
         // Vurderingen og den fullførte prøvingen ble skrevet i samme transaksjon
-        assertEquals(1, Database.antallRader("vilkarsproving"))
-        assertEquals(1, Database.antallRader("vilkarsvurdering"))
+        assertEquals(1, Database.antallRader("kravproving"))
+        assertEquals(1, Database.antallRader("kravvurdering"))
 
         val opptjeningsvurderingLøsning = rapid.inspektør.message(1)
         assertEquals(behovId.toString(), opptjeningsvurderingLøsning.path("@id").asString())
@@ -226,7 +226,7 @@ internal class OpptjeningE2ETest : DatabaseTest() {
 
         rapid.sendTestMessage(løsning, FØDSELSNUMMER)
         assertEquals(2, rapid.inspektør.size) // Ingen ny melding
-        assertEquals(1, Database.antallRader("vilkarsvurdering"))
+        assertEquals(1, Database.antallRader("kravvurdering"))
     }
 
     // === Selvstendig næringsdrivende-flyt ===
@@ -295,7 +295,7 @@ internal class OpptjeningE2ETest : DatabaseTest() {
                 .path("id")
                 .asString(),
         ) { "Eksisterende vurdering skal gjenbrukes" }
-        assertEquals(1, Database.antallRader("vilkarsvurdering"))
+        assertEquals(1, Database.antallRader("kravvurdering"))
     }
 
     // Feiler behandlingen av en melding etter at arbeidet er gjort, skal ingenting være lagret
@@ -310,8 +310,8 @@ internal class OpptjeningE2ETest : DatabaseTest() {
             feilendeRapid.sendTestMessage(opptjeningsvurderingBehov(UUID.randomUUID(), "SelvstendigNæringsdrivende"), FØDSELSNUMMER)
         }
 
-        assertEquals(0, Database.antallRader("vilkarsproving"))
-        assertEquals(0, Database.antallRader("vilkarsvurdering"))
+        assertEquals(0, Database.antallRader("kravproving"))
+        assertEquals(0, Database.antallRader("kravvurdering"))
     }
 
     /** Gjør alt arbeidet i en ekte transaksjon, men krasjer før commit. */

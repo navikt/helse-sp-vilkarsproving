@@ -5,7 +5,7 @@ import no.nav.helse.februar
 import no.nav.helse.hendelser.somPeriode
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
-import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingResultatRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
@@ -33,7 +33,7 @@ class OpptjeningsvurderingResultatRiverCallthroughTest {
                             FØDSELSNUMMER ->
                                 listOf(
                                     Opptjeningsvurdering.SpleisArbeidstaker(
-                                        opptjeningsvurderingId = VurderingId(vurderingIdSpleisArbeidstaker),
+                                        opptjeningsvurderingId = KravvurderingId(vurderingIdSpleisArbeidstaker),
                                         skjæringstidspunkt = 1.februar,
                                         oppfylt = true,
                                         antallDager = 31,
@@ -41,7 +41,7 @@ class OpptjeningsvurderingResultatRiverCallthroughTest {
                                         arbeidsforhold = listOf(),
                                     ),
                                     Opptjeningsvurdering.SpleisArbeidstaker(
-                                        opptjeningsvurderingId = VurderingId(vurderingIdSpleisArbeidstakerIkkeOppfylt),
+                                        opptjeningsvurderingId = KravvurderingId(vurderingIdSpleisArbeidstakerIkkeOppfylt),
                                         skjæringstidspunkt = 1.februar,
                                         oppfylt = false,
                                         antallDager = 1,
@@ -49,11 +49,11 @@ class OpptjeningsvurderingResultatRiverCallthroughTest {
                                         arbeidsforhold = listOf(),
                                     ),
                                     Opptjeningsvurdering.SpleisSelvstendig(
-                                        opptjeningsvurderingId = VurderingId(vurderingIdSpleisSelvstendig),
+                                        opptjeningsvurderingId = KravvurderingId(vurderingIdSpleisSelvstendig),
                                         skjæringstidspunkt = 1.februar,
                                     ),
                                     Opptjeningsvurdering.InfotrygdArbeidstaker(
-                                        opptjeningsvurderingId = VurderingId(vurderingIdSpleisInfotrygd),
+                                        opptjeningsvurderingId = KravvurderingId(vurderingIdSpleisInfotrygd),
                                         skjæringstidspunkt = 1.februar,
                                     ),
                                 )

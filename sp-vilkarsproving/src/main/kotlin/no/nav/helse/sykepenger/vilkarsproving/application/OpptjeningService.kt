@@ -1,21 +1,21 @@
 package no.nav.helse.sykepenger.vilkarsproving.application
 
-import no.nav.helse.sykepenger.vilkarsproving.application.VilkårsprøvingService.GrunnlagResultat
-import no.nav.helse.sykepenger.vilkarsproving.application.VilkårsprøvingService.PrøvingResultat
+import no.nav.helse.sykepenger.vilkarsproving.application.KravprøvingService.GrunnlagResultat
+import no.nav.helse.sykepenger.vilkarsproving.application.KravprøvingService.PrøvingResultat
 import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResultat.HarVurdering
 import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResultat.TrengerArbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
+import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
 import java.time.LocalDate
 
 /**
  * Oversetter opptjeningsspesifikke kommandoer til den generelle prøvingsflyten.
- * All orkestrering ligger i [VilkårsprøvingService]; her er kun det som er særegent for opptjening.
+ * All orkestrering ligger i [KravprøvingService]; her er kun det som er særegent for opptjening.
  *
  * Tjenesten konstrueres av en [Transaksjonskontekst] og lever like lenge som transaksjonen —
  * altså like lenge som behandlingen av én melding.
@@ -23,7 +23,7 @@ import java.time.LocalDate
 internal class OpptjeningService(
     kontekst: Transaksjonskontekst,
 ) {
-    private val vilkårsprøving = VilkårsprøvingService(kontekst)
+    private val kravprøving = KravprøvingService(kontekst)
 
     fun vurderOpptjening(
         fødselsnummer: String,
@@ -33,7 +33,7 @@ internal class OpptjeningService(
         // TODO: I fremtiden bør vi sjekke at eksisterende vurdering ble gjort på samme arbeidssituasjon,
         //  dersom situasjonen på et skjæringstidspunkt kan endre seg.
         val resultat =
-            vilkårsprøving.prøv(Vilkår.Opptjening, fødselsnummer, skjæringstidspunkt) {
+            kravprøving.prøv(Krav.Opptjening, fødselsnummer, skjæringstidspunkt) {
                 Opptjeningsprøving.start(fødselsnummer, skjæringstidspunkt, arbeidssituasjon)
             }
         return when (resultat) {
@@ -48,7 +48,7 @@ internal class OpptjeningService(
         skjæringstidspunkt: LocalDate,
     ): BehandleGrunnlagResultat {
         val resultat =
-            vilkårsprøving.behandleGrunnlag(
+            kravprøving.behandleGrunnlag(
                 fødselsnummer = fødselsnummer,
                 skjæringstidspunkt = skjæringstidspunkt,
                 grunnlag = Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold),
@@ -64,7 +64,7 @@ internal class OpptjeningService(
         data class NyVurderingForetatt(
             val fødselsnummer: String,
             val skjæringstidspunkt: LocalDate,
-            val vurderingId: VurderingId,
+            val kravvurderingId: KravvurderingId,
         ) : BehandleGrunnlagResultat()
 
         data object AlleredeVurdert : BehandleGrunnlagResultat()
@@ -73,12 +73,12 @@ internal class OpptjeningService(
     }
 
     fun finnOpptjeningsvurdering(
-        vurderingId: VurderingId,
+        kravvurderingId: KravvurderingId,
         fødselsnummer: String,
-    ): Vilkårsvurdering =
-        vilkårsprøving.finnVurdering(
-            vilkår = Vilkår.Opptjening,
-            vurderingId = vurderingId,
+    ): Kravvurdering =
+        kravprøving.finnVurdering(
+            krav = Krav.Opptjening,
+            kravvurderingId = kravvurderingId,
             fødselsnummer = fødselsnummer,
         )
 }

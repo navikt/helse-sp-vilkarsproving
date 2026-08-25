@@ -6,10 +6,12 @@ import no.nav.helse.hendelser.til
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode
+import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
+import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiKravkode
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.ApiKravvurdering
@@ -54,7 +56,6 @@ internal class VurderingsresponsTest {
         assertEquals(ApiKravkode.OPPTJENING, krav.kravkode)
         assertEquals(ApiUtfall.OPPFYLT, krav.utfall)
         assertEquals(ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, krav.avgjørendeVilkårskode)
-        // Den avgjørende koden skal alltid finnes i stien, aldri peke ut i løse lufta.
         assertEquals(listOf(krav.avgjørendeVilkårskode), krav.vurderinger.map { it.vilkårskode })
     }
 
@@ -65,21 +66,25 @@ internal class VurderingsresponsTest {
         val vurdering = Vurderingsrespons.fra(forKortOpptjening).enesteVurdering()
 
         assertEquals(ApiUtfall.IKKE_OPPFYLT, vurdering.utfall)
-        assertEquals(ApiVilkårskode.OPPTJENING_ARBEID_ELLER_YTELSE, vurdering.vilkårskode)
+        assertEquals(ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, vurdering.vilkårskode)
     }
 
     @Test
     fun `manuell vurdering har saksbehandler som kilde og ikke noe grunnlag`() {
-        val vurdering =
+        val ledd =
             Vilkårsvurdering.avSaksbehandler(
-                prøvingId = null,
-                vilkår = Vilkår.Opptjening,
-                fødselsnummer = "12345678901",
-                skjæringstidspunkt = 1.februar,
-                kodeverkkode = Kodeverkkode.OPPTJENING_ANNEN_YTELSE,
+                vilkårskode = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE,
+                utfall = Utfall.Oppfylt,
                 saksbehandlerIdent = "Z999999",
                 fritekstbegrunnelse = "Mottok foreldrepenger fram til skjæringstidspunktet.",
                 vurdertTidspunkt = vurdertTidspunkt,
+            )
+        val vurdering =
+            Kravvurdering.avSaksbehandler(
+                krav = Krav.Opptjening,
+                fødselsnummer = "12345678901",
+                skjæringstidspunkt = 1.februar,
+                sti = listOf(ledd),
             )
 
         val api = Vurderingsrespons.fra(vurdering).enesteVurdering()
@@ -91,16 +96,20 @@ internal class VurderingsresponsTest {
 
     @Test
     fun `unntaksvilkaar er en helt vanlig vilkaarsvurdering i stien`() {
-        val vurdering =
+        val ledd =
             Vilkårsvurdering.avSaksbehandler(
-                prøvingId = null,
-                vilkår = Vilkår.Opptjening,
-                fødselsnummer = "12345678901",
-                skjæringstidspunkt = 1.februar,
-                kodeverkkode = Kodeverkkode.IKKE_OPPTJENING_AAP_FOER_FORELDREPENGER,
+                vilkårskode = Vilkårskode.OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP,
+                utfall = Utfall.IkkeOppfylt,
                 saksbehandlerIdent = "Z999999",
                 fritekstbegrunnelse = "Ingen AAP forut for foreldrepengeperioden.",
                 vurdertTidspunkt = vurdertTidspunkt,
+            )
+        val vurdering =
+            Kravvurdering.avSaksbehandler(
+                krav = Krav.Opptjening,
+                fødselsnummer = "12345678901",
+                skjæringstidspunkt = 1.februar,
+                sti = listOf(ledd),
             )
 
         val api = Vurderingsrespons.fra(vurdering).enesteVurdering()
@@ -109,20 +118,14 @@ internal class VurderingsresponsTest {
         assertEquals(ApiUtfall.IKKE_OPPFYLT, api.utfall)
     }
 
-    /**
-     * Infotrygd er kilde til et helt krav, ikke til et enkelt vilkår: vi kjenner utfallet, men
-     * verken hvilke vilkår som ble prøvd eller hvilket som avgjorde. Da skal kravet være en variant
-     * som ikke i det hele tatt har de feltene — ikke en tom sti konsumenten må tolke.
-     */
     @Test
     fun `infotrygdvurdering blir et krav uten sti`() {
         val vurdering =
-            Vilkårsvurdering.fraInfotrygd(
-                vilkår = Vilkår.Opptjening,
+            Kravvurdering.fraInfotrygd(
+                krav = Krav.Opptjening,
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
-                kodeverkkode = Kodeverkkode.OPPTJENING_ARBEID_ELLER_YTELSE,
-                vurdertTidspunkt = vurdertTidspunkt,
+                utfall = Utfall.Oppfylt,
             )
 
         val krav = Vurderingsrespons.fra(vurdering).krav.single()
@@ -135,7 +138,7 @@ internal class VurderingsresponsTest {
     @Test
     fun `selvstendig naeringsdrivende gir grunnlag uten arbeidsforhold`() {
         val vurdering =
-            Vilkårsvurdering.automatisk(
+            Kravvurdering.automatisk(
                 prøvingId = PrøvingId.ny(),
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
@@ -149,7 +152,7 @@ internal class VurderingsresponsTest {
     }
 
     private fun automatiskArbeidstakervurdering(ansettelseperiode: Periode) =
-        Vilkårsvurdering.automatisk(
+        Kravvurdering.automatisk(
             prøvingId = PrøvingId.ny(),
             fødselsnummer = "12345678901",
             skjæringstidspunkt = 1.februar,

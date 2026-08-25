@@ -12,14 +12,15 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
 import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode.IKKE_OPPTJENING_ARBEID_ELLER_YTELSE
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode.OPPTJENING_MINST_4_UKER
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opphav
+import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kravprøving
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsprøving
-import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -31,16 +32,10 @@ import java.time.LocalDate
 
 internal class OpptjeningServiceTest {
     private val transaksjon = InMemoryTransaksjonProvider()
-    private val vurderinger = transaksjon.vilkårsvurderinger
-    private val prøvinger = transaksjon.vilkårsprøvinger
+    private val vurderinger = transaksjon.kravvurderinger
+    private val prøvinger = transaksjon.kravprøvinger
     private val service = OpptjeningService(transaksjon)
 
-    // ---------------------------------------------------------------------
-    // vurderOpptjening
-    // ---------------------------------------------------------------------
-
-    // For arbeidstakere kan vi ikke vurdere noe før vi har hentet arbeidsforhold fra aareg.
-    // Vi starter en prøving som venter, men det finnes ingen vurdering ennå.
     @Test
     fun `arbeidstaker uten eksisterende vurdering starter en prøving som venter på arbeidsforhold`() {
         val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
@@ -48,15 +43,13 @@ internal class OpptjeningServiceTest {
         assertEquals(TrengerArbeidsforhold(FØDSELSNUMMER, 1.februar), resultat)
         assertEquals(0, vurderinger.antallLagringer)
 
-        val prøving = prøvinger.alleProvinger.single()
+        val prøving = prøvinger.allePrøvinger.single()
         assertEquals(FØDSELSNUMMER, prøving.fødselsnummer)
         assertEquals(1.februar, prøving.skjæringstidspunkt)
         assertFalse(prøving.erAvsluttet)
         assertEquals(Grunnlagsbehov.Arbeidsforhold, prøving.uteståendeBehov)
     }
 
-    // Selvstendig næringsdrivende har alltid oppfylt opptjening, så prøvingen fullføres
-    // uten å hente noe som helst, og gir en vurdering med en gang
     @Test
     fun `selvstendig næringsdrivende vurderes umiddelbart`() {
         val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
@@ -65,13 +58,14 @@ internal class OpptjeningServiceTest {
         assertEquals(FØDSELSNUMMER, harVurdering.fødselsnummer)
         assertEquals(1.februar, harVurdering.skjæringstidspunkt)
 
-        val vurdering = vurderinger.finn(Vilkår.Opptjening, harVurdering.vurderingId)!!
-        assertEquals(OPPTJENING_MINST_4_UKER, vurdering.kodeverkkode)
-        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (vurdering.opphav as Opphav.Automatisk).grunnlag)
-        assertTrue(prøvinger.alleProvinger.single().erAvsluttet)
+        val vurdering = vurderinger.finn(Krav.Opptjening, harVurdering.kravvurderingId) as Kravvurdering.Vurdert
+        val ledd = vurdering.sti.single()
+        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
+        assertEquals(Utfall.Oppfylt, ledd.utfall)
+        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (ledd.kilde as Vurderingskilde.Automatisk).grunnlag)
+        assertTrue(prøvinger.allePrøvinger.single().erAvsluttet)
     }
 
-    // Har vi allerede en vurdering skal vi gjenbruke den i stedet for å prøve på nytt
     @Test
     fun `eksisterende vurdering gjenbrukes`() {
         val eksisterende = fullførtPrøving(1.februar)
@@ -80,10 +74,9 @@ internal class OpptjeningServiceTest {
 
         assertEquals(HarVurdering(FØDSELSNUMMER, 1.februar, eksisterende), resultat)
         assertEquals(1, vurderinger.antallLagringer)
-        assertEquals(1, prøvinger.alleProvinger.size)
+        assertEquals(1, prøvinger.allePrøvinger.size)
     }
 
-    // Gjelder også for selvstendig næringsdrivende – ingen ny prøving skal startes
     @Test
     fun `eksisterende vurdering gjenbrukes også for selvstendig næringsdrivende`() {
         val eksisterende = fullførtPrøving(1.februar)
@@ -91,11 +84,9 @@ internal class OpptjeningServiceTest {
         val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
 
         assertEquals(HarVurdering(FØDSELSNUMMER, 1.februar, eksisterende), resultat)
-        assertEquals(1, prøvinger.alleProvinger.size)
+        assertEquals(1, prøvinger.allePrøvinger.size)
     }
 
-    // En pågående prøving betyr at vi venter på arbeidsforhold; da ber vi om dem på nytt
-    // i stedet for å starte enda en prøving på de samme dataene
     @Test
     fun `pågående prøving fører til nytt behov om arbeidsforhold, ikke ny prøving`() {
         service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
@@ -103,11 +94,9 @@ internal class OpptjeningServiceTest {
         val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
 
         assertEquals(TrengerArbeidsforhold(FØDSELSNUMMER, 1.februar), resultat)
-        assertEquals(1, prøvinger.alleProvinger.size)
+        assertEquals(1, prøvinger.allePrøvinger.size)
     }
 
-    // Vurderinger er knyttet til ett skjæringstidspunkt; en vurdering på et annet
-    // skjæringstidspunkt skal ikke gjenbrukes
     @Test
     fun `vurdering på et annet skjæringstidspunkt gjenbrukes ikke`() {
         fullførtPrøving(1.januar)
@@ -117,7 +106,6 @@ internal class OpptjeningServiceTest {
         assertEquals(TrengerArbeidsforhold(FØDSELSNUMMER, 1.februar), resultat)
     }
 
-    // ... og heller ikke en vurdering som tilhører en annen person
     @Test
     fun `vurdering for en annen person gjenbrukes ikke`() {
         fullførtPrøving(1.februar, fødselsnummer = ET_ANNET_FØDSELSNUMMER)
@@ -127,11 +115,6 @@ internal class OpptjeningServiceTest {
         assertEquals(TrengerArbeidsforhold(FØDSELSNUMMER, 1.februar), resultat)
     }
 
-    // ---------------------------------------------------------------------
-    // behandleGrunnlagForAutomatiskArbeidstakerOpptjeningsvurdering
-    // ---------------------------------------------------------------------
-
-    // Kommer det grunnlag uten at vi har startet en prøving har vi ingenting å fullføre
     @Test
     fun `grunnlag uten påbegynt prøving gir ingen prøving funnet`() {
         val resultat =
@@ -145,8 +128,6 @@ internal class OpptjeningServiceTest {
         assertEquals(0, vurderinger.antallLagringer)
     }
 
-    // Normalflyten: den pågående prøvingen fullføres med arbeidsforholdene vi fikk inn,
-    // og først da oppstår vurderingen
     @Test
     fun `grunnlag fullfører påbegynt prøving og produserer vurderingen`() {
         service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
@@ -160,16 +141,18 @@ internal class OpptjeningServiceTest {
             )
 
         val nyVurdering = assertInstanceOf(BehandleGrunnlagResultat.NyVurderingForetatt::class.java, resultat)
-        val prøving = prøvinger.alleProvinger.single()
-        assertEquals(Vilkårsprøving.Tilstand.Fullført(nyVurdering.vurderingId), prøving.tilstand)
+        val prøving = prøvinger.allePrøvinger.single()
+        assertEquals(Kravprøving.Tilstand.Fullført(nyVurdering.kravvurderingId), prøving.tilstand)
 
-        val vurdering = vurderinger.finn(Vilkår.Opptjening, nyVurdering.vurderingId)!!
-        assertEquals(prøving.id, vurdering.prøvingId)
-        assertEquals(OPPTJENING_MINST_4_UKER, vurdering.kodeverkkode)
-        assertEquals(arbeidsforhold, ((vurdering.opphav as Opphav.Automatisk).grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold)
+        val vurdering = vurderinger.finn(Krav.Opptjening, nyVurdering.kravvurderingId) as Kravvurdering.Vurdert
+        val ledd = vurdering.sti.single()
+        val kilde = ledd.kilde as Vurderingskilde.Automatisk
+        assertEquals(prøving.id, kilde.prøvingId)
+        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
+        assertEquals(Utfall.Oppfylt, ledd.utfall)
+        assertEquals(arbeidsforhold, (kilde.grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold)
     }
 
-    // Kodeverkkoden utledes av arbeidsforholdene: for kort opptjening gir avslagskode
     @Test
     fun `grunnlag med for kort opptjening gir ikke oppfylt`() {
         service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
@@ -180,11 +163,11 @@ internal class OpptjeningServiceTest {
             skjæringstidspunkt = 1.februar,
         )
 
-        assertEquals(IKKE_OPPTJENING_ARBEID_ELLER_YTELSE, vurderinger.alleVurderinger.single().kodeverkkode)
+        val ledd = (vurderinger.alleVurderinger.single() as Kravvurdering.Vurdert).sti.single()
+        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
+        assertEquals(Utfall.IkkeOppfylt, ledd.utfall)
     }
 
-    // Uten arbeidsforhold i det hele tatt er opptjeningen ikke oppfylt, men prøvingen
-    // skal likevel fullføres slik at behandlingen kommer videre
     @Test
     fun `grunnlag uten arbeidsforhold fullfører prøvingen`() {
         service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
@@ -197,11 +180,11 @@ internal class OpptjeningServiceTest {
             )
 
         assertInstanceOf(BehandleGrunnlagResultat.NyVurderingForetatt::class.java, resultat)
-        assertTrue(prøvinger.alleProvinger.single().erAvsluttet)
-        assertEquals(IKKE_OPPTJENING_ARBEID_ELLER_YTELSE, vurderinger.alleVurderinger.single().kodeverkkode)
+        assertTrue(prøvinger.allePrøvinger.single().erAvsluttet)
+        val ledd = (vurderinger.alleVurderinger.single() as Kravvurdering.Vurdert).sti.single()
+        assertEquals(Utfall.IkkeOppfylt, ledd.utfall)
     }
 
-    // Duplikate svar på behovet skal ikke gi en ny vurdering
     @Test
     fun `grunnlag på allerede fullført prøving gjør ingenting`() {
         service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
@@ -223,7 +206,6 @@ internal class OpptjeningServiceTest {
         assertSame(opprinneligVurdering, vurderinger.alleVurderinger.single())
     }
 
-    // Grunnlag som gjelder et annet skjæringstidspunkt skal ikke treffe prøvingen vår
     @Test
     fun `grunnlag for et annet skjæringstidspunkt treffer ikke prøvingen`() {
         service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
@@ -236,24 +218,20 @@ internal class OpptjeningServiceTest {
             )
 
         assertEquals(BehandleGrunnlagResultat.IngenPrøvingFunnet, resultat)
-        assertFalse(prøvinger.alleProvinger.single().erAvsluttet)
+        assertFalse(prøvinger.allePrøvinger.single().erAvsluttet)
         assertEquals(0, vurderinger.antallLagringer)
     }
 
-    // ---------------------------------------------------------------------
-    // finnOpptjeningsvurdering
-    // ---------------------------------------------------------------------
-
     @Test
     fun `finner lagret opptjeningsvurdering`() {
-        val vurderingId = fullførtPrøving(1.februar)
+        val kravvurderingId = fullførtPrøving(1.februar)
 
-        assertEquals(vurderingId, service.finnOpptjeningsvurdering(vurderingId, "whatever").id)
+        assertEquals(kravvurderingId, service.finnOpptjeningsvurdering(kravvurderingId, "whatever").id)
     }
 
     @Test
     fun `ukjent opptjeningsvurdering gir feil`() {
-        val ukjentId = VurderingId.ny()
+        val ukjentId = KravvurderingId.ny()
 
         val feil = assertThrows<IllegalStateException> { service.finnOpptjeningsvurdering(ukjentId, "whatever") }
         assertEquals("Fant ikke vurdering av Opptjening med id $ukjentId", feil.message)
@@ -262,7 +240,7 @@ internal class OpptjeningServiceTest {
     private fun fullførtPrøving(
         skjæringstidspunkt: LocalDate,
         fødselsnummer: String = FØDSELSNUMMER,
-    ): VurderingId {
+    ): KravvurderingId {
         val prøving = Opptjeningsprøving.start(fødselsnummer, skjæringstidspunkt, Arbeidssituasjon.Arbeidstaker).prøving
         val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(listOf(arbeidsforhold(1.januar til 31.januar))))
         prøvinger.lagre(prøving)

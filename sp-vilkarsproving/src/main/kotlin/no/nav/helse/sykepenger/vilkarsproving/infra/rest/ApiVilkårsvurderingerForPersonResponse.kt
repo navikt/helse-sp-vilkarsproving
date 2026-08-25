@@ -12,7 +12,6 @@ import java.util.UUID
 
 @Serializable
 internal data class ApiVilkårsvurderingerForPersonResponse(
-    /** Ett kall gjelder alltid ett skjæringstidspunkt, så det står på rota og ikke per krav. */
     val skjæringstidspunkt: LocalDate,
     val krav: List<ApiKravvurdering>,
 )
@@ -38,7 +37,7 @@ internal sealed interface ApiKravvurdering {
         val avgjørendeVilkårskode: ApiVilkårskode,
         val vurderinger: List<ApiVilkårsvurdering>,
     ) : ApiKravvurdering {
-        override val kravkilde: ApiKravkilde = ApiKravkilde.VURDERT_HOS_OSS
+        override val kravkilde: ApiKravkilde = ApiKravkilde.VURDERT_I_SPEIL
 
         init {
             require(vurderinger.isNotEmpty()) { "En kravvurdering gjort hos oss må ha minst én vilkårsvurdering" }
@@ -60,7 +59,7 @@ internal sealed interface ApiKravvurdering {
 
 @Serializable
 internal enum class ApiKravkilde {
-    VURDERT_HOS_OSS,
+    VURDERT_I_SPEIL,
     OVERFOERT_FRA_INFOTRYGD,
 }
 
@@ -69,7 +68,7 @@ internal data class ApiVilkårsvurdering(
     val id: UUID,
     val vilkårskode: ApiVilkårskode,
     val utfall: ApiUtfall,
-    val vurdertTidspunkt: Instant,
+    val vurdertTidspunkt: Instant?,
     val kilde: ApiVurderingskilde,
 )
 
@@ -86,26 +85,20 @@ internal enum class ApiKravkode {
 
 @Serializable
 internal enum class ApiVilkårskode {
-    /** Minst fire sammenhengende uker i arbeid umiddelbart før skjæringstidspunktet. */
     OPPTJENING_ARBEID_MINST_4_UKER,
 
-    /** Ytelse likestilt med arbeid i opptjeningstiden. Prøves når arbeidsvilkåret ikke er oppfylt. */
     OPPTJENING_LIKESTILT_YTELSE,
 
-    /** Unntak fra [OPPTJENING_LIKESTILT_YTELSE]: foreldrepenger uten forutgående AAP. */
     OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP,
 
-    /** Yrkesaktiv før foreldrepengeperioden. */
     OPPTJENING_YRKESAKTIV_FOER_FORELDREPENGER,
-
-    /** Generell: opptjeningen er vurdert, men vi vet ikke hvilket alternativ som traff. */
-    OPPTJENING_ARBEID_ELLER_YTELSE,
 }
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "kildetype", visible = true)
 @JsonSubTypes(
     JsonSubTypes.Type(value = ApiVurderingskilde.Automatisk::class, name = "AUTOMATISK"),
     JsonSubTypes.Type(value = ApiVurderingskilde.Saksbehandler::class, name = "SAKSBEHANDLER"),
+    JsonSubTypes.Type(value = ApiVurderingskilde.OverførtFraSpleis::class, name = "OVERFOERT_FRA_SPLEIS"),
 )
 @Serializable
 internal sealed interface ApiVurderingskilde {
@@ -126,12 +119,20 @@ internal sealed interface ApiVurderingskilde {
     ) : ApiVurderingskilde {
         override val kildetype: ApiKildetype = ApiKildetype.SAKSBEHANDLER
     }
+
+    @Serializable
+    data class OverførtFraSpleis(
+        val grunnlag: ApiVurderingsgrunnlag,
+    ) : ApiVurderingskilde {
+        override val kildetype: ApiKildetype = ApiKildetype.OVERFOERT_FRA_SPLEIS
+    }
 }
 
 @Serializable
 internal enum class ApiKildetype {
     AUTOMATISK,
     SAKSBEHANDLER,
+    OVERFOERT_FRA_SPLEIS,
 }
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "grunnlagstype", visible = true)
@@ -178,7 +179,6 @@ internal data class ApiPeriode(
 internal data class ApiArbeidsforhold(
     val organisasjonsnummer: String,
     val fom: LocalDate,
-    /** Null betyr løpende ansettelsesforhold. */
     val tom: LocalDate?,
     val type: ApiArbeidsforholdtype,
 )

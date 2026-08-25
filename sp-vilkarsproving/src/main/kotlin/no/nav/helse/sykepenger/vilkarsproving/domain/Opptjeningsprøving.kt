@@ -3,18 +3,18 @@ package no.nav.helse.sykepenger.vilkarsproving.domain
 import java.time.LocalDate
 
 /**
- * Starter en prøving av opptjeningsvilkåret.
+ * Starter en prøving av opptjeningskravet.
  *
  * Arbeidstakere må vi hente arbeidsforhold for, mens selvstendig næringsdrivende kan vurderes
- * med en gang. Det er den eneste vilkårsspesifikke delen av oppstarten — resten er [Vilkårsprøving].
+ * med en gang. Det er den eneste kravspesifikke delen av oppstarten — resten er [Kravprøving].
  */
 internal object Opptjeningsprøving {
     fun start(
         fødselsnummer: String,
         skjæringstidspunkt: LocalDate,
         arbeidssituasjon: Arbeidssituasjon,
-    ) = Vilkårsprøving.start(
-        vilkår = Vilkår.Opptjening,
+    ) = Kravprøving.start(
+        krav = Krav.Opptjening,
         fødselsnummer = fødselsnummer,
         skjæringstidspunkt = skjæringstidspunkt,
         behov = Grunnlagsbehov.Arbeidsforhold,

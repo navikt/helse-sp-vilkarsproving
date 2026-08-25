@@ -3,30 +3,30 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.db
 import kotliquery.Row
 import kotliquery.Session
 import kotliquery.queryOf
-import no.nav.helse.sykepenger.vilkarsproving.application.VilkårsprøvingRepository
+import no.nav.helse.sykepenger.vilkarsproving.application.KravprøvingRepository
 import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
+import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kravprøving
+import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsprøving
-import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
 import org.intellij.lang.annotations.Language
 import java.time.LocalDate
 import java.util.UUID
 
-internal class PostgresVilkårsprøvingRepository(
+internal class PostgresKravprøvingRepository(
     private val session: Session,
-) : VilkårsprøvingRepository {
-    override fun lagre(prøving: Vilkårsprøving) {
+) : KravprøvingRepository {
+    override fun lagre(prøving: Kravprøving) {
         val tilstand = prøving.tilstand.tilLagring()
 
         @Language("PostgreSQL")
         val sql = """
-            insert into vilkarsproving (id, vilkår, fødselsnummer, skjæringstidspunkt, startet, tilstand, utestående_behov, vurdering_id)
-            values (:id, :vilkar, :fodselsnummer, :skjaeringstidspunkt, :startet, :tilstand, :behov, :vurderingId)
+            insert into kravproving (id, krav, fødselsnummer, skjæringstidspunkt, startet, tilstand, utestående_behov, kravvurdering_id)
+            values (:id, :krav, :fodselsnummer, :skjaeringstidspunkt, :startet, :tilstand, :behov, :kravvurderingId)
             on conflict (id) do update
             set tilstand = excluded.tilstand,
                 utestående_behov = excluded.utestående_behov,
-                vurdering_id = excluded.vurdering_id,
+                kravvurdering_id = excluded.kravvurdering_id,
                 endret = now()
         """
         session.run(
@@ -34,28 +34,28 @@ internal class PostgresVilkårsprøvingRepository(
                 sql,
                 mapOf(
                     "id" to prøving.id.value,
-                    "vilkar" to prøving.vilkår.name,
+                    "krav" to prøving.krav.name,
                     "fodselsnummer" to prøving.fødselsnummer,
                     "skjaeringstidspunkt" to prøving.skjæringstidspunkt,
                     "startet" to prøving.startet,
                     "tilstand" to tilstand.navn,
                     "behov" to tilstand.behov,
-                    "vurderingId" to tilstand.vurderingId,
+                    "kravvurderingId" to tilstand.kravvurderingId,
                 ),
             ).asUpdate,
         )
     }
 
     override fun finnSiste(
-        vilkår: Vilkår,
+        krav: Krav,
         fødselsnummer: String,
         skjæringstidspunkt: LocalDate,
-    ): Vilkårsprøving? {
+    ): Kravprøving? {
         @Language("PostgreSQL")
         val sql = """
-            select id, vilkår, fødselsnummer, skjæringstidspunkt, startet, tilstand, utestående_behov, vurdering_id
-            from vilkarsproving
-            where vilkår = :vilkar and fødselsnummer = :fodselsnummer and skjæringstidspunkt = :skjaeringstidspunkt
+            select id, krav, fødselsnummer, skjæringstidspunkt, startet, tilstand, utestående_behov, kravvurdering_id
+            from kravproving
+            where krav = :krav and fødselsnummer = :fodselsnummer and skjæringstidspunkt = :skjaeringstidspunkt
             order by løpenummer desc
             limit 1
         """
@@ -63,7 +63,7 @@ internal class PostgresVilkårsprøvingRepository(
             queryOf(
                 sql,
                 mapOf(
-                    "vilkar" to vilkår.name,
+                    "krav" to krav.name,
                     "fodselsnummer" to fødselsnummer,
                     "skjaeringstidspunkt" to skjæringstidspunkt,
                 ),
@@ -72,9 +72,9 @@ internal class PostgresVilkårsprøvingRepository(
     }
 
     private fun tilPrøving(row: Row) =
-        Vilkårsprøving.fraLagring(
+        Kravprøving.fraLagring(
             id = PrøvingId(row.uuid("id")),
-            vilkår = Vilkår.valueOf(row.string("vilkår")),
+            krav = Krav.valueOf(row.string("krav")),
             fødselsnummer = row.string("fødselsnummer"),
             skjæringstidspunkt = row.localDate("skjæringstidspunkt"),
             startet = row.instant("startet"),
@@ -82,7 +82,7 @@ internal class PostgresVilkårsprøvingRepository(
                 tilstandFraLagring(
                     navn = row.string("tilstand"),
                     behov = row.stringOrNull("utestående_behov"),
-                    vurderingId = row.uuidOrNull("vurdering_id"),
+                    kravvurderingId = row.uuidOrNull("kravvurdering_id"),
                 ),
         )
 }
@@ -94,31 +94,31 @@ private const val FULLFØRT = "FULLFØRT"
 private class LagretTilstand(
     val navn: String,
     val behov: String? = null,
-    val vurderingId: UUID? = null,
+    val kravvurderingId: UUID? = null,
 )
 
-private fun Vilkårsprøving.Tilstand.tilLagring() =
+private fun Kravprøving.Tilstand.tilLagring() =
     when (this) {
-        Vilkårsprøving.Tilstand.Startet -> LagretTilstand(STARTET)
-        is Vilkårsprøving.Tilstand.VenterPåGrunnlag -> LagretTilstand(VENTER_PÅ_GRUNNLAG, behov = behov.name)
-        is Vilkårsprøving.Tilstand.Fullført -> LagretTilstand(FULLFØRT, vurderingId = vurderingId.value)
+        Kravprøving.Tilstand.Startet -> LagretTilstand(STARTET)
+        is Kravprøving.Tilstand.VenterPåGrunnlag -> LagretTilstand(VENTER_PÅ_GRUNNLAG, behov = behov.name)
+        is Kravprøving.Tilstand.Fullført -> LagretTilstand(FULLFØRT, kravvurderingId = kravvurderingId.value)
     }
 
 private fun tilstandFraLagring(
     navn: String,
     behov: String?,
-    vurderingId: UUID?,
-): Vilkårsprøving.Tilstand =
+    kravvurderingId: UUID?,
+): Kravprøving.Tilstand =
     when (navn) {
-        STARTET -> Vilkårsprøving.Tilstand.Startet
+        STARTET -> Kravprøving.Tilstand.Startet
         VENTER_PÅ_GRUNNLAG ->
-            Vilkårsprøving.Tilstand.VenterPåGrunnlag(
+            Kravprøving.Tilstand.VenterPåGrunnlag(
                 Grunnlagsbehov.valueOf(requireNotNull(behov) { "Prøving i tilstand $navn mangler utestående behov" }),
             )
 
         FULLFØRT ->
-            Vilkårsprøving.Tilstand.Fullført(
-                VurderingId(requireNotNull(vurderingId) { "Prøving i tilstand $navn mangler vurdering" }),
+            Kravprøving.Tilstand.Fullført(
+                KravvurderingId(requireNotNull(kravvurderingId) { "Prøving i tilstand $navn mangler kravvurdering" }),
             )
 
         else -> error("Kjenner ikke igjen lagret tilstand $navn")

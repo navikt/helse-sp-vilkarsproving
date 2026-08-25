@@ -10,7 +10,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import no.nav.helse.hendelser.til
-import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering.SpleisArbeidstaker.Ansettelsesperiode
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
@@ -75,7 +75,7 @@ internal class SpleisClientTest {
         assertEquals(4, opptjeningsvurderinger.size)
 
         val infotrygdvurdering = opptjeningsvurderinger[0]
-        assertEquals(VurderingId(UUID.fromString("b89e2ae5-59e3-388e-98cd-42a8e7350773")), infotrygdvurdering.opptjeningsvurderingId)
+        assertEquals(KravvurderingId(UUID.fromString("b89e2ae5-59e3-388e-98cd-42a8e7350773")), infotrygdvurdering.opptjeningsvurderingId)
         assertEquals(LocalDate.of(2018, 1, 1), infotrygdvurdering.skjæringstidspunkt)
         assertTrue(infotrygdvurdering is Opptjeningsvurdering.InfotrygdArbeidstaker)
 

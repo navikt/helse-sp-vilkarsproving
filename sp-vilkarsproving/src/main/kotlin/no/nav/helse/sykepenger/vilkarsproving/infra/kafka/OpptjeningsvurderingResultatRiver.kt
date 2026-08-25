@@ -9,16 +9,16 @@ import io.micrometer.core.instrument.MeterRegistry
 import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.sikkerLogg
+import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
+import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
-import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
 
 /**
- * Svarer på spørsmål om utfallet av en ferdig vurdering.
+ * Svarer på spørsmål om utfallet av en ferdig kravvurdering.
  *
- * Fordi en vurdering ser likt ut uansett vilkår, er denne riveren felles: den slår opp resultatet
+ * Fordi en kravvurdering ser likt ut uansett krav, er denne riveren felles: den slår opp resultatet
  * direkte, uten å gå veien om prøvingen. Det er hele poenget med å skille resultat fra prosess.
  */
 internal open class OpptjeningsvurderingResultatRiver(
@@ -26,7 +26,7 @@ internal open class OpptjeningsvurderingResultatRiver(
     private val transaksjonProvider: TransaksjonProvider<Transaksjonskontekst>,
     private val spleisClient: ISpleisClient,
 ) : River.PacketListener {
-    private val vilkår = Vilkår.Opptjening
+    private val krav = Krav.Opptjening
     private val behovnavn = "OpptjeningsvurderingResultat"
     private val idFelt = "OpptjeningsvurderingResultat.opptjeningsvurderingId"
 
@@ -51,20 +51,20 @@ internal open class OpptjeningsvurderingResultatRiver(
         metadata: MessageMetadata,
         meterRegistry: MeterRegistry,
     ) {
-        val vurderingId = VurderingId(packet[idFelt].asUUID())
+        val kravvurderingId = KravvurderingId(packet[idFelt].asUUID())
         val fødselsnummer = packet["fødselsnummer"].asString()
-        sikkerLogg.info("Mottatt behov for $behovnavn for $idFelt $vurderingId")
+        sikkerLogg.info("Mottatt behov for $behovnavn for $idFelt $kravvurderingId")
 
         try {
-            val vilkårsvurdering =
+            val kravvurdering =
                 transaksjonProvider.transaksjon {
-                    it.vilkårsvurderinger.finn(vilkår, vurderingId)
+                    it.kravvurderinger.finn(krav, kravvurderingId)
                 }
 
             val utfall =
-                vilkårsvurdering?.utfall ?: spleisClient
+                kravvurdering?.utfall ?: spleisClient
                     .hentOpptjeningsvurderinger(fødselsnummer = fødselsnummer)
-                    .find { it.opptjeningsvurderingId == vurderingId }
+                    .find { it.opptjeningsvurderingId == kravvurderingId }
                     ?.let { vurdering ->
                         when (vurdering) {
                             is Opptjeningsvurdering.SpleisArbeidstaker ->
@@ -77,7 +77,7 @@ internal open class OpptjeningsvurderingResultatRiver(
                             is Opptjeningsvurdering.InfotrygdArbeidstaker,
                             -> Utfall.Oppfylt
                         }
-                    } ?: error("Fant ikke vurdering med id $vurderingId")
+                    } ?: error("Fant ikke vurdering med id $kravvurderingId")
 
             val ok =
                 when (utfall) {
@@ -86,10 +86,10 @@ internal open class OpptjeningsvurderingResultatRiver(
                 }
 
             packet["@løsning"] = mapOf(behovnavn to mapOf("ok" to ok))
-            sikkerLogg.info("Publiserer løsning for $behovnavn for $idFelt $vurderingId. Løsning:\n\t${packet.toJson()}")
+            sikkerLogg.info("Publiserer løsning for $behovnavn for $idFelt $kravvurderingId. Løsning:\n\t${packet.toJson()}")
             context.publish(packet.toJson())
         } catch (ex: Exception) {
-            sikkerLogg.error("Feil under håndtering av behov $behovnavn for $idFelt $vurderingId", ex)
+            sikkerLogg.error("Feil under håndtering av behov $behovnavn for $idFelt ${kravvurderingId.value}", ex)
         }
     }
 }

@@ -1,64 +1,56 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kodeverkkode
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opphav
+import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsregel
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkår
+import no.nav.helse.sykepenger.vilkarsproving.domain.Utledet
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsgrunnlag
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
 import java.time.LocalDate
 
 internal object Vurderingsrespons {
-    fun fra(vurdering: Vilkårsvurdering): ApiVilkårsvurderingerForPersonResponse =
+    fun fra(vurdering: Kravvurdering): ApiVilkårsvurderingerForPersonResponse =
         ApiVilkårsvurderingerForPersonResponse(
             skjæringstidspunkt = vurdering.skjæringstidspunkt,
-            krav = listOf(vurdering.tilKravvurdering()),
+            krav = listOf(vurdering.tilApi()),
         )
 }
 
-private fun Vilkårsvurdering.tilKravvurdering(): ApiKravvurdering =
-    // Infotrygd-vurderinger bærer bare et utfall. Å bygge en sti for dem ville påstått at vi kjenner
-    // vilkårene som ble prøvd, og det gjør vi ikke.
-    when (val opphav = opphav) {
-        is Opphav.Infotrygd ->
+private fun Kravvurdering.tilApi(): ApiKravvurdering =
+    when (this) {
+        is Kravvurdering.OverførtFraInfotrygd ->
             ApiKravvurdering.OverførtFraInfotrygd(
                 id = id.value,
-                kravkode = vilkår.tilApi(),
+                kravkode = krav.tilApi(),
                 utfall = utfall.tilApi(),
             )
 
-        is Opphav.Automatisk -> vurdertHosOss(opphav.tilApi(skjæringstidspunkt))
-        is Opphav.Saksbehandler -> vurdertHosOss(opphav.tilApi())
+        is Kravvurdering.Vurdert ->
+            ApiKravvurdering.Vurdert(
+                id = id.value,
+                kravkode = krav.tilApi(),
+                utfall = utfall.tilApi(),
+                avgjørendeVilkårskode = avgjørendeVilkårskode.tilApi(),
+                vurderinger = sti.map { it.tilApi() },
+            )
     }
 
-private fun Vilkårsvurdering.vurdertHosOss(kilde: ApiVurderingskilde): ApiKravvurdering.Vurdert {
-    val sti =
-        listOf(
-            ApiVilkårsvurdering(
-                id = id.value,
-                vilkårskode = kodeverkkode.tilVilkårskode(),
-                utfall = utfall.tilApi(),
-                vurdertTidspunkt = vurdertTidspunkt,
-                kilde = kilde,
-            ),
-        )
-    return ApiKravvurdering.Vurdert(
+private fun Vilkårsvurdering.tilApi() =
+    ApiVilkårsvurdering(
         id = id.value,
-        kravkode = vilkår.tilApi(),
+        vilkårskode = vilkårskode.tilApi(),
         utfall = utfall.tilApi(),
-        // Prøvingen stopper når kravet er avgjort, så det sist prøvde vilkåret er det avgjørende —
-        // også når det er et unntak som slo ut et alternativ som ellers var oppfylt.
-        avgjørendeVilkårskode = sti.last().vilkårskode,
-        vurderinger = sti,
+        vurdertTidspunkt = vurdertTidspunkt,
+        kilde = kilde.tilApi(),
     )
-}
 
-private fun Vilkår.tilApi(): ApiKravkode =
+private fun Krav.tilApi(): ApiKravkode =
     when (this) {
-        Vilkår.Opptjening -> ApiKravkode.OPPTJENING
+        Krav.Opptjening -> ApiKravkode.OPPTJENING
     }
 
 private fun Utfall.tilApi(): ApiUtfall =
@@ -67,47 +59,40 @@ private fun Utfall.tilApi(): ApiUtfall =
         Utfall.IkkeOppfylt -> ApiUtfall.IKKE_OPPFYLT
     }
 
-private fun Kodeverkkode.tilVilkårskode(): ApiVilkårskode =
+private fun Vilkårskode.tilApi(): ApiVilkårskode =
     when (this) {
-        Kodeverkkode.OPPTJENING_MINST_4_UKER -> ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER
-        Kodeverkkode.OPPTJENING_ANNEN_YTELSE -> ApiVilkårskode.OPPTJENING_LIKESTILT_YTELSE
-        Kodeverkkode.OPPTJENING_YRKESAKTIV_FOER_FORELDREPENGER -> ApiVilkårskode.OPPTJENING_YRKESAKTIV_FOER_FORELDREPENGER
-        Kodeverkkode.IKKE_OPPTJENING_AAP_FOER_FORELDREPENGER -> ApiVilkårskode.OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP
-
-        // De generelle kodene sier bare at kravet er vurdert, ikke hvilket alternativ som traff.
-        // TODO: Opptjeningsregel bruker i dag den generelle koden også når den faktisk har prøvd
-        //  og forkastet fireukersvilkåret. Da mister vi presisjonen som stien er ment å gi. Rettes
-        //  når domenet får én vurdering per alternativt vilkår.
-        Kodeverkkode.OPPTJENING_ARBEID_ELLER_YTELSE,
-        Kodeverkkode.IKKE_OPPTJENING_ARBEID_ELLER_YTELSE,
-        -> ApiVilkårskode.OPPTJENING_ARBEID_ELLER_YTELSE
+        Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER -> ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER
+        Vilkårskode.OPPTJENING_LIKESTILT_YTELSE -> ApiVilkårskode.OPPTJENING_LIKESTILT_YTELSE
+        Vilkårskode.OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP ->
+            ApiVilkårskode.OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP
+        Vilkårskode.OPPTJENING_YRKESAKTIV_FOER_FORELDREPENGER -> ApiVilkårskode.OPPTJENING_YRKESAKTIV_FOER_FORELDREPENGER
     }
 
-private fun Opphav.Automatisk.tilApi(skjæringstidspunkt: LocalDate) =
-    ApiVurderingskilde.Automatisk(
-        versjonAvKildekode = versjonAvKildekode,
-        grunnlag = grunnlag.tilApi(skjæringstidspunkt),
-    )
+private fun Vurderingskilde.tilApi(): ApiVurderingskilde =
+    when (this) {
+        is Vurderingskilde.Automatisk ->
+            ApiVurderingskilde.Automatisk(
+                versjonAvKildekode = versjonAvKildekode,
+                grunnlag = grunnlag.tilApi(utledet),
+            )
 
-private fun Opphav.Saksbehandler.tilApi() = ApiVurderingskilde.Saksbehandler(ident = ident, fritekstbegrunnelse = fritekstbegrunnelse)
+        is Vurderingskilde.Saksbehandler ->
+            ApiVurderingskilde.Saksbehandler(ident = ident, fritekstbegrunnelse = fritekstbegrunnelse)
 
-/**
- * Opptjeningsperioden og antall opptjeningsdager er ikke lagret, og utledes ved å kjøre regelen på
- * nytt på det lagrede grunnlaget.
- *
- * TODO: Dette er en sporbarhetsbrist. Endres regelen, viser api-et nye tall under den gamle
- *  `versjonAvKildekode`-etiketten. De utledede verdiene bør lagres sammen med grunnlaget, slik at en
- *  vurdering aldri regnes ut på nytt ved lesing.
- */
-private fun Vilkårsgrunnlag.tilApi(skjæringstidspunkt: LocalDate): ApiVurderingsgrunnlag =
+        is Vurderingskilde.OverførtFraSpleis ->
+            ApiVurderingskilde.OverførtFraSpleis(grunnlag = grunnlag.tilApi(utledet))
+    }
+
+private fun Vilkårsgrunnlag.tilApi(utledet: Utledet): ApiVurderingsgrunnlag =
     when (this) {
         is Opptjeningsgrunnlag.Arbeidstaker -> {
-            val resultat = Opptjeningsregel.vurder(skjæringstidspunkt, this)
+            check(utledet is Utledet.Opptjeningstid) {
+                "Arbeidstaker-grunnlag skal ha utledet opptjeningstid, fikk $utledet"
+            }
             ApiVurderingsgrunnlag.Arbeidsforhold(
                 arbeidsforhold = arbeidsforhold.map { it.tilApi() },
-                opptjeningsperiode = resultat.opptjeningsperiode?.tilApi(),
-                // Uten en opptjeningsperiode fram til skjæringstidspunktet er det null dager opptjening.
-                opptjeningsdager = resultat.opptjeningsdager ?: 0,
+                opptjeningsperiode = utledet.opptjeningsperiode?.tilApi(),
+                opptjeningsdager = utledet.opptjeningsdager,
             )
         }
 

@@ -4,23 +4,24 @@ import java.time.Instant
 import java.time.LocalDate
 
 /**
- * Prosessen som leder fram til en [Vilkårsvurdering].
+ * Prosessen som leder fram til en [Kravvurdering.Vurdert].
  *
  * Prøvingen eier livssyklusen — hva vi venter på, hvor lenge, og om vi er ferdige — mens selve
- * vurderingen er resultatet den produserer. Det er kun innhentingen av grunnlag som er asynkron;
- * vurderingen i seg selv er en ren funksjon ([Vilkårsregel]).
+ * vurderingen er resultatet den produserer. En prøving i denne appen *er* en automatisk prøving: det
+ * finnes ingen prøving for en manuell vurdering eller en vurdering overført fra Spleis eller Infotrygd,
+ * se [Vurderingskilde].
  *
- * Livssyklusen er den samme for alle vilkår, og ligger derfor her. Det vilkårsspesifikke — hvilket
- * grunnlag som må innhentes, og hva som utgjør et utfall — ligger i [Vilkårsgrunnlag] og [Vilkårsregel].
- * Hvert vilkår har en egen startfunksjon, se `Opptjeningsprøving`.
+ * Livssyklusen er den samme for alle krav, og ligger derfor her. Det kravspesifikke — hvilket grunnlag
+ * som må innhentes, og hva som utgjør et utfall — ligger i [Vilkårsgrunnlag] og [Kravregel]. Hvert krav
+ * har en egen startfunksjon, se `Opptjeningsprøving`.
  *
- * Prøvingen holder ikke på innhentede fakta. Det er ikke nødvendig så lenge den venter på ett
- * grunnlag om gangen: kommer svaret, konstrueres grunnlaget og vurderingen i samme operasjon.
- * Skal et vilkår senere vente på flere uavhengige svar må vi legge til et arbeidsminne her.
+ * Prøvingen holder ikke på innhentede fakta. Det er ikke nødvendig så lenge den venter på ett grunnlag om
+ * gangen: kommer svaret, konstrueres grunnlaget og vurderingen i samme operasjon. Skal et krav senere
+ * vente på flere uavhengige svar må vi legge til et arbeidsminne her.
  */
-internal class Vilkårsprøving private constructor(
+internal class Kravprøving private constructor(
     val id: PrøvingId,
-    val vilkår: Vilkår,
+    val krav: Krav,
     val fødselsnummer: String,
     val skjæringstidspunkt: LocalDate,
     val startet: Instant,
@@ -41,15 +42,15 @@ internal class Vilkårsprøving private constructor(
         ) : Tilstand
 
         data class Fullført(
-            val vurderingId: VurderingId,
+            val kravvurderingId: KravvurderingId,
         ) : Tilstand
     }
 
     /**
-     * Tar imot grunnlaget prøvingen venter på og produserer vurderingen.
+     * Tar imot grunnlaget prøvingen venter på og produserer kravvurderingen.
      * Vurderingen og den oppdaterte prøvingen må lagres i samme transaksjon.
      */
-    fun motta(grunnlag: Vilkårsgrunnlag): Vilkårsvurdering {
+    fun motta(grunnlag: Vilkårsgrunnlag): Kravvurdering.Vurdert {
         val venter =
             tilstand as? Tilstand.VenterPåGrunnlag
                 ?: error("Prøving $id venter ikke på grunnlag, men er i tilstand $tilstand")
@@ -59,10 +60,10 @@ internal class Vilkårsprøving private constructor(
         return fullfør(grunnlag)
     }
 
-    private fun fullfør(grunnlag: Vilkårsgrunnlag): Vilkårsvurdering {
-        check(grunnlag.vilkår == vilkår) { "Prøving $id gjelder $vilkår, men fikk grunnlag for ${grunnlag.vilkår}" }
+    private fun fullfør(grunnlag: Vilkårsgrunnlag): Kravvurdering.Vurdert {
+        check(grunnlag.krav == krav) { "Prøving $id gjelder $krav, men fikk grunnlag for ${grunnlag.krav}" }
         val vurdering =
-            Vilkårsvurdering.automatisk(
+            Kravvurdering.automatisk(
                 prøvingId = id,
                 fødselsnummer = fødselsnummer,
                 skjæringstidspunkt = skjæringstidspunkt,
@@ -75,26 +76,26 @@ internal class Vilkårsprøving private constructor(
 
     /** En påbegynt prøving. [vurdering] er satt dersom prøvingen kunne fullføres uten å innhente noe. */
     data class Påbegynt(
-        val prøving: Vilkårsprøving,
-        val vurdering: Vilkårsvurdering?,
+        val prøving: Kravprøving,
+        val vurdering: Kravvurdering.Vurdert?,
     )
 
     companion object {
         /**
-         * Starter en prøving. [umiddelbartGrunnlag] settes av vilkår som kan vurderes uten å hente
-         * noe utenfra; ellers venter prøvingen på [behov].
+         * Starter en prøving. [umiddelbartGrunnlag] settes av krav som kan vurderes uten å hente noe
+         * utenfra; ellers venter prøvingen på [behov].
          */
         fun start(
-            vilkår: Vilkår,
+            krav: Krav,
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
             behov: Grunnlagsbehov,
             umiddelbartGrunnlag: Vilkårsgrunnlag?,
         ): Påbegynt {
             val prøving =
-                Vilkårsprøving(
+                Kravprøving(
                     id = PrøvingId.ny(),
-                    vilkår = vilkår,
+                    krav = krav,
                     fødselsnummer = fødselsnummer,
                     skjæringstidspunkt = skjæringstidspunkt,
                     startet = Instant.now(),
@@ -114,11 +115,11 @@ internal class Vilkårsprøving private constructor(
 
         fun fraLagring(
             id: PrøvingId,
-            vilkår: Vilkår,
+            krav: Krav,
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
             startet: Instant,
             tilstand: Tilstand,
-        ) = Vilkårsprøving(id, vilkår, fødselsnummer, skjæringstidspunkt, startet, tilstand)
+        ) = Kravprøving(id, krav, fødselsnummer, skjæringstidspunkt, startet, tilstand)
     }
 }

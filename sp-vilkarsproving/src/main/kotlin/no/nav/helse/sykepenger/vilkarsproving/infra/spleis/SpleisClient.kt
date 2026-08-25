@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.github.navikt.tbd_libs.access_token.AccessTokenProvider
 import com.github.navikt.tbd_libs.access_token.TexasClient
 import no.nav.helse.hendelser.til
-import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering.SpleisArbeidstaker.Ansettelsesperiode
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold
 import tools.jackson.module.kotlin.jacksonObjectMapper
@@ -88,7 +88,7 @@ internal class SpleisClient(
          */
         @JsonIgnoreProperties(ignoreUnknown = true)
         private data class OpptjeningsvurderingDto(
-            val opptjeningsvurderingId: VurderingId,
+            val opptjeningsvurderingId: KravvurderingId,
             val type: OpptjeningsvurderingTypeDto,
             val skjæringstidspunkt: LocalDate,
             val kilde: OpptjeningsvurderingKildeDto,
