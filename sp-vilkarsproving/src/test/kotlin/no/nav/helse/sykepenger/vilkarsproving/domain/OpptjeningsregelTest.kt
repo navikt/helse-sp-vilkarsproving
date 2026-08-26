@@ -116,7 +116,7 @@ internal class OpptjeningsregelTest {
         val resultat = Opptjeningsregel.vurder(1.februar, Opptjeningsgrunnlag.SelvstendigNæringsdrivende)
 
         assertEquals(Utfall.Oppfylt, resultat.utfall)
-        val ledd = resultat.sti.single()
+        val ledd = resultat.vilkårsutfall.single()
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
         assertInstanceOf(UtledetFakta.Ingen::class.java, ledd.utledetFakta)
     }
@@ -134,7 +134,7 @@ internal class OpptjeningsregelTest {
                 ),
             )
 
-        val utledetFakta = resultat.sti.single().utledetFakta as UtledetFakta.Opptjeningstid
+        val utledetFakta = resultat.vilkårsutfall.single().utledetFakta as UtledetFakta.Opptjeningstid
         assertEquals(4.januar, utledetFakta.opptjeningsperiode?.start)
         assertEquals(31.januar, utledetFakta.opptjeningsperiode?.endInclusive)
         assertEquals(28, utledetFakta.opptjeningsdager)
@@ -149,7 +149,7 @@ internal class OpptjeningsregelTest {
                 Opptjeningsgrunnlag.Arbeidstaker(listOf(arbeidsforhold(1.januar til 30.januar))),
             )
 
-        val utledetFakta = resultat.sti.single().utledetFakta as UtledetFakta.Opptjeningstid
+        val utledetFakta = resultat.vilkårsutfall.single().utledetFakta as UtledetFakta.Opptjeningstid
         assertEquals(null, utledetFakta.opptjeningsperiode)
         assertEquals(0, utledetFakta.opptjeningsdager)
         assertEquals(Utfall.IkkeOppfylt, resultat.utfall)

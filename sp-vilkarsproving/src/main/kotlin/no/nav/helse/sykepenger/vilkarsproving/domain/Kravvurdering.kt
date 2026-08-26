@@ -51,7 +51,7 @@ internal sealed interface Kravvurdering {
             val regel = grunnlag.krav.regel
             val resultat = regel.vurder(skjæringstidspunkt, grunnlag)
             val vilkårsvurderinger =
-                resultat.sti.map { ledd ->
+                resultat.vilkårsutfall.map { ledd ->
                     Vilkårsvurdering.automatisk(prøvingId, ledd, grunnlag, regel.versjon, vurdertTidspunkt)
                 }
             return VurdertISpeil(id, grunnlag.krav, fødselsnummer, skjæringstidspunkt, vilkårsvurderinger)

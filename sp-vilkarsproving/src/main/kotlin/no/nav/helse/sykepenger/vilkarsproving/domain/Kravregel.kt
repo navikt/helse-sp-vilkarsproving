@@ -13,13 +13,13 @@ internal interface Kravregel {
 }
 
 internal data class Kravregelresultat(
-    val sti: List<Vilkårsutfall>,
+    val vilkårsutfall: List<Vilkårsutfall>,
 ) {
     init {
-        require(sti.isNotEmpty()) { "En regel må ha prøvd minst ett vilkår" }
+        require(vilkårsutfall.isNotEmpty()) { "En regel må ha prøvd minst ett vilkår" }
     }
 
-    val utfall: Utfall get() = sti.last().utfall
+    val utfall: Utfall get() = vilkårsutfall.last().utfall
 }
 
 internal data class Vilkårsutfall(
