@@ -16,8 +16,9 @@ on:
       - '!.github/workflows/standard-dependabot-auto-merge.yml'
       - '!.github/workflows/standard-dependency-submission.yml'
       # Ressursene som deployes av denne workflowen
-      - '.nais/sp-vilkarsproving.yaml'
-      - '.nais/sp-vilkarsproving-vars-*.yaml'
+      - '.nais/dev.yaml'
+      - '.nais/prod.yaml'
+      - '.nais/entra-id-vars.yml'
       # Spesielt for denne tjenesten ellers
       - '!.github/workflows/standard-pr.yml'
       - '!.github/workflows/main-opprydding-dev.yml'
