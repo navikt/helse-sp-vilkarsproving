@@ -21,7 +21,7 @@ internal class PostgresTransaksjonProviderTest : DatabaseTest() {
         transaksjon { kontekst ->
             val påbegynt = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
             kontekst.opptjeningsprøvinger.lagre(påbegynt.prøving)
-            kontekst.kravvurderinger.lagre(checkNotNull(påbegynt.vurdering))
+            kontekst.opptjeningsvurderinger.lagre(checkNotNull(påbegynt.vurdering))
         }
 
         assertEquals(1, Database.antallRader("kravproving"))
@@ -35,7 +35,7 @@ internal class PostgresTransaksjonProviderTest : DatabaseTest() {
             transaksjon { kontekst ->
                 val påbegynt = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
                 kontekst.opptjeningsprøvinger.lagre(påbegynt.prøving)
-                kontekst.kravvurderinger.lagre(checkNotNull(påbegynt.vurdering))
+                kontekst.opptjeningsvurderinger.lagre(checkNotNull(påbegynt.vurdering))
                 throw RuntimeException("noe gikk galt etter at arbeidet var gjort")
             }
         }
@@ -54,7 +54,7 @@ internal class PostgresTransaksjonProviderTest : DatabaseTest() {
 
         assertThrows<RuntimeException> {
             transaksjon { kontekst ->
-                kontekst.kravvurderinger.lagre(prøving.motta(arbeidstakergrunnlag()))
+                kontekst.opptjeningsvurderinger.lagre(prøving.motta(arbeidstakergrunnlag()))
                 kontekst.opptjeningsprøvinger.lagre(prøving)
                 throw RuntimeException("krasjer før commit")
             }

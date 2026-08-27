@@ -41,7 +41,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRi
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.OverstyrVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -85,7 +85,7 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
                 this,
                 transaksjon,
                 object : ISpleisClient {
-                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<Opptjeningsvurdering> {
+                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> {
                         TODO("Not yet implemented, skal ikke trenges når vurderingen finnes i databasen")
                     }
                 },
@@ -139,7 +139,7 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
                 GetVilkårsvurderingerForPersonBehandler(
                     SpleisOpptjeningsvurderingService(
                         object : ISpleisClient {
-                            override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<Opptjeningsvurdering> = emptyList()
+                            override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> = emptyList()
                         },
                     ),
                 ),

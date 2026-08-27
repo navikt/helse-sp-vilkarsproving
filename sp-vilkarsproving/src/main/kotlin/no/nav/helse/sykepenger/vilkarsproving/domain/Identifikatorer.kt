@@ -25,12 +25,12 @@ internal value class VilkårsvurderingId(
 }
 
 @JvmInline
-internal value class KravvurderingId(
+internal value class OpptjeningsvurderingId(
     val value: UUID,
 ) {
     override fun toString() = value.toString()
 
     companion object {
-        fun ny() = KravvurderingId(UUID.randomUUID())
+        fun ny() = OpptjeningsvurderingId(UUID.randomUUID())
     }
 }

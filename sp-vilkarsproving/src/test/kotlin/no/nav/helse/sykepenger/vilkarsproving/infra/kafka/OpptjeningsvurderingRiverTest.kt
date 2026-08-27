@@ -9,9 +9,8 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
 import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
-import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER
@@ -27,7 +26,7 @@ import java.util.UUID
 
 internal class OpptjeningsvurderingRiverTest {
     private val transaksjon = InMemoryTransaksjonProvider()
-    private val vurderinger = transaksjon.kravvurderinger
+    private val vurderinger = transaksjon.opptjeningsvurderinger
     private val prøvinger = transaksjon.opptjeningsprøvinger
     private val rapid =
         TestRapid().apply {
@@ -70,8 +69,8 @@ internal class OpptjeningsvurderingRiverTest {
 
         assertEquals(1, rapid.inspektør.size)
         val løsning = rapid.inspektør.message(0)
-        val kravvurderingId =
-            KravvurderingId(
+        val opptjeningsvurderingId =
+            OpptjeningsvurderingId(
                 UUID.fromString(
                     løsning
                         .path("@løsning")
@@ -81,7 +80,7 @@ internal class OpptjeningsvurderingRiverTest {
                 ),
             )
 
-        val vurdering = vurderinger.finn(Krav.Opptjening, kravvurderingId) as Kravvurdering.VurdertISpeil
+        val vurdering = vurderinger.finn(opptjeningsvurderingId) as Opptjeningsvurdering.VurdertISpeil
         assertEquals(OPPTJENING_ARBEID_MINST_4_UKER, vurdering.avgjørendeVilkårskode)
         assertTrue(prøvinger.allePrøvinger.single().erAvsluttet)
     }
@@ -183,7 +182,7 @@ internal class OpptjeningsvurderingRiverTest {
         assertEquals(0, rapid.inspektør.size)
     }
 
-    private fun fullførtPrøving(): KravvurderingId {
+    private fun fullførtPrøving(): OpptjeningsvurderingId {
         val prøving = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving
         val arbeidsforhold = Arbeidsforhold(orgnummer = ORGNUMMER, ansettelseperiode = 1.januar til 31.januar, type = ORDINÆRT)
         val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(listOf(arbeidsforhold)))

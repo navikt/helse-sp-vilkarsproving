@@ -5,9 +5,8 @@ import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResult
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.sikkerLogg
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
-import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import java.time.LocalDate
@@ -22,7 +21,7 @@ import java.time.LocalDate
 internal class OpptjeningService(
     kontekst: Transaksjonskontekst,
 ) {
-    private val kravvurderingRepository = kontekst.kravvurderinger
+    private val kravvurderingRepository = kontekst.opptjeningsvurderinger
     private val opptjeningsprøvingRepository = kontekst.opptjeningsprøvinger
 
     fun vurderOpptjening(
@@ -32,8 +31,8 @@ internal class OpptjeningService(
     ): VurderOpptjeningResultat {
         // TODO: I fremtiden bør vi sjekke at eksisterende vurdering ble gjort på samme arbeidssituasjon,
         //  dersom situasjonen på et skjæringstidspunkt kan endre seg.
-        kravvurderingRepository.gjeldende(Krav.Opptjening, fødselsnummer, skjæringstidspunkt)?.let { vurdering ->
-            sikkerLogg.info("Har allerede opptjeningsvurdering for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. KravvurderingId: ${vurdering.id}.")
+        kravvurderingRepository.gjeldende(fødselsnummer, skjæringstidspunkt)?.let { vurdering ->
+            sikkerLogg.info("Har allerede opptjeningsvurdering for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. OpptjeningsvurderingId: ${vurdering.id}.")
             return HarVurdering(fødselsnummer, skjæringstidspunkt, vurdering.id)
         }
 
@@ -51,7 +50,7 @@ internal class OpptjeningService(
         }
 
         kravvurderingRepository.lagre(vurdering)
-        sikkerLogg.info("Opptjeningsprøving ${prøving.id} fullført uten innhenting for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. KravvurderingId: ${vurdering.id}.")
+        sikkerLogg.info("Opptjeningsprøving ${prøving.id} fullført uten innhenting for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. OpptjeningsvurderingId: ${vurdering.id}.")
         return HarVurdering(fødselsnummer, skjæringstidspunkt, vurdering.id)
     }
 
@@ -75,7 +74,7 @@ internal class OpptjeningService(
         val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold))
         kravvurderingRepository.lagre(vurdering)
         opptjeningsprøvingRepository.lagre(prøving)
-        sikkerLogg.info("Opptjeningsprøving ${prøving.id} fullført for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. KravvurderingId: ${vurdering.id}.")
+        sikkerLogg.info("Opptjeningsprøving ${prøving.id} fullført for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. OpptjeningsvurderingId: ${vurdering.id}.")
         return BehandleGrunnlagResultat.NyVurderingForetatt(fødselsnummer, skjæringstidspunkt, vurdering.id)
     }
 
@@ -83,7 +82,7 @@ internal class OpptjeningService(
         data class NyVurderingForetatt(
             val fødselsnummer: String,
             val skjæringstidspunkt: LocalDate,
-            val kravvurderingId: KravvurderingId,
+            val opptjeningsvurderingId: OpptjeningsvurderingId,
         ) : BehandleGrunnlagResultat()
 
         data object AlleredeVurdert : BehandleGrunnlagResultat()
@@ -91,7 +90,7 @@ internal class OpptjeningService(
         data object IngenPrøvingFunnet : BehandleGrunnlagResultat()
     }
 
-    fun finnOpptjeningsvurdering(kravvurderingId: KravvurderingId): Kravvurdering =
-        kravvurderingRepository.finn(Krav.Opptjening, kravvurderingId)
-            ?: error("Fant ikke opptjeningsvurdering med id $kravvurderingId")
+    fun finnOpptjeningsvurdering(opptjeningsvurderingId: OpptjeningsvurderingId): Opptjeningsvurdering =
+        kravvurderingRepository.finn(opptjeningsvurderingId)
+            ?: error("Fant ikke opptjeningsvurdering med id $opptjeningsvurderingId")
 }

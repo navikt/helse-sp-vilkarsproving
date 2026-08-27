@@ -9,10 +9,10 @@ import java.util.*
 
 class ApiDiskriminatorTest {
     @Test
-    fun `ApiKravvurdering - navn i JsonSubTypes stemmer med faktisk kravkilde`() {
+    fun `ApiOpptjeningsvurdering - navn i JsonSubTypes stemmer med faktisk kravkilde`() {
         verifiserDiskriminator(
-            ApiKravvurdering::class.java,
-            ApiKravvurdering.VurdertISpeil(
+            ApiOpptjeningsvurdering::class.java,
+            ApiOpptjeningsvurdering.VurdertISpeil(
                 id = UUID.randomUUID(),
                 kravkode = ApiKravkode.OPPTJENING,
                 rettTilSykepenger = true,
@@ -32,7 +32,7 @@ class ApiDiskriminatorTest {
                         ),
                     ),
             ),
-            ApiKravvurdering.OverførtFraInfotrygd(
+            ApiOpptjeningsvurdering.OverførtFraInfotrygd(
                 id = UUID.randomUUID(),
                 kravkode = ApiKravkode.OPPTJENING,
                 rettTilSykepenger = true,

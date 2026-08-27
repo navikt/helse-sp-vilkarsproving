@@ -3,10 +3,10 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.db
 import kotliquery.Row
 import kotliquery.Session
 import kotliquery.queryOf
-import no.nav.helse.sykepenger.vilkarsproving.application.KravvurderingRepository
+import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningsvurderingRepository
 import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
@@ -18,22 +18,22 @@ import java.time.LocalDate
 private const val KRAVKILDE_VURDERT_I_SPEIL = "VURDERT_I_SPEIL"
 private const val KRAVKILDE_OVERFOERT_FRA_INFOTRYGD = "OVERFOERT_FRA_INFOTRYGD"
 
-internal class PostgresKravvurderingRepository(
+internal class PostgresOpptjeningsvurderingRepository(
     private val session: Session,
-) : KravvurderingRepository {
-    override fun lagre(vurdering: Kravvurdering) {
+) : OpptjeningsvurderingRepository {
+    override fun lagre(vurdering: Opptjeningsvurdering) {
         try {
             when (vurdering) {
-                is Kravvurdering.VurdertISpeil -> lagreVurdertISpeil(vurdering)
-                is Kravvurdering.OverførtFraInfotrygd -> lagreInfotrygd(vurdering)
+                is Opptjeningsvurdering.VurdertISpeil -> lagreVurdertISpeil(vurdering)
+                is Opptjeningsvurdering.OverførtFraInfotrygd -> lagreInfotrygd(vurdering)
             }
         } catch (e: PSQLException) {
             if (e.sqlState != UNIKHETSBRUDD) throw e
-            throw IllegalStateException("Kravvurdering ${vurdering.id} er allerede lagret. Vurderinger er immutable.", e)
+            throw IllegalStateException("Opptjeningsvurdering ${vurdering.id} er allerede lagret. Vurderinger er immutable.", e)
         }
     }
 
-    private fun lagreVurdertISpeil(vurdering: Kravvurdering.VurdertISpeil) {
+    private fun lagreVurdertISpeil(vurdering: Opptjeningsvurdering.VurdertISpeil) {
         @Language("PostgreSQL")
         val kravvurderingSql = """
             insert into kravvurdering (id, krav, fødselsnummer, skjæringstidspunkt, kravkilde, rett_til_sykepenger)
@@ -44,7 +44,7 @@ internal class PostgresKravvurderingRepository(
                 kravvurderingSql,
                 mapOf(
                     "id" to vurdering.id.value,
-                    "krav" to vurdering.krav.name,
+                    "krav" to Krav.Opptjening.name,
                     "fodselsnummer" to vurdering.fødselsnummer,
                     "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
                     "kravkilde" to KRAVKILDE_VURDERT_I_SPEIL,
@@ -56,7 +56,7 @@ internal class PostgresKravvurderingRepository(
         @Language("PostgreSQL")
         val vilkårsvurderingSql = """
             insert into vilkarsvurdering (id, kravvurdering_id, vilkårskode, utfall, vurdert_tidspunkt, kilde)
-            values (:id, :kravvurderingId, :vilkarskode, :utfall, :vurdertTidspunkt, cast(:kilde as jsonb))
+            values (:id, :opptjeningsvurderingId, :vilkarskode, :utfall, :vurdertTidspunkt, cast(:kilde as jsonb))
         """
         vurdering.vilkårsvurderinger.forEach { ledd ->
             session.run(
@@ -64,7 +64,7 @@ internal class PostgresKravvurderingRepository(
                     vilkårsvurderingSql,
                     mapOf(
                         "id" to ledd.id.value,
-                        "kravvurderingId" to vurdering.id.value,
+                        "opptjeningsvurderingId" to vurdering.id.value,
                         "vilkarskode" to ledd.vilkårskode.name,
                         "utfall" to ledd.utfall.name,
                         "vurdertTidspunkt" to ledd.vurdertTidspunkt,
@@ -75,7 +75,7 @@ internal class PostgresKravvurderingRepository(
         }
     }
 
-    private fun lagreInfotrygd(vurdering: Kravvurdering.OverførtFraInfotrygd) {
+    private fun lagreInfotrygd(vurdering: Opptjeningsvurdering.OverførtFraInfotrygd) {
         @Language("PostgreSQL")
         val sql = """
             insert into kravvurdering (id, krav, fødselsnummer, skjæringstidspunkt, kravkilde, rett_til_sykepenger)
@@ -86,7 +86,7 @@ internal class PostgresKravvurderingRepository(
                 sql,
                 mapOf(
                     "id" to vurdering.id.value,
-                    "krav" to vurdering.krav.name,
+                    "krav" to Krav.Opptjening.name,
                     "fodselsnummer" to vurdering.fødselsnummer,
                     "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
                     "kravkilde" to KRAVKILDE_OVERFOERT_FRA_INFOTRYGD,
@@ -97,10 +97,9 @@ internal class PostgresKravvurderingRepository(
     }
 
     override fun gjeldende(
-        krav: Krav,
         fødselsnummer: String,
         skjæringstidspunkt: LocalDate,
-    ): Kravvurdering? {
+    ): Opptjeningsvurdering? {
         @Language("PostgreSQL")
         val sql = """
             $SELECT_KRAVVURDERING
@@ -113,18 +112,15 @@ internal class PostgresKravvurderingRepository(
                 queryOf(
                     sql,
                     mapOf(
-                        "krav" to krav.name,
+                        "krav" to Krav.Opptjening.name,
                         "fodselsnummer" to fødselsnummer,
                         "skjaeringstidspunkt" to skjæringstidspunkt,
                     ),
-                ).map(::tilKravvurderingRad).asSingle,
+                ).map(::tilOpptjeningsvurderingRad).asSingle,
             )?.let(::hydrer)
     }
 
-    override fun finn(
-        krav: Krav,
-        kravvurderingId: KravvurderingId,
-    ): Kravvurdering? {
+    override fun finn(opptjeningsvurderingId: OpptjeningsvurderingId): Opptjeningsvurdering? {
         @Language("PostgreSQL")
         val sql = """
             $SELECT_KRAVVURDERING
@@ -132,41 +128,42 @@ internal class PostgresKravvurderingRepository(
         """
         return session
             .run(
-                queryOf(sql, mapOf("krav" to krav.name, "id" to kravvurderingId.value)).map(::tilKravvurderingRad).asSingle,
+                queryOf(
+                    sql,
+                    mapOf("krav" to Krav.Opptjening.name, "id" to opptjeningsvurderingId.value),
+                ).map(::tilOpptjeningsvurderingRad).asSingle,
             )?.let(::hydrer)
     }
 
-    private fun hydrer(rad: KravvurderingRad): Kravvurdering =
+    private fun hydrer(rad: OpptjeningsvurderingRad): Opptjeningsvurdering =
         when (rad.kravkilde) {
             KRAVKILDE_OVERFOERT_FRA_INFOTRYGD ->
-                Kravvurdering.infotrygdFraLagring(
+                Opptjeningsvurdering.infotrygdFraLagring(
                     id = rad.id,
-                    krav = rad.krav,
                     fødselsnummer = rad.fødselsnummer,
                     skjæringstidspunkt = rad.skjæringstidspunkt,
                     girRettTilSykepenger = rad.girRettTilSykepenger,
                 )
 
             else ->
-                Kravvurdering.fraLagring(
+                Opptjeningsvurdering.fraLagring(
                     id = rad.id,
-                    krav = rad.krav,
                     fødselsnummer = rad.fødselsnummer,
                     skjæringstidspunkt = rad.skjæringstidspunkt,
                     sti = finnSti(rad.id),
                 )
         }
 
-    private fun finnSti(kravvurderingId: KravvurderingId): List<Vilkårsvurdering> {
+    private fun finnSti(opptjeningsvurderingId: OpptjeningsvurderingId): List<Vilkårsvurdering> {
         @Language("PostgreSQL")
         val sql = """
             select id, vilkårskode, utfall, vurdert_tidspunkt, kilde
             from vilkarsvurdering
-            where kravvurdering_id = :kravvurderingId
+            where kravvurdering_id = :opptjeningsvurderingId
             order by løpenummer
         """
         return session.run(
-            queryOf(sql, mapOf("kravvurderingId" to kravvurderingId.value)).map(::tilVilkårsvurdering).asList,
+            queryOf(sql, mapOf("opptjeningsvurderingId" to opptjeningsvurderingId.value)).map(::tilVilkårsvurdering).asList,
         )
     }
 
@@ -179,9 +176,9 @@ internal class PostgresKravvurderingRepository(
             kilde = Vurderingskildejson.fraJson(row.string("kilde")),
         )
 
-    private fun tilKravvurderingRad(row: Row) =
-        KravvurderingRad(
-            id = KravvurderingId(row.uuid("id")),
+    private fun tilOpptjeningsvurderingRad(row: Row) =
+        OpptjeningsvurderingRad(
+            id = OpptjeningsvurderingId(row.uuid("id")),
             krav = Krav.valueOf(row.string("krav")),
             fødselsnummer = row.string("fødselsnummer"),
             skjæringstidspunkt = row.localDate("skjæringstidspunkt"),
@@ -189,8 +186,8 @@ internal class PostgresKravvurderingRepository(
             girRettTilSykepenger = row.boolean("rett_til_sykepenger"),
         )
 
-    private data class KravvurderingRad(
-        val id: KravvurderingId,
+    private data class OpptjeningsvurderingRad(
+        val id: OpptjeningsvurderingId,
         val krav: Krav,
         val fødselsnummer: String,
         val skjæringstidspunkt: LocalDate,

@@ -8,7 +8,7 @@ import no.nav.helse.speil.backend.app.rest.PostBehandler
 import no.nav.helse.speil.backend.app.rest.RestResponse
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
@@ -63,14 +63,13 @@ internal class OverstyrVilkårsvurderingBehandler(
                 )
 
             val kravvurdering =
-                Kravvurdering.avSaksbehandler(
-                    krav = vilkårskode.krav,
+                Opptjeningsvurdering.avSaksbehandler(
                     fødselsnummer = identitetsnummer.value,
                     skjæringstidspunkt = request.skjæringstidspunkt,
                     sti = listOf(vilkårsvurdering),
                 )
 
-            kallKontekst.transaksjon.kravvurderinger.lagre(kravvurdering)
+            kallKontekst.transaksjon.opptjeningsvurderinger.lagre(kravvurdering)
 
             OpptjeningsvurderingOverstyrtMelding.publiser(
                 context = meldingskontekst(),

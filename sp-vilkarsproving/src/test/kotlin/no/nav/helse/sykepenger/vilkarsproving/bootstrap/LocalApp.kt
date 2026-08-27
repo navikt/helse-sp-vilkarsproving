@@ -16,7 +16,7 @@ import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurde
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 
 private const val PORT = 8181
 
@@ -24,7 +24,7 @@ fun main() {
     val spleisService =
         SpleisOpptjeningsvurderingService(
             object : ISpleisClient {
-                override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<Opptjeningsvurdering> = emptyList()
+                override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> = emptyList()
             },
         )
     val restAdapter =

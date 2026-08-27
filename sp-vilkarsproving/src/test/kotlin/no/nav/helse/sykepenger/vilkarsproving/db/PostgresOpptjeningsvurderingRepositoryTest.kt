@@ -4,9 +4,8 @@ import no.nav.helse.februar
 import no.nav.helse.januar
 import no.nav.helse.mars
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
-import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
@@ -28,7 +27,7 @@ import java.time.temporal.ChronoUnit
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
+internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
     @Test
     fun `arbeidstakervurdering lagres og hentes tilbake med grunnlaget sitt`() {
         val grunnlag =
@@ -38,10 +37,9 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
             )
         val vurdering = lagreVurdering(grunnlag)
 
-        val lagret = transaksjon { it.kravvurderinger.finn(Krav.Opptjening, vurdering.id) } as Kravvurdering.VurdertISpeil
+        val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.VurdertISpeil
 
         assertEquals(vurdering.id, lagret.id)
-        assertEquals(Krav.Opptjening, lagret.krav)
         assertEquals(FØDSELSNUMMER, lagret.fødselsnummer)
         assertEquals(1.februar, lagret.skjæringstidspunkt)
         assertEquals(vurdering.girRettTilSykepenger, lagret.girRettTilSykepenger)
@@ -63,7 +61,7 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
     fun `vurdering av selvstendig næringsdrivende lagres og hentes tilbake`() {
         val vurdering = lagreVurdering(Opptjeningsgrunnlag.SelvstendigNæringsdrivende)
 
-        val lagret = transaksjon { it.kravvurderinger.finn(Krav.Opptjening, vurdering.id) } as Kravvurdering.VurdertISpeil
+        val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.VurdertISpeil
         val kilde = lagret.vilkårsvurderinger.single().kilde as Vurderingskilde.Automatisk
 
         assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, kilde.grunnlag)
@@ -81,15 +79,14 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
                 vurdertTidspunkt = Instant.now(),
             )
         val vurdering =
-            Kravvurdering.avSaksbehandler(
-                krav = Krav.Opptjening,
+            Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
                 sti = listOf(ledd),
             )
-        transaksjon { it.kravvurderinger.lagre(vurdering) }
+        transaksjon { it.opptjeningsvurderinger.lagre(vurdering) }
 
-        val lagret = transaksjon { it.kravvurderinger.finn(Krav.Opptjening, vurdering.id) } as Kravvurdering.VurdertISpeil
+        val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.VurdertISpeil
         val kilde = lagret.vilkårsvurderinger.single().kilde
 
         assertInstanceOf(Vurderingskilde.Saksbehandler::class.java, kilde)
@@ -101,17 +98,16 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
     @Test
     fun `infotrygdvurdering lagres uten sti`() {
         val vurdering =
-            Kravvurdering.fraInfotrygd(
-                krav = Krav.Opptjening,
+            Opptjeningsvurdering.fraInfotrygd(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
                 girRettTilSykepenger = true,
             )
-        transaksjon { it.kravvurderinger.lagre(vurdering) }
+        transaksjon { it.opptjeningsvurderinger.lagre(vurdering) }
 
-        val lagret = transaksjon { it.kravvurderinger.finn(Krav.Opptjening, vurdering.id) }
+        val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) }
 
-        assertInstanceOf(Kravvurdering.OverførtFraInfotrygd::class.java, lagret)
+        assertInstanceOf(Opptjeningsvurdering.OverførtFraInfotrygd::class.java, lagret)
         assertTrue(lagret!!.girRettTilSykepenger)
     }
 
@@ -120,22 +116,22 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
         val første = lagreVurdering(arbeidstakergrunnlag())
         val andre = lagreVurdering(Opptjeningsgrunnlag.SelvstendigNæringsdrivende)
 
-        val gjeldende = transaksjon { it.kravvurderinger.gjeldende(Krav.Opptjening, FØDSELSNUMMER, 1.februar) }!!
+        val gjeldende = transaksjon { it.opptjeningsvurderinger.gjeldende(FØDSELSNUMMER, 1.februar) }!!
 
         assertEquals(andre.id, gjeldende.id)
         assertEquals(2, Database.antallRader("kravvurdering"))
-        assertEquals(første.id, transaksjon { it.kravvurderinger.finn(Krav.Opptjening, første.id) }!!.id)
+        assertEquals(første.id, transaksjon { it.opptjeningsvurderinger.finn(første.id) }!!.id)
     }
 
     @Test
     fun `gjeldende skiller på skjæringstidspunkt og fødselsnummer`() {
         lagreVurdering(arbeidstakergrunnlag(), skjæringstidspunkt = 1.mars)
 
-        assertNull(transaksjon { it.kravvurderinger.gjeldende(Krav.Opptjening, FØDSELSNUMMER, 1.februar) })
-        assertNull(transaksjon { it.kravvurderinger.gjeldende(Krav.Opptjening, "12029240046", 1.mars) })
+        assertNull(transaksjon { it.opptjeningsvurderinger.gjeldende(FØDSELSNUMMER, 1.februar) })
+        assertNull(transaksjon { it.opptjeningsvurderinger.gjeldende("12029240046", 1.mars) })
         assertEquals(
             1.mars,
-            transaksjon { it.kravvurderinger.gjeldende(Krav.Opptjening, FØDSELSNUMMER, 1.mars) }!!.skjæringstidspunkt,
+            transaksjon { it.opptjeningsvurderinger.gjeldende(FØDSELSNUMMER, 1.mars) }!!.skjæringstidspunkt,
         )
     }
 
@@ -143,27 +139,27 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
     fun `samme vurdering kan ikke lagres to ganger`() {
         val vurdering = lagreVurdering(arbeidstakergrunnlag())
 
-        assertThrows<IllegalStateException> { transaksjon { it.kravvurderinger.lagre(vurdering) } }
+        assertThrows<IllegalStateException> { transaksjon { it.opptjeningsvurderinger.lagre(vurdering) } }
 
         assertEquals(1, Database.antallRader("kravvurdering"))
     }
 
     @Test
     fun `finn gir null for en ukjent vurdering`() {
-        assertNull(transaksjon { it.kravvurderinger.finn(Krav.Opptjening, KravvurderingId.ny()) })
+        assertNull(transaksjon { it.opptjeningsvurderinger.finn(OpptjeningsvurderingId.ny()) })
     }
 
     private fun lagreVurdering(
         grunnlag: Vilkårsgrunnlag,
         skjæringstidspunkt: LocalDate = 1.februar,
-    ): Kravvurdering.VurdertISpeil =
+    ): Opptjeningsvurdering.VurdertISpeil =
         transaksjon { kontekst ->
             when (grunnlag) {
                 is Opptjeningsgrunnlag.Arbeidstaker -> {
                     val påbegynt = Opptjeningsprøving.start(FØDSELSNUMMER, skjæringstidspunkt, Arbeidssituasjon.Arbeidstaker)
                     kontekst.opptjeningsprøvinger.lagre(påbegynt.prøving)
                     val vurdering = påbegynt.prøving.motta(grunnlag)
-                    kontekst.kravvurderinger.lagre(vurdering)
+                    kontekst.opptjeningsvurderinger.lagre(vurdering)
                     kontekst.opptjeningsprøvinger.lagre(påbegynt.prøving)
                     vurdering
                 }
@@ -171,7 +167,7 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
                 else -> {
                     val påbegynt = Opptjeningsprøving.start(FØDSELSNUMMER, skjæringstidspunkt, Arbeidssituasjon.SelvstendigNæringsdrivende)
                     kontekst.opptjeningsprøvinger.lagre(påbegynt.prøving)
-                    checkNotNull(påbegynt.vurdering).also { kontekst.kravvurderinger.lagre(it) }
+                    checkNotNull(påbegynt.vurdering).also { kontekst.opptjeningsvurderinger.lagre(it) }
                 }
             }
         }

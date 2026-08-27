@@ -9,7 +9,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskA
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingResultatRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -41,7 +41,7 @@ internal class OpptjeningE2ETest : DatabaseTest() {
                 this,
                 transaksjon,
                 object : ISpleisClient {
-                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<Opptjeningsvurdering> {
+                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> {
                         TODO("Not yet implemented")
                     }
                 },

@@ -1,8 +1,7 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.spleis
 
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
-import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
@@ -10,22 +9,21 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import org.slf4j.LoggerFactory
 
-private val log = LoggerFactory.getLogger("OpptjeningsvurderingTilKravvurdering")
+private val log = LoggerFactory.getLogger("OpptjeningsvurderingTilOpptjeningsvurdering")
 
 /**
- * Oversetter en [Opptjeningsvurdering] hentet fra spleis-api til domeneobjektet [Kravvurdering],
+ * Oversetter en [SpleisOpptjeningsvurdering] hentet fra spleis-api til domeneobjektet [Opptjeningsvurdering],
  * slik at den kan behandles likt med vurderinger hentet fra vår egen database — se
  * [no.nav.helse.sykepenger.vilkarsproving.infra.db.Lagringsjson] for tilsvarende oversettelse
  * for lagrede vurderinger.
  */
-internal fun Opptjeningsvurdering.tilKravvurdering(fødselsnummer: String): Kravvurdering =
+internal fun SpleisOpptjeningsvurdering.tilOpptjeningsvurdering(fødselsnummer: String): Opptjeningsvurdering =
     when (this) {
-        is Opptjeningsvurdering.SpleisArbeidstaker -> {
+        is SpleisOpptjeningsvurdering.SpleisArbeidstaker -> {
             val grunnlag = Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold.flatMap { it.tilDomene() })
             val utledetFakta = UtledetFakta.Opptjeningstid(opptjeningsperiode, antallDager)
-            Kravvurdering.overførtFraSpleis(
+            Opptjeningsvurdering.overførtFraSpleis(
                 id = opptjeningsvurderingId,
-                krav = Krav.Opptjening,
                 fødselsnummer = fødselsnummer,
                 skjæringstidspunkt = skjæringstidspunkt,
                 sti =
@@ -40,10 +38,9 @@ internal fun Opptjeningsvurdering.tilKravvurdering(fødselsnummer: String): Krav
             )
         }
 
-        is Opptjeningsvurdering.SpleisSelvstendig ->
-            Kravvurdering.overførtFraSpleis(
+        is SpleisOpptjeningsvurdering.SpleisSelvstendig ->
+            Opptjeningsvurdering.overførtFraSpleis(
                 id = opptjeningsvurderingId,
-                krav = Krav.Opptjening,
                 fødselsnummer = fødselsnummer,
                 skjæringstidspunkt = skjæringstidspunkt,
                 sti =
@@ -60,17 +57,16 @@ internal fun Opptjeningsvurdering.tilKravvurdering(fødselsnummer: String): Krav
         // Infotrygd-krav har verken sti eller avgjørende vilkår i vår modell. Spleis overfører kun
         // opptjeningsvurderinger som Infotrygd har innvilget, så vi kan trygt anta rett til
         // sykepenger — jf. samme antakelse i OpptjeningsvurderingResultatRiver.
-        is Opptjeningsvurdering.InfotrygdArbeidstaker ->
-            Kravvurdering.fraInfotrygd(
+        is SpleisOpptjeningsvurdering.InfotrygdArbeidstaker ->
+            Opptjeningsvurdering.fraInfotrygd(
                 id = opptjeningsvurderingId,
-                krav = Krav.Opptjening,
                 fødselsnummer = fødselsnummer,
                 skjæringstidspunkt = skjæringstidspunkt,
                 girRettTilSykepenger = true,
             )
     }
 
-private fun Opptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold.tilDomene(): List<Arbeidsforhold> {
+private fun SpleisOpptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold.tilDomene(): List<Arbeidsforhold> {
     // Spleis oppgir ikke arbeidsforholdtype (ordinært, frilanser, maritimt o.l.), kun
     // ansettelsesperioder per orgnummer. Vi setter UKJENT inntil spleis-api eventuelt utvides
     // til å oppgi reell type.

@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.github.navikt.tbd_libs.access_token.AccessTokenProvider
 import com.github.navikt.tbd_libs.access_token.TexasClient
 import no.nav.helse.hendelser.til
-import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering.SpleisArbeidstaker.Ansettelsesperiode
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering.SpleisArbeidstaker.Ansettelsesperiode
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import tools.jackson.module.kotlin.readValue
 import java.net.URI
@@ -18,7 +18,7 @@ import java.time.LocalDate
 import java.util.UUID
 
 internal interface ISpleisClient {
-    fun hentOpptjeningsvurderinger(fødselsnummer: String): List<Opptjeningsvurdering>
+    fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering>
 }
 
 internal class SpleisClient(
@@ -27,7 +27,7 @@ internal class SpleisClient(
     private val tokenProvider: AccessTokenProvider,
     private val httpClient: HttpClient = HttpClient.newHttpClient(),
 ) : ISpleisClient {
-    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<Opptjeningsvurdering> {
+    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> {
         val m2mToken = tokenProvider.machineToken(scope)
 
         val body = PersonRequest(fødselsnummer)
@@ -78,17 +78,17 @@ internal class SpleisClient(
         private data class OpptjeningsvurderingerResponse(
             val opptjeningsvurderinger: List<OpptjeningsvurderingDto>,
         ) {
-            fun tilDomene(): List<Opptjeningsvurdering> = opptjeningsvurderinger.map { it.tilDomene() }
+            fun tilDomene(): List<SpleisOpptjeningsvurdering> = opptjeningsvurderinger.map { it.tilDomene() }
         }
 
         /**
          * Rå JSON-representasjon av en opptjeningsvurdering fra spleis-api, slik den kommer over
          * ledningen. Dette er utelukkende et internt format for klienten: den mappes videre til
-         * [Opptjeningsvurdering], som kun tillater de gyldige kombinasjonene av type og kilde.
+         * [SpleisOpptjeningsvurdering], som kun tillater de gyldige kombinasjonene av type og kilde.
          */
         @JsonIgnoreProperties(ignoreUnknown = true)
         private data class OpptjeningsvurderingDto(
-            val opptjeningsvurderingId: KravvurderingId,
+            val opptjeningsvurderingId: OpptjeningsvurderingId,
             val type: OpptjeningsvurderingTypeDto,
             val skjæringstidspunkt: LocalDate,
             val kilde: OpptjeningsvurderingKildeDto,
@@ -100,10 +100,10 @@ internal class SpleisClient(
             val opptjeningsperiode: PeriodeDto? = null,
             val arbeidsforhold: List<ArbeidsforholdDto> = emptyList(),
         ) {
-            fun tilDomene(): Opptjeningsvurdering =
+            fun tilDomene(): SpleisOpptjeningsvurdering =
                 when (kilde to type) {
                     OpptjeningsvurderingKildeDto.SPLEIS to OpptjeningsvurderingTypeDto.ARBEIDSTAKER ->
-                        Opptjeningsvurdering.SpleisArbeidstaker(
+                        SpleisOpptjeningsvurdering.SpleisArbeidstaker(
                             opptjeningsvurderingId = opptjeningsvurderingId,
                             skjæringstidspunkt = skjæringstidspunkt,
                             oppfylt = requireNotNull(oppfylt) { "oppfylt mangler for SPLEIS/ARBEIDSTAKER-vurdering $opptjeningsvurderingId" },
@@ -113,13 +113,13 @@ internal class SpleisClient(
                         )
 
                     OpptjeningsvurderingKildeDto.SPLEIS to OpptjeningsvurderingTypeDto.SELVSTENDIG ->
-                        Opptjeningsvurdering.SpleisSelvstendig(
+                        SpleisOpptjeningsvurdering.SpleisSelvstendig(
                             opptjeningsvurderingId = opptjeningsvurderingId,
                             skjæringstidspunkt = skjæringstidspunkt,
                         )
 
                     OpptjeningsvurderingKildeDto.INFOTRYGD to OpptjeningsvurderingTypeDto.ARBEIDSTAKER ->
-                        Opptjeningsvurdering.InfotrygdArbeidstaker(
+                        SpleisOpptjeningsvurdering.InfotrygdArbeidstaker(
                             opptjeningsvurderingId = opptjeningsvurderingId,
                             skjæringstidspunkt = skjæringstidspunkt,
                         )

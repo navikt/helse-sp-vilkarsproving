@@ -8,20 +8,18 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 
-internal class KravvurderingTest {
+internal class OpptjeningsvurderingTest {
     @Test
     fun `infotrygdvurdering har ingen sti, kun et utfall`() {
         val vurdering =
-            Kravvurdering.fraInfotrygd(
-                krav = Krav.Opptjening,
+            Opptjeningsvurdering.fraInfotrygd(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
                 girRettTilSykepenger = true,
             )
 
-        assertInstanceOf(Kravvurdering.OverførtFraInfotrygd::class.java, vurdering)
+        assertInstanceOf(Opptjeningsvurdering.OverførtFraInfotrygd::class.java, vurdering)
         assertTrue(vurdering.girRettTilSykepenger)
-        assertEquals(Krav.Opptjening, vurdering.krav)
     }
 
     @Test
@@ -36,8 +34,7 @@ internal class KravvurderingTest {
             )
 
         val vurdering =
-            Kravvurdering.avSaksbehandler(
-                krav = Krav.Opptjening,
+            Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
                 sti = listOf(ledd),
@@ -70,8 +67,7 @@ internal class KravvurderingTest {
             )
 
         val vurdering =
-            Kravvurdering.avSaksbehandler(
-                krav = Krav.Opptjening,
+            Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
                 sti = listOf(ikkeOppfylt, avgjørende),
@@ -85,8 +81,7 @@ internal class KravvurderingTest {
     @Test
     fun `en vurdert kravvurdering må ha minst ett ledd i stien`() {
         assertThrows<IllegalArgumentException> {
-            Kravvurdering.avSaksbehandler(
-                krav = Krav.Opptjening,
+            Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
                 sti = emptyList(),

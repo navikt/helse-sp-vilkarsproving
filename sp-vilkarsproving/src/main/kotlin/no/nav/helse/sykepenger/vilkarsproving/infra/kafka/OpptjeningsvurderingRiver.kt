@@ -67,10 +67,10 @@ internal class OpptjeningsvurderingRiver(
                     mapOf(
                         "Opptjeningsvurdering" to
                             mapOf(
-                                "id" to vurderOpptjeningResultat.kravvurderingId.toString(),
+                                "id" to vurderOpptjeningResultat.opptjeningsvurderingId.toString(),
                             ),
                     )
-                sikkerLogg.info("Har vurdering for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. VurderingId: ${vurderOpptjeningResultat.kravvurderingId}. Løsning:\n\t${packet.toJson()}")
+                sikkerLogg.info("Har vurdering for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. VurderingId: ${vurderOpptjeningResultat.opptjeningsvurderingId}. Løsning:\n\t${packet.toJson()}")
                 context.publish(packet.toJson())
             }
 

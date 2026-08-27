@@ -55,7 +55,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
         val påbegynt = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
         transaksjon {
             it.opptjeningsprøvinger.lagre(påbegynt.prøving)
-            it.kravvurderinger.lagre(påbegynt.vurdering!!)
+            it.opptjeningsvurderinger.lagre(påbegynt.vurdering!!)
         }
 
         val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar) }!!
@@ -73,7 +73,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
         val vurdering =
             transaksjon { kontekst ->
                 val vurdering = prøving.motta(arbeidstakergrunnlag())
-                kontekst.kravvurderinger.lagre(vurdering)
+                kontekst.opptjeningsvurderinger.lagre(vurdering)
                 kontekst.opptjeningsprøvinger.lagre(prøving)
                 vurdering
             }
@@ -113,7 +113,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
         val første = nyPrøving()
         transaksjon { kontekst ->
             kontekst.opptjeningsprøvinger.lagre(første)
-            kontekst.kravvurderinger.lagre(første.motta(arbeidstakergrunnlag()))
+            kontekst.opptjeningsvurderinger.lagre(første.motta(arbeidstakergrunnlag()))
             kontekst.opptjeningsprøvinger.lagre(første)
         }
 

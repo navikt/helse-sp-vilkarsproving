@@ -6,8 +6,7 @@ import no.nav.helse.hendelser.til
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT
-import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
@@ -43,7 +42,7 @@ internal class VurderingsresponsTest {
     @Test
     fun `kravet peker paa vilkaaret som avgjorde det`() {
         val respons = Vurderingsrespons.fra(automatiskArbeidstakervurdering(4.januar til 31.januar))
-        val krav = respons.krav.single() as ApiKravvurdering.VurdertISpeil
+        val krav = respons.krav.single() as ApiOpptjeningsvurdering.VurdertISpeil
 
         assertEquals(ApiKravkode.OPPTJENING, krav.kravkode)
         assertTrue(krav.rettTilSykepenger)
@@ -72,8 +71,7 @@ internal class VurderingsresponsTest {
                 vurdertTidspunkt = vurdertTidspunkt,
             )
         val vurdering =
-            Kravvurdering.avSaksbehandler(
-                krav = Krav.Opptjening,
+            Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
                 sti = listOf(ledd),
@@ -97,8 +95,7 @@ internal class VurderingsresponsTest {
                 vurdertTidspunkt = vurdertTidspunkt,
             )
         val vurdering =
-            Kravvurdering.avSaksbehandler(
-                krav = Krav.Opptjening,
+            Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
                 sti = listOf(ledd),
@@ -113,8 +110,7 @@ internal class VurderingsresponsTest {
     @Test
     fun `infotrygdvurdering blir et krav uten sti`() {
         val vurdering =
-            Kravvurdering.fraInfotrygd(
-                krav = Krav.Opptjening,
+            Opptjeningsvurdering.fraInfotrygd(
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
                 girRettTilSykepenger = true,
@@ -122,7 +118,7 @@ internal class VurderingsresponsTest {
 
         val krav = Vurderingsrespons.fra(vurdering).krav.single()
 
-        assertInstanceOf(ApiKravvurdering.OverførtFraInfotrygd::class.java, krav)
+        assertInstanceOf(ApiOpptjeningsvurdering.OverførtFraInfotrygd::class.java, krav)
         assertEquals(ApiKravkode.OPPTJENING, krav.kravkode)
         assertTrue(krav.rettTilSykepenger)
     }
@@ -130,7 +126,7 @@ internal class VurderingsresponsTest {
     @Test
     fun `selvstendig naeringsdrivende gir grunnlag uten arbeidsforhold`() {
         val vurdering =
-            Kravvurdering.automatisk(
+            Opptjeningsvurdering.automatisk(
                 opptjeningsprøvingId = OpptjeningsprøvingId.ny(),
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
@@ -144,7 +140,7 @@ internal class VurderingsresponsTest {
     }
 
     private fun automatiskArbeidstakervurdering(ansettelseperiode: Periode) =
-        Kravvurdering.automatisk(
+        Opptjeningsvurdering.automatisk(
             opptjeningsprøvingId = OpptjeningsprøvingId.ny(),
             fødselsnummer = "12345678901",
             skjæringstidspunkt = 1.februar,
@@ -156,6 +152,6 @@ internal class VurderingsresponsTest {
         )
 }
 
-private fun ApiVilkårsvurderingerForPersonResponse.enesteVurdering() = (krav.single() as ApiKravvurdering.VurdertISpeil).vurderinger.single()
+private fun ApiVilkårsvurderingerForPersonResponse.enesteVurdering() = (krav.single() as ApiOpptjeningsvurdering.VurdertISpeil).vurderinger.single()
 
 private fun ApiVilkårsvurdering.automatiskGrunnlag() = (kilde as ApiVurderingskilde.Automatisk).grunnlag as ApiVurderingsgrunnlag.Arbeidsforhold

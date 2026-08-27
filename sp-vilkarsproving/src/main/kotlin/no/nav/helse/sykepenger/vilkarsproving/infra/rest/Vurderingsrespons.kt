@@ -2,7 +2,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
@@ -13,26 +13,26 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
 import java.time.LocalDate
 
 internal object Vurderingsrespons {
-    fun fra(vurdering: Kravvurdering): ApiVilkårsvurderingerForPersonResponse =
+    fun fra(vurdering: Opptjeningsvurdering): ApiVilkårsvurderingerForPersonResponse =
         ApiVilkårsvurderingerForPersonResponse(
             skjæringstidspunkt = vurdering.skjæringstidspunkt,
             krav = listOf(vurdering.tilApi()),
         )
 }
 
-private fun Kravvurdering.tilApi(): ApiKravvurdering =
+private fun Opptjeningsvurdering.tilApi(): ApiOpptjeningsvurdering =
     when (this) {
-        is Kravvurdering.OverførtFraInfotrygd ->
-            ApiKravvurdering.OverførtFraInfotrygd(
+        is Opptjeningsvurdering.OverførtFraInfotrygd ->
+            ApiOpptjeningsvurdering.OverførtFraInfotrygd(
                 id = id.value,
-                kravkode = krav.tilApi(),
+                kravkode = Krav.Opptjening.tilApi(),
                 rettTilSykepenger = girRettTilSykepenger,
             )
 
-        is Kravvurdering.VurdertISpeil ->
-            ApiKravvurdering.VurdertISpeil(
+        is Opptjeningsvurdering.VurdertISpeil ->
+            ApiOpptjeningsvurdering.VurdertISpeil(
                 id = id.value,
-                kravkode = krav.tilApi(),
+                kravkode = Krav.Opptjening.tilApi(),
                 rettTilSykepenger = girRettTilSykepenger,
                 avgjørendeVilkårskode = avgjørendeVilkårskode.tilApi(),
                 vurderinger = vilkårsvurderinger.map { it.tilApi() },

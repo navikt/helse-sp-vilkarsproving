@@ -22,5 +22,5 @@ private class PostgresTransaksjonskontekst(
     session: Session,
 ) : Transaksjonskontekst {
     override val opptjeningsprøvinger = PostgresOpptjeningsprøvingRepository(session)
-    override val kravvurderinger = PostgresKravvurderingRepository(session)
+    override val opptjeningsvurderinger = PostgresOpptjeningsvurderingRepository(session)
 }

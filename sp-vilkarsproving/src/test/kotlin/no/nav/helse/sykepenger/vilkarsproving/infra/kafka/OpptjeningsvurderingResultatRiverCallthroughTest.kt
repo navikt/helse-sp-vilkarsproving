@@ -5,9 +5,9 @@ import no.nav.helse.februar
 import no.nav.helse.hendelser.somPeriode
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
-import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -27,32 +27,32 @@ class OpptjeningsvurderingResultatRiverCallthroughTest {
                 this,
                 transaksjon,
                 object : ISpleisClient {
-                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<Opptjeningsvurdering> =
+                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> =
                         when (fødselsnummer) {
                             FØDSELSNUMMER ->
                                 listOf(
-                                    Opptjeningsvurdering.SpleisArbeidstaker(
-                                        opptjeningsvurderingId = KravvurderingId(vurderingIdSpleisArbeidstaker),
+                                    SpleisOpptjeningsvurdering.SpleisArbeidstaker(
+                                        opptjeningsvurderingId = OpptjeningsvurderingId(vurderingIdSpleisArbeidstaker),
                                         skjæringstidspunkt = 1.februar,
                                         oppfylt = true,
                                         antallDager = 31,
                                         opptjeningsperiode = januar,
                                         arbeidsforhold = listOf(),
                                     ),
-                                    Opptjeningsvurdering.SpleisArbeidstaker(
-                                        opptjeningsvurderingId = KravvurderingId(vurderingIdSpleisArbeidstakerIkkeOppfylt),
+                                    SpleisOpptjeningsvurdering.SpleisArbeidstaker(
+                                        opptjeningsvurderingId = OpptjeningsvurderingId(vurderingIdSpleisArbeidstakerIkkeOppfylt),
                                         skjæringstidspunkt = 1.februar,
                                         oppfylt = false,
                                         antallDager = 1,
                                         opptjeningsperiode = 31.januar.somPeriode(),
                                         arbeidsforhold = listOf(),
                                     ),
-                                    Opptjeningsvurdering.SpleisSelvstendig(
-                                        opptjeningsvurderingId = KravvurderingId(vurderingIdSpleisSelvstendig),
+                                    SpleisOpptjeningsvurdering.SpleisSelvstendig(
+                                        opptjeningsvurderingId = OpptjeningsvurderingId(vurderingIdSpleisSelvstendig),
                                         skjæringstidspunkt = 1.februar,
                                     ),
-                                    Opptjeningsvurdering.InfotrygdArbeidstaker(
-                                        opptjeningsvurderingId = KravvurderingId(vurderingIdSpleisInfotrygd),
+                                    SpleisOpptjeningsvurdering.InfotrygdArbeidstaker(
+                                        opptjeningsvurderingId = OpptjeningsvurderingId(vurderingIdSpleisInfotrygd),
                                         skjæringstidspunkt = 1.februar,
                                     ),
                                 )

@@ -4,7 +4,7 @@ import java.time.Instant
 import java.time.LocalDate
 
 /**
- * Prosessen som leder fram til en [Kravvurdering.VurdertISpeil] av opptjeningskravet.
+ * Prosessen som leder fram til en [Opptjeningsvurdering.VurdertISpeil] av opptjeningskravet.
  *
  * Prøvingen eier livssyklusen — hva vi venter på, hvor lenge, og om vi er ferdige — mens selve
  * vurderingen er resultatet den produserer. En prøving i denne appen *er* en automatisk prøving: det
@@ -37,7 +37,7 @@ internal class Opptjeningsprøving private constructor(
         ) : Tilstand
 
         data class Fullført(
-            val kravvurderingId: KravvurderingId,
+            val opptjeningsvurderingId: OpptjeningsvurderingId,
         ) : Tilstand
     }
 
@@ -45,7 +45,7 @@ internal class Opptjeningsprøving private constructor(
      * Tar imot grunnlaget prøvingen venter på og produserer kravvurderingen.
      * Vurderingen og den oppdaterte prøvingen må lagres i samme transaksjon.
      */
-    fun motta(grunnlag: Opptjeningsgrunnlag): Kravvurdering.VurdertISpeil {
+    fun motta(grunnlag: Opptjeningsgrunnlag): Opptjeningsvurdering.VurdertISpeil {
         val venter =
             tilstand as? Tilstand.VenterPåGrunnlag
                 ?: error("Prøving $id venter ikke på grunnlag, men er i tilstand $tilstand")
@@ -55,9 +55,9 @@ internal class Opptjeningsprøving private constructor(
         return fullfør(grunnlag)
     }
 
-    private fun fullfør(grunnlag: Opptjeningsgrunnlag): Kravvurdering.VurdertISpeil {
+    private fun fullfør(grunnlag: Opptjeningsgrunnlag): Opptjeningsvurdering.VurdertISpeil {
         val vurdering =
-            Kravvurdering.automatisk(
+            Opptjeningsvurdering.automatisk(
                 opptjeningsprøvingId = id,
                 fødselsnummer = fødselsnummer,
                 skjæringstidspunkt = skjæringstidspunkt,
@@ -71,7 +71,7 @@ internal class Opptjeningsprøving private constructor(
     /** En påbegynt prøving. [vurdering] er satt dersom prøvingen kunne fullføres uten å innhente noe. */
     data class Påbegynt(
         val prøving: Opptjeningsprøving,
-        val vurdering: Kravvurdering.VurdertISpeil?,
+        val vurdering: Opptjeningsvurdering.VurdertISpeil?,
     )
 
     companion object {

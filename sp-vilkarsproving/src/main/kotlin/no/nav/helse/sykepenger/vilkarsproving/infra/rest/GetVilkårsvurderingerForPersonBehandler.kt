@@ -9,8 +9,7 @@ import no.nav.helse.speil.backend.app.rest.RestResponse
 import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
-import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
 
 internal class GetVilkårsvurderingerForPersonBehandler(
@@ -34,10 +33,10 @@ internal class GetVilkårsvurderingerForPersonBehandler(
         ) { identitetsnummer ->
 
             val vurdering =
-                kallKontekst.transaksjon.kravvurderinger
-                    .finn(Krav.Opptjening, KravvurderingId(resource.opptjeningsvurderingId))
+                kallKontekst.transaksjon.opptjeningsvurderinger
+                    .finn(OpptjeningsvurderingId(resource.opptjeningsvurderingId))
                     ?: try {
-                        spleisService.finn(KravvurderingId(resource.opptjeningsvurderingId), identitetsnummer.value)
+                        spleisService.finn(OpptjeningsvurderingId(resource.opptjeningsvurderingId), identitetsnummer.value)
                     } catch (ex: SpleisClientException) {
                         // warn log
                         loggWarn("SpleisClientException ved henting av opptjeningsvurdering: ${ex.message}")

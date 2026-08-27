@@ -6,7 +6,7 @@ import kotliquery.queryOf
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningsprøvingRepository
 import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
 import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import org.intellij.lang.annotations.Language
@@ -22,7 +22,7 @@ internal class PostgresOpptjeningsprøvingRepository(
         @Language("PostgreSQL")
         val sql = """
             insert into kravproving (id, krav, fødselsnummer, skjæringstidspunkt, startet, tilstand, utestående_behov, kravvurdering_id)
-            values (:id, :krav, :fodselsnummer, :skjaeringstidspunkt, :startet, :tilstand, :behov, :kravvurderingId)
+            values (:id, :krav, :fodselsnummer, :skjaeringstidspunkt, :startet, :tilstand, :behov, :opptjeningsvurderingId)
             on conflict (id) do update
             set tilstand = excluded.tilstand,
                 utestående_behov = excluded.utestående_behov,
@@ -40,7 +40,7 @@ internal class PostgresOpptjeningsprøvingRepository(
                     "startet" to prøving.startet,
                     "tilstand" to tilstand.navn,
                     "behov" to tilstand.behov,
-                    "kravvurderingId" to tilstand.kravvurderingId,
+                    "opptjeningsvurderingId" to tilstand.opptjeningsvurderingId,
                 ),
             ).asUpdate,
         )
@@ -80,7 +80,7 @@ internal class PostgresOpptjeningsprøvingRepository(
                 tilstandFraLagring(
                     navn = row.string("tilstand"),
                     behov = row.stringOrNull("utestående_behov"),
-                    kravvurderingId = row.uuidOrNull("kravvurdering_id"),
+                    opptjeningsvurderingId = row.uuidOrNull("kravvurdering_id"),
                 ),
         )
 }
@@ -92,20 +92,20 @@ private const val FULLFØRT = "FULLFØRT"
 private class LagretTilstand(
     val navn: String,
     val behov: String? = null,
-    val kravvurderingId: UUID? = null,
+    val opptjeningsvurderingId: UUID? = null,
 )
 
 private fun Opptjeningsprøving.Tilstand.tilLagring() =
     when (this) {
         Opptjeningsprøving.Tilstand.Startet -> LagretTilstand(STARTET)
         is Opptjeningsprøving.Tilstand.VenterPåGrunnlag -> LagretTilstand(VENTER_PÅ_GRUNNLAG, behov = behov.name)
-        is Opptjeningsprøving.Tilstand.Fullført -> LagretTilstand(FULLFØRT, kravvurderingId = kravvurderingId.value)
+        is Opptjeningsprøving.Tilstand.Fullført -> LagretTilstand(FULLFØRT, opptjeningsvurderingId = opptjeningsvurderingId.value)
     }
 
 private fun tilstandFraLagring(
     navn: String,
     behov: String?,
-    kravvurderingId: UUID?,
+    opptjeningsvurderingId: UUID?,
 ): Opptjeningsprøving.Tilstand =
     when (navn) {
         STARTET -> Opptjeningsprøving.Tilstand.Startet
@@ -116,7 +116,7 @@ private fun tilstandFraLagring(
 
         FULLFØRT ->
             Opptjeningsprøving.Tilstand.Fullført(
-                KravvurderingId(requireNotNull(kravvurderingId) { "Prøving i tilstand $navn mangler kravvurdering" }),
+                OpptjeningsvurderingId(requireNotNull(opptjeningsvurderingId) { "Prøving i tilstand $navn mangler kravvurdering" }),
             )
 
         else -> error("Kjenner ikke igjen lagret tilstand $navn")

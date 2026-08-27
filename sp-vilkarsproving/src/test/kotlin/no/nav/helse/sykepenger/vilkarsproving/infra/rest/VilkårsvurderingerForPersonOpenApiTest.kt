@@ -21,7 +21,7 @@ import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurde
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -58,7 +58,7 @@ class VilkårsvurderingerForPersonOpenApiTest {
         val spleisService =
             SpleisOpptjeningsvurderingService(
                 object : ISpleisClient {
-                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<Opptjeningsvurdering> = emptyList()
+                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> = emptyList()
                 },
             )
         routing {
@@ -101,8 +101,8 @@ class VilkårsvurderingerForPersonOpenApiTest {
                     .readTree(client.get("/api/openapi.json").bodyAsText())["components"]["schemas"]
 
             listOf(
-                "ApiKravvurdering.VurdertISpeil" to "kravkilde",
-                "ApiKravvurdering.OverførtFraInfotrygd" to "kravkilde",
+                "ApiOpptjeningsvurdering.VurdertISpeil" to "kravkilde",
+                "ApiOpptjeningsvurdering.OverførtFraInfotrygd" to "kravkilde",
                 "ApiVurderingskilde.Automatisk" to "kildetype",
                 "ApiVurderingskilde.Saksbehandler" to "kildetype",
                 "ApiVurderingsgrunnlag.Arbeidsforhold" to "grunnlagstype",

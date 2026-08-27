@@ -24,13 +24,12 @@ import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonPro
 import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
-import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -71,10 +70,10 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
     private fun principal(tilganger: Set<Tilgang> = setOf(Tilgang.Les)) = SaksbehandlerPrincipal(saksbehandler, tilganger, emptySet<AppRolle>(), AccessToken("token"))
 
     private class FakeSpleisClient(
-        private val vurderinger: List<Opptjeningsvurdering> = emptyList(),
+        private val vurderinger: List<SpleisOpptjeningsvurdering> = emptyList(),
         private val svikt: RuntimeException? = null,
     ) : ISpleisClient {
-        override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<Opptjeningsvurdering> {
+        override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> {
             svikt?.let { throw it }
             return vurderinger
         }
@@ -179,14 +178,14 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             val enAnnenIdentitetsnummer = Identitetsnummer("98765432109")
             val transaksjonProvider = InMemoryTransaksjonProvider()
             val andresVurdering =
-                Kravvurdering.automatisk(
+                Opptjeningsvurdering.automatisk(
                     opptjeningsprøvingId = OpptjeningsprøvingId.ny(),
                     fødselsnummer = enAnnenIdentitetsnummer.value,
                     skjæringstidspunkt = LocalDate.of(2024, 1, 1),
                     grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,
                     vurdertTidspunkt = Instant.now(),
                 )
-            transaksjonProvider.kravvurderinger.lagre(andresVurdering)
+            transaksjonProvider.opptjeningsvurderinger.lagre(andresVurdering)
 
             val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
             val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
@@ -210,14 +209,14 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
         testApplication {
             val transaksjonProvider = InMemoryTransaksjonProvider()
             val vurdering =
-                Kravvurdering.automatisk(
+                Opptjeningsvurdering.automatisk(
                     opptjeningsprøvingId = OpptjeningsprøvingId.ny(),
                     fødselsnummer = identitetsnummer.value,
                     skjæringstidspunkt = LocalDate.of(2024, 2, 1),
                     grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,
                     vurdertTidspunkt = Instant.parse("2024-02-01T12:00:00Z"),
                 )
-            transaksjonProvider.kravvurderinger.lagre(vurdering)
+            transaksjonProvider.opptjeningsvurderinger.lagre(vurdering)
 
             val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
             val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
@@ -262,13 +261,12 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
         testApplication {
             val transaksjonProvider = InMemoryTransaksjonProvider()
             val vurdering =
-                Kravvurdering.fraInfotrygd(
-                    krav = Krav.Opptjening,
+                Opptjeningsvurdering.fraInfotrygd(
                     fødselsnummer = identitetsnummer.value,
                     skjæringstidspunkt = LocalDate.of(2024, 2, 1),
                     girRettTilSykepenger = true,
                 )
-            transaksjonProvider.kravvurderinger.lagre(vurdering)
+            transaksjonProvider.opptjeningsvurderinger.lagre(vurdering)
 
             val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
             val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
@@ -295,21 +293,21 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
     @Test
     fun `finner ikke vurdering i db, men finner den hos spleis som arbeidstaker`() =
         testApplication {
-            val kravvurderingId = UUID.randomUUID()
+            val opptjeningsvurderingId = UUID.randomUUID()
             val spleisVurdering =
-                Opptjeningsvurdering.SpleisArbeidstaker(
-                    opptjeningsvurderingId = KravvurderingId(kravvurderingId),
+                SpleisOpptjeningsvurdering.SpleisArbeidstaker(
+                    opptjeningsvurderingId = OpptjeningsvurderingId(opptjeningsvurderingId),
                     skjæringstidspunkt = LocalDate.of(2024, 3, 1),
                     oppfylt = true,
                     antallDager = 30,
                     opptjeningsperiode = null,
                     arbeidsforhold =
                         listOf(
-                            Opptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold(
+                            SpleisOpptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold(
                                 organisasjonsnummer = "123456789",
                                 ansettelsesperioder =
                                     listOf(
-                                        Opptjeningsvurdering.SpleisArbeidstaker.Ansettelsesperiode(
+                                        SpleisOpptjeningsvurdering.SpleisArbeidstaker.Ansettelsesperiode(
                                             fom = LocalDate.of(2024, 1, 1),
                                             tom = null,
                                         ),
@@ -329,7 +327,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
                 )
             }
 
-            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$kravvurderingId")
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$opptjeningsvurderingId")
             assertEquals(HttpStatusCode.OK, response.status)
 
             val krav = jacksonObjectMapper().readTree(response.bodyAsText())["krav"].single()
@@ -343,10 +341,10 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
     @Test
     fun `finner ikke vurdering i db, men finner den hos spleis som selvstendig`() =
         testApplication {
-            val kravvurderingId = UUID.randomUUID()
+            val opptjeningsvurderingId = UUID.randomUUID()
             val spleisVurdering =
-                Opptjeningsvurdering.SpleisSelvstendig(
-                    opptjeningsvurderingId = KravvurderingId(kravvurderingId),
+                SpleisOpptjeningsvurdering.SpleisSelvstendig(
+                    opptjeningsvurderingId = OpptjeningsvurderingId(opptjeningsvurderingId),
                     skjæringstidspunkt = LocalDate.of(2024, 3, 1),
                 )
 
@@ -361,7 +359,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
                 )
             }
 
-            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$kravvurderingId")
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$opptjeningsvurderingId")
             assertEquals(HttpStatusCode.OK, response.status)
 
             val krav = jacksonObjectMapper().readTree(response.bodyAsText())["krav"].single()
@@ -371,10 +369,10 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
     @Test
     fun `finner ikke vurdering i db, men finner den hos spleis som overfoert fra infotrygd`() =
         testApplication {
-            val kravvurderingId = UUID.randomUUID()
+            val opptjeningsvurderingId = UUID.randomUUID()
             val spleisVurdering =
-                Opptjeningsvurdering.InfotrygdArbeidstaker(
-                    opptjeningsvurderingId = KravvurderingId(kravvurderingId),
+                SpleisOpptjeningsvurdering.InfotrygdArbeidstaker(
+                    opptjeningsvurderingId = OpptjeningsvurderingId(opptjeningsvurderingId),
                     skjæringstidspunkt = LocalDate.of(2024, 3, 1),
                 )
 
@@ -389,7 +387,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
                 )
             }
 
-            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$kravvurderingId")
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$opptjeningsvurderingId")
             assertEquals(HttpStatusCode.OK, response.status)
 
             val krav = jacksonObjectMapper().readTree(response.bodyAsText())["krav"].single()

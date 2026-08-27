@@ -2,7 +2,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.kafka
 
 import com.github.navikt.tbd_libs.rapids_and_rivers.JsonMessage
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
-import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import java.time.LocalDate
 
 /**
@@ -25,7 +25,7 @@ internal object OpptjeningsvurderingOverstyrtMelding {
         context: MessageContext,
         fødselsnummer: String,
         skjæringstidspunkt: LocalDate,
-        opptjeningsvurderingId: KravvurderingId,
+        opptjeningsvurderingId: OpptjeningsvurderingId,
     ) {
         val melding =
             JsonMessage.newMessage(

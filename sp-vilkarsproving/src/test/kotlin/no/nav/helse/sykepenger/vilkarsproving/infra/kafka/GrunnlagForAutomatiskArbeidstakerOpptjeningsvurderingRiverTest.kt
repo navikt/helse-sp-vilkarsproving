@@ -15,7 +15,7 @@ import java.util.*
 
 internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
     private val transaksjon = InMemoryTransaksjonProvider()
-    private val vurderinger = transaksjon.kravvurderinger
+    private val vurderinger = transaksjon.opptjeningsvurderinger
     private val prøvinger = transaksjon.opptjeningsprøvinger
     private val rapid =
         TestRapid().apply {
@@ -190,7 +190,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
 
     private fun påbegyntPrøving() = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving.also { prøvinger.lagre(it) }
 
-    private fun vurdert() = vurderinger.alleVurderinger.single() as Kravvurdering.VurdertISpeil
+    private fun vurdert() = vurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpeil
 
     private fun arbeidsforholdPåVurdering() = ((vurdert().vilkårsvurderinger.single().kilde as Vurderingskilde.Automatisk).grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold
 

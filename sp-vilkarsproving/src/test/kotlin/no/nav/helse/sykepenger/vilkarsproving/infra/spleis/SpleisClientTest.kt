@@ -5,9 +5,9 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import no.nav.helse.hendelser.til
-import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering.SpleisArbeidstaker.Ansettelsesperiode
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering.SpleisArbeidstaker.Ansettelsesperiode
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
@@ -65,17 +65,17 @@ internal class SpleisClientTest {
         assertEquals(4, opptjeningsvurderinger.size)
 
         val infotrygdvurdering = opptjeningsvurderinger[0]
-        assertEquals(KravvurderingId(UUID.fromString("b89e2ae5-59e3-388e-98cd-42a8e7350773")), infotrygdvurdering.opptjeningsvurderingId)
+        assertEquals(OpptjeningsvurderingId(UUID.fromString("b89e2ae5-59e3-388e-98cd-42a8e7350773")), infotrygdvurdering.opptjeningsvurderingId)
         assertEquals(LocalDate.of(2018, 1, 1), infotrygdvurdering.skjæringstidspunkt)
-        assertTrue(infotrygdvurdering is Opptjeningsvurdering.InfotrygdArbeidstaker)
+        assertTrue(infotrygdvurdering is SpleisOpptjeningsvurdering.InfotrygdArbeidstaker)
 
-        val ikkeOppfyltSpleisvurdering = opptjeningsvurderinger[1] as Opptjeningsvurdering.SpleisArbeidstaker
+        val ikkeOppfyltSpleisvurdering = opptjeningsvurderinger[1] as SpleisOpptjeningsvurdering.SpleisArbeidstaker
         assertEquals(false, ikkeOppfyltSpleisvurdering.oppfylt)
         assertEquals(0, ikkeOppfyltSpleisvurdering.antallDager)
         assertNull(ikkeOppfyltSpleisvurdering.opptjeningsperiode)
         assertEquals(emptyList<Arbeidsforhold>(), ikkeOppfyltSpleisvurdering.arbeidsforhold)
 
-        val oppfyltSpleisvurdering = opptjeningsvurderinger[2] as Opptjeningsvurdering.SpleisArbeidstaker
+        val oppfyltSpleisvurdering = opptjeningsvurderinger[2] as SpleisOpptjeningsvurdering.SpleisArbeidstaker
         assertEquals(true, oppfyltSpleisvurdering.oppfylt)
         assertEquals(365, oppfyltSpleisvurdering.antallDager)
         assertEquals(LocalDate.of(2017, 4, 1) til LocalDate.of(2018, 3, 31), oppfyltSpleisvurdering.opptjeningsperiode)
@@ -86,7 +86,7 @@ internal class SpleisClientTest {
 
         val selvstendigvurdering = opptjeningsvurderinger[3]
         assertEquals(LocalDate.of(2018, 4, 1), selvstendigvurdering.skjæringstidspunkt)
-        assertTrue(selvstendigvurdering is Opptjeningsvurdering.SpleisSelvstendig)
+        assertTrue(selvstendigvurdering is SpleisOpptjeningsvurdering.SpleisSelvstendig)
 
         server.verify(
             postRequestedFor(urlEqualTo("/api/opptjeningsvurderinger"))

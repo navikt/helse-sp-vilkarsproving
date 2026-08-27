@@ -13,16 +13,16 @@ import java.util.UUID
 @Serializable
 internal data class ApiVilkårsvurderingerForPersonResponse(
     val skjæringstidspunkt: LocalDate,
-    val krav: List<ApiKravvurdering>,
+    val krav: List<ApiOpptjeningsvurdering>,
 )
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "kravkilde", visible = true)
 @JsonSubTypes(
-    JsonSubTypes.Type(value = ApiKravvurdering.VurdertISpeil::class, name = "VURDERT_I_SPEIL"),
-    JsonSubTypes.Type(value = ApiKravvurdering.OverførtFraInfotrygd::class, name = "OVERFOERT_FRA_INFOTRYGD"),
+    JsonSubTypes.Type(value = ApiOpptjeningsvurdering.VurdertISpeil::class, name = "VURDERT_I_SPEIL"),
+    JsonSubTypes.Type(value = ApiOpptjeningsvurdering.OverførtFraInfotrygd::class, name = "OVERFOERT_FRA_INFOTRYGD"),
 )
 @Serializable
-internal sealed interface ApiKravvurdering {
+internal sealed interface ApiOpptjeningsvurdering {
     val id: UUID
     val kravkode: ApiKravkode
     val rettTilSykepenger: Boolean
@@ -36,7 +36,7 @@ internal sealed interface ApiKravvurdering {
         override val rettTilSykepenger: Boolean,
         val avgjørendeVilkårskode: ApiVilkårskode,
         val vurderinger: List<ApiVilkårsvurdering>,
-    ) : ApiKravvurdering {
+    ) : ApiOpptjeningsvurdering {
         override val kravkilde: ApiKravkilde = ApiKravkilde.VURDERT_I_SPEIL
 
         init {
@@ -52,7 +52,7 @@ internal sealed interface ApiKravvurdering {
         override val id: UUID,
         override val kravkode: ApiKravkode,
         override val rettTilSykepenger: Boolean,
-    ) : ApiKravvurdering {
+    ) : ApiOpptjeningsvurdering {
         override val kravkilde: ApiKravkilde = ApiKravkilde.OVERFOERT_FRA_INFOTRYGD
     }
 }

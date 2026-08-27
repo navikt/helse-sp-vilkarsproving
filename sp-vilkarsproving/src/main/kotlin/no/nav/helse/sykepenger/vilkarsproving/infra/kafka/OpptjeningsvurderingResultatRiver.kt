@@ -9,10 +9,9 @@ import io.micrometer.core.instrument.MeterRegistry
 import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.sikkerLogg
-import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 
 /**
  * Svarer på spørsmål om utfallet av en ferdig kravvurdering.
@@ -25,7 +24,6 @@ internal open class OpptjeningsvurderingResultatRiver(
     private val transaksjonProvider: TransaksjonProvider<Transaksjonskontekst>,
     private val spleisClient: ISpleisClient,
 ) : River.PacketListener {
-    private val krav = Krav.Opptjening
     private val behovnavn = "OpptjeningsvurderingResultat"
     private val idFelt = "OpptjeningsvurderingResultat.opptjeningsvurderingId"
 
@@ -50,35 +48,35 @@ internal open class OpptjeningsvurderingResultatRiver(
         metadata: MessageMetadata,
         meterRegistry: MeterRegistry,
     ) {
-        val kravvurderingId = KravvurderingId(packet[idFelt].asUUID())
+        val opptjeningsvurderingId = OpptjeningsvurderingId(packet[idFelt].asUUID())
         val fødselsnummer = packet["fødselsnummer"].asString()
-        sikkerLogg.info("Mottatt behov for $behovnavn for $idFelt $kravvurderingId")
+        sikkerLogg.info("Mottatt behov for $behovnavn for $idFelt $opptjeningsvurderingId")
 
         try {
             val kravvurdering =
                 transaksjonProvider.transaksjon {
-                    it.kravvurderinger.finn(krav, kravvurderingId)
+                    it.opptjeningsvurderinger.finn(opptjeningsvurderingId)
                 }
 
             val utfall =
                 kravvurdering?.girRettTilSykepenger ?: spleisClient
                     .hentOpptjeningsvurderinger(fødselsnummer = fødselsnummer)
-                    .find { it.opptjeningsvurderingId == kravvurderingId }
+                    .find { it.opptjeningsvurderingId == opptjeningsvurderingId }
                     ?.let { vurdering ->
                         when (vurdering) {
-                            is Opptjeningsvurdering.SpleisArbeidstaker -> vurdering.oppfylt
+                            is SpleisOpptjeningsvurdering.SpleisArbeidstaker -> vurdering.oppfylt
 
-                            is Opptjeningsvurdering.SpleisSelvstendig,
-                            is Opptjeningsvurdering.InfotrygdArbeidstaker,
+                            is SpleisOpptjeningsvurdering.SpleisSelvstendig,
+                            is SpleisOpptjeningsvurdering.InfotrygdArbeidstaker,
                             -> true
                         }
-                    } ?: error("Fant ikke vurdering med id $kravvurderingId")
+                    } ?: error("Fant ikke vurdering med id $opptjeningsvurderingId")
 
             packet["@løsning"] = mapOf(behovnavn to mapOf("ok" to utfall))
-            sikkerLogg.info("Publiserer løsning for $behovnavn for $idFelt $kravvurderingId. Løsning:\n\t${packet.toJson()}")
+            sikkerLogg.info("Publiserer løsning for $behovnavn for $idFelt $opptjeningsvurderingId. Løsning:\n\t${packet.toJson()}")
             context.publish(packet.toJson())
         } catch (ex: Exception) {
-            sikkerLogg.error("Feil under håndtering av behov $behovnavn for $idFelt ${kravvurderingId.value}", ex)
+            sikkerLogg.error("Feil under håndtering av behov $behovnavn for $idFelt ${opptjeningsvurderingId.value}", ex)
         }
     }
 }

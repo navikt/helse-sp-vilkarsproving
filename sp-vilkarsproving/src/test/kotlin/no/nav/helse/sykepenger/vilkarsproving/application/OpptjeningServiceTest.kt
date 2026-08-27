@@ -12,9 +12,8 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
 import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
-import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
@@ -31,7 +30,7 @@ import java.time.LocalDate
 
 internal class OpptjeningServiceTest {
     private val transaksjon = InMemoryTransaksjonProvider()
-    private val vurderinger = transaksjon.kravvurderinger
+    private val vurderinger = transaksjon.opptjeningsvurderinger
     private val prøvinger = transaksjon.opptjeningsprøvinger
     private val service = OpptjeningService(transaksjon)
 
@@ -57,7 +56,7 @@ internal class OpptjeningServiceTest {
         assertEquals(FØDSELSNUMMER, harVurdering.fødselsnummer)
         assertEquals(1.februar, harVurdering.skjæringstidspunkt)
 
-        val vurdering = vurderinger.finn(Krav.Opptjening, harVurdering.kravvurderingId) as Kravvurdering.VurdertISpeil
+        val vurdering = vurderinger.finn(harVurdering.opptjeningsvurderingId) as Opptjeningsvurdering.VurdertISpeil
         val ledd = vurdering.vilkårsvurderinger.single()
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
         assertEquals(Utfall.Oppfylt, ledd.utfall)
@@ -141,9 +140,9 @@ internal class OpptjeningServiceTest {
 
         val nyVurdering = assertInstanceOf(BehandleGrunnlagResultat.NyVurderingForetatt::class.java, resultat)
         val prøving = prøvinger.allePrøvinger.single()
-        assertEquals(Opptjeningsprøving.Tilstand.Fullført(nyVurdering.kravvurderingId), prøving.tilstand)
+        assertEquals(Opptjeningsprøving.Tilstand.Fullført(nyVurdering.opptjeningsvurderingId), prøving.tilstand)
 
-        val vurdering = vurderinger.finn(Krav.Opptjening, nyVurdering.kravvurderingId) as Kravvurdering.VurdertISpeil
+        val vurdering = vurderinger.finn(nyVurdering.opptjeningsvurderingId) as Opptjeningsvurdering.VurdertISpeil
         val ledd = vurdering.vilkårsvurderinger.single()
         val kilde = ledd.kilde as Vurderingskilde.Automatisk
         assertEquals(prøving.id, kilde.opptjeningsprøvingId)
@@ -162,7 +161,7 @@ internal class OpptjeningServiceTest {
             skjæringstidspunkt = 1.februar,
         )
 
-        val ledd = (vurderinger.alleVurderinger.single() as Kravvurdering.VurdertISpeil).vilkårsvurderinger.single()
+        val ledd = (vurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpeil).vilkårsvurderinger.single()
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
         assertEquals(Utfall.IkkeOppfylt, ledd.utfall)
     }
@@ -180,7 +179,7 @@ internal class OpptjeningServiceTest {
 
         assertInstanceOf(BehandleGrunnlagResultat.NyVurderingForetatt::class.java, resultat)
         assertTrue(prøvinger.allePrøvinger.single().erAvsluttet)
-        val ledd = (vurderinger.alleVurderinger.single() as Kravvurdering.VurdertISpeil).vilkårsvurderinger.single()
+        val ledd = (vurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpeil).vilkårsvurderinger.single()
         assertEquals(Utfall.IkkeOppfylt, ledd.utfall)
     }
 
@@ -223,14 +222,14 @@ internal class OpptjeningServiceTest {
 
     @Test
     fun `finner lagret opptjeningsvurdering`() {
-        val kravvurderingId = fullførtPrøving(1.februar)
+        val opptjeningsvurderingId = fullførtPrøving(1.februar)
 
-        assertEquals(kravvurderingId, service.finnOpptjeningsvurdering(kravvurderingId).id)
+        assertEquals(opptjeningsvurderingId, service.finnOpptjeningsvurdering(opptjeningsvurderingId).id)
     }
 
     @Test
     fun `ukjent opptjeningsvurdering gir feil`() {
-        val ukjentId = KravvurderingId.ny()
+        val ukjentId = OpptjeningsvurderingId.ny()
 
         val feil = assertThrows<IllegalStateException> { service.finnOpptjeningsvurdering(ukjentId) }
         assertEquals("Fant ikke opptjeningsvurdering med id $ukjentId", feil.message)
@@ -239,7 +238,7 @@ internal class OpptjeningServiceTest {
     private fun fullførtPrøving(
         skjæringstidspunkt: LocalDate,
         fødselsnummer: String = FØDSELSNUMMER,
-    ): KravvurderingId {
+    ): OpptjeningsvurderingId {
         val prøving = Opptjeningsprøving.start(fødselsnummer, skjæringstidspunkt, Arbeidssituasjon.Arbeidstaker).prøving
         val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(listOf(arbeidsforhold(1.januar til 31.januar))))
         prøvinger.lagre(prøving)
