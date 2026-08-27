@@ -21,12 +21,17 @@ import no.nav.helse.speil.backend.app.rest.RestAdapter
 import no.nav.helse.speil.backend.app.rest.get
 import no.nav.helse.speil.backend.app.testfixtures.InMemoryPersonPseudoIdProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
+import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
 import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
@@ -65,11 +70,22 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
 
     private fun principal(tilganger: Set<Tilgang> = setOf(Tilgang.Les)) = SaksbehandlerPrincipal(saksbehandler, tilganger, emptySet<AppRolle>(), AccessToken("token"))
 
+    private class FakeSpleisClient(
+        private val vurderinger: List<Opptjeningsvurdering> = emptyList(),
+        private val svikt: RuntimeException? = null,
+    ) : ISpleisClient {
+        override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<Opptjeningsvurdering> {
+            svikt?.let { throw it }
+            return vurderinger
+        }
+    }
+
     private fun Application.settOppTestapp(
         principal: SaksbehandlerPrincipal<AppRolle>?,
         transaksjonProvider: InMemoryTransaksjonProvider = InMemoryTransaksjonProvider(),
         tilgangskontroll: PopulasjonstilgangskontrollProvider = FakeTilgangskontroll(),
         personPseudoIdProvider: InMemoryPersonPseudoIdProvider = InMemoryPersonPseudoIdProvider(),
+        spleisClient: ISpleisClient = FakeSpleisClient(),
     ) {
         configureContentNegotiation()
         configureResources()
@@ -86,7 +102,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
                 transaksjonProvider = transaksjonProvider,
             )
         routing {
-            get(GetVilkårsvurderingerForPersonBehandler(), restAdapter)
+            get(GetVilkårsvurderingerForPersonBehandler(SpleisOpptjeningsvurderingService(spleisClient)), restAdapter)
         }
     }
 
@@ -270,5 +286,148 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             assertEquals(true, krav["rettTilSykepenger"].asBoolean())
             assertFalse(krav.has("vurderinger")) { "Infotrygd-kravet skal ikke ha en sti: $krav" }
             assertFalse(krav.has("avgjørendeVilkårskode")) { "Vi kjenner ikke det avgjørende vilkåret: $krav" }
+        }
+
+    /**
+     * Vurderingen finnes ikke i vår database — typisk fordi den ble gjort automatisk i spleis før
+     * dette systemet begynte å lagre vurderinger selv. Da skal vi falle tilbake til spleis-api.
+     */
+    @Test
+    fun `finner ikke vurdering i db, men finner den hos spleis som arbeidstaker`() =
+        testApplication {
+            val kravvurderingId = UUID.randomUUID()
+            val spleisVurdering =
+                Opptjeningsvurdering.SpleisArbeidstaker(
+                    opptjeningsvurderingId = KravvurderingId(kravvurderingId),
+                    skjæringstidspunkt = LocalDate.of(2024, 3, 1),
+                    oppfylt = true,
+                    antallDager = 30,
+                    opptjeningsperiode = null,
+                    arbeidsforhold =
+                        listOf(
+                            Opptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold(
+                                organisasjonsnummer = "123456789",
+                                ansettelsesperioder =
+                                    listOf(
+                                        Opptjeningsvurdering.SpleisArbeidstaker.Ansettelsesperiode(
+                                            fom = LocalDate.of(2024, 1, 1),
+                                            tom = null,
+                                        ),
+                                    ),
+                            ),
+                        ),
+                )
+
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+
+            application {
+                settOppTestapp(
+                    principal(),
+                    personPseudoIdProvider = pseudoIdProvider,
+                    spleisClient = FakeSpleisClient(vurderinger = listOf(spleisVurdering)),
+                )
+            }
+
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$kravvurderingId")
+            assertEquals(HttpStatusCode.OK, response.status)
+
+            val krav = jacksonObjectMapper().readTree(response.bodyAsText())["krav"].single()
+            assertEquals("VURDERT_I_SPEIL", krav["kravkilde"].asString())
+            assertEquals(true, krav["rettTilSykepenger"].asBoolean())
+
+            val kilde = krav["vurderinger"].single()["kilde"]
+            assertEquals("OVERFOERT_FRA_SPLEIS", kilde["kildetype"].asString())
+        }
+
+    @Test
+    fun `finner ikke vurdering i db, men finner den hos spleis som selvstendig`() =
+        testApplication {
+            val kravvurderingId = UUID.randomUUID()
+            val spleisVurdering =
+                Opptjeningsvurdering.SpleisSelvstendig(
+                    opptjeningsvurderingId = KravvurderingId(kravvurderingId),
+                    skjæringstidspunkt = LocalDate.of(2024, 3, 1),
+                )
+
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+
+            application {
+                settOppTestapp(
+                    principal(),
+                    personPseudoIdProvider = pseudoIdProvider,
+                    spleisClient = FakeSpleisClient(vurderinger = listOf(spleisVurdering)),
+                )
+            }
+
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$kravvurderingId")
+            assertEquals(HttpStatusCode.OK, response.status)
+
+            val krav = jacksonObjectMapper().readTree(response.bodyAsText())["krav"].single()
+            assertEquals(true, krav["rettTilSykepenger"].asBoolean())
+        }
+
+    @Test
+    fun `finner ikke vurdering i db, men finner den hos spleis som overfoert fra infotrygd`() =
+        testApplication {
+            val kravvurderingId = UUID.randomUUID()
+            val spleisVurdering =
+                Opptjeningsvurdering.InfotrygdArbeidstaker(
+                    opptjeningsvurderingId = KravvurderingId(kravvurderingId),
+                    skjæringstidspunkt = LocalDate.of(2024, 3, 1),
+                )
+
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+
+            application {
+                settOppTestapp(
+                    principal(),
+                    personPseudoIdProvider = pseudoIdProvider,
+                    spleisClient = FakeSpleisClient(vurderinger = listOf(spleisVurdering)),
+                )
+            }
+
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$kravvurderingId")
+            assertEquals(HttpStatusCode.OK, response.status)
+
+            val krav = jacksonObjectMapper().readTree(response.bodyAsText())["krav"].single()
+            assertEquals("OVERFOERT_FRA_INFOTRYGD", krav["kravkilde"].asString())
+            assertEquals(true, krav["rettTilSykepenger"].asBoolean())
+        }
+
+    @Test
+    fun `finnes verken i db eller hos spleis gir 404`() =
+        testApplication {
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+
+            application {
+                settOppTestapp(principal(), personPseudoIdProvider = pseudoIdProvider, spleisClient = FakeSpleisClient())
+            }
+
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=${UUID.randomUUID()}")
+
+            assertEquals(HttpStatusCode.NotFound, response.status)
+        }
+
+    @Test
+    fun `spleis-api svikter gir 503, ikke 500`() =
+        testApplication {
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+
+            application {
+                settOppTestapp(
+                    principal(),
+                    personPseudoIdProvider = pseudoIdProvider,
+                    spleisClient = FakeSpleisClient(svikt = SpleisClientException("spleis-api svarte 500")),
+                )
+            }
+
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=${UUID.randomUUID()}")
+
+            assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
         }
 }

@@ -12,12 +12,21 @@ import no.nav.helse.speil.backend.app.rest.get
 import no.nav.helse.speil.backend.app.testfixtures.InMemoryPersonPseudoIdProvider
 import no.nav.helse.speil.backend.app.testfixtures.installTestPlugins
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
+import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
 
 private const val PORT = 8181
 
 fun main() {
+    val spleisService =
+        SpleisOpptjeningsvurderingService(
+            object : ISpleisClient {
+                override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<Opptjeningsvurdering> = emptyList()
+            },
+        )
     val restAdapter =
         RestAdapter<AppRolle, Transaksjonskontekst>(
             personPseudoIdProvider = InMemoryPersonPseudoIdProvider(),
@@ -32,7 +41,7 @@ fun main() {
                 openApiConfig = OpenApiConfig(eksponerOpenApi = true, tittel = "sp-vilkarsproving"),
             )
             routing {
-                get(GetVilkårsvurderingerForPersonBehandler(), restAdapter)
+                get(GetVilkårsvurderingerForPersonBehandler(spleisService), restAdapter)
             }
         }
 

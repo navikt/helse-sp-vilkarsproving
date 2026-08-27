@@ -38,6 +38,20 @@ internal data class Vilkårsvurdering(
             kilde = Vurderingskilde.Saksbehandler(saksbehandlerIdent, fritekstbegrunnelse),
         )
 
+        fun overførtFraSpleis(
+            vilkårskode: Vilkårskode,
+            utfall: Utfall,
+            grunnlag: Vilkårsgrunnlag,
+            utledetFakta: UtledetFakta,
+            vurdertTidspunkt: Instant? = null,
+        ) = Vilkårsvurdering(
+            id = VurderingId.ny(),
+            vilkårskode = vilkårskode,
+            utfall = utfall,
+            vurdertTidspunkt = vurdertTidspunkt,
+            kilde = Vurderingskilde.OverførtFraSpleis(grunnlag, utledetFakta),
+        )
+
         fun fraLagring(
             id: VurderingId,
             vilkårskode: Vilkårskode,

@@ -1,24 +1,21 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
-import no.nav.helse.desember
-import no.nav.helse.hendelser.til
-import no.nav.helse.januar
 import no.nav.helse.speil.backend.app.auth.Tilgang
+import no.nav.helse.speil.backend.app.logging.loggWarn
 import no.nav.helse.speil.backend.app.person.PersonPseudoId
 import no.nav.helse.speil.backend.app.rest.GetBehandler
 import no.nav.helse.speil.backend.app.rest.KallKontekst
 import no.nav.helse.speil.backend.app.rest.RestResponse
+import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
-import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
-import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
-import java.time.Instant
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
 
-internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<ApiVilkårsvurderingerForPersonResource, ApiVilkårsvurderingerForPersonResponse, ApiVilkårsvurderingerForPersonFeil, AppRolle, Transaksjonskontekst> {
+internal class GetVilkårsvurderingerForPersonBehandler(
+    private val spleisService: SpleisOpptjeningsvurderingService,
+) : GetBehandler<ApiVilkårsvurderingerForPersonResource, ApiVilkårsvurderingerForPersonResponse, ApiVilkårsvurderingerForPersonFeil, AppRolle, Transaksjonskontekst> {
     override val påkrevdTilgang = Tilgang.Les
     override val tag = "vilkarsvurderinger"
 
@@ -35,13 +32,17 @@ internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<ApiVilkå
             personIkkeFunnet = { ApiVilkårsvurderingerForPersonFeil.PersonIkkeFunnet },
             manglerTilgang = { ApiVilkårsvurderingerForPersonFeil.ManglerTilgang },
         ) { identitetsnummer ->
-            if (Demodata.erPåskrudd) {
-                return@medPerson RestResponse.ok(Demodata.respons())
-            }
 
             val vurdering =
                 kallKontekst.transaksjon.kravvurderinger
                     .finn(Krav.Opptjening, KravvurderingId(resource.opptjeningsvurderingId))
+                    ?: try {
+                        spleisService.finn(KravvurderingId(resource.opptjeningsvurderingId), identitetsnummer.value)
+                    } catch (ex: SpleisClientException) {
+                        // warn log
+                        loggWarn("SpleisClientException ved henting av opptjeningsvurdering: ${ex.message}")
+                        return@medPerson RestResponse.feil(ApiVilkårsvurderingerForPersonFeil.SpleisUtilgjengelig)
+                    }
 
             if (vurdering == null || vurdering.fødselsnummer != identitetsnummer.value) {
                 return@medPerson RestResponse.feil(ApiVilkårsvurderingerForPersonFeil.VurderingIkkeFunnet)
@@ -50,28 +51,4 @@ internal class GetVilkårsvurderingerForPersonBehandler : GetBehandler<ApiVilkå
             RestResponse.ok(Vurderingsrespons.fra(vurdering))
         }
     }
-}
-
-private object Demodata {
-    val erPåskrudd: Boolean get() = System.getenv("NAIS_CLUSTER_NAME") == "dev-gcp"
-
-    fun respons(): ApiVilkårsvurderingerForPersonResponse =
-        Vurderingsrespons.fra(
-            Kravvurdering.automatisk(
-                prøvingId = PrøvingId.ny(),
-                fødselsnummer = "00000000000",
-                skjæringstidspunkt = 1.januar(2018),
-                grunnlag =
-                    Opptjeningsgrunnlag.Arbeidstaker(
-                        listOf(
-                            Arbeidsforhold(
-                                orgnummer = "123456789",
-                                ansettelseperiode = 1.desember(2017) til 31.desember(2017),
-                                type = Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT,
-                            ),
-                        ),
-                    ),
-                vurdertTidspunkt = Instant.now(),
-            ),
-        )
 }

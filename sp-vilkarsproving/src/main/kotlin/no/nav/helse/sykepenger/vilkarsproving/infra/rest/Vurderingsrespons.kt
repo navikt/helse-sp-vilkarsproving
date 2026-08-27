@@ -112,5 +112,6 @@ private fun Arbeidsforhold.tilApi() =
                 Arbeidsforhold.Arbeidsforholdtype.FRILANSER -> ApiArbeidsforholdtype.FRILANSER
                 Arbeidsforhold.Arbeidsforholdtype.MARITIMT -> ApiArbeidsforholdtype.MARITIMT
                 Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT -> ApiArbeidsforholdtype.ORDINÆRT
+                Arbeidsforhold.Arbeidsforholdtype.UKJENT -> ApiArbeidsforholdtype.UKJENT
             },
     )

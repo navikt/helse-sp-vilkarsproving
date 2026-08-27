@@ -17,8 +17,11 @@ import no.nav.helse.speil.backend.app.rest.RestAdapter
 import no.nav.helse.speil.backend.app.rest.get
 import no.nav.helse.speil.backend.app.testfixtures.InMemoryPersonPseudoIdProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
+import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -52,8 +55,14 @@ class VilkårsvurderingerForPersonOpenApiTest {
                 transaksjonProvider = InMemoryTransaksjonProvider(),
             )
         configureOpenApiPlugin(OpenApiConfig(eksponerOpenApi = true, tittel = "sp-vilkarsproving"))
+        val spleisService =
+            SpleisOpptjeningsvurderingService(
+                object : ISpleisClient {
+                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<Opptjeningsvurdering> = emptyList()
+                },
+            )
         routing {
-            get(GetVilkårsvurderingerForPersonBehandler(), restAdapter)
+            get(GetVilkårsvurderingerForPersonBehandler(spleisService), restAdapter)
         }
     }
 

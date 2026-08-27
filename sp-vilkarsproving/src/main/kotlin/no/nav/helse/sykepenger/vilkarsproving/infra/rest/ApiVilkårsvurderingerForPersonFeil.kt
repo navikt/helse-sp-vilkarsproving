@@ -9,4 +9,5 @@ internal enum class ApiVilkårsvurderingerForPersonFeil(
     PersonIkkeFunnet(404, "Person ikke funnet"),
     ManglerTilgang(403, "Mangler tilgang"),
     VurderingIkkeFunnet(404, "Vurdering ikke funnet"),
+    SpleisUtilgjengelig(503, "Spleis er utilgjengelig"),
 }

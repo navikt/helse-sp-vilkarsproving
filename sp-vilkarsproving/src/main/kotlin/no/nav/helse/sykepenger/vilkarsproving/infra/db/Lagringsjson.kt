@@ -114,6 +114,7 @@ private fun Arbeidsforhold.tilDto() =
                 Arbeidsforhold.Arbeidsforholdtype.FRILANSER -> ArbeidsforholdtypeDto.FRILANSER
                 Arbeidsforhold.Arbeidsforholdtype.MARITIMT -> ArbeidsforholdtypeDto.MARITIMT
                 Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT -> ArbeidsforholdtypeDto.ORDINÆRT
+                Arbeidsforhold.Arbeidsforholdtype.UKJENT -> ArbeidsforholdtypeDto.UKJENT
             },
     )
 
@@ -127,5 +128,6 @@ private fun ArbeidsforholdDto.tilArbeidsforhold() =
                 ArbeidsforholdtypeDto.FRILANSER -> Arbeidsforhold.Arbeidsforholdtype.FRILANSER
                 ArbeidsforholdtypeDto.MARITIMT -> Arbeidsforhold.Arbeidsforholdtype.MARITIMT
                 ArbeidsforholdtypeDto.ORDINÆRT -> Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT
+                ArbeidsforholdtypeDto.UKJENT -> Arbeidsforhold.Arbeidsforholdtype.UKJENT
             },
     )

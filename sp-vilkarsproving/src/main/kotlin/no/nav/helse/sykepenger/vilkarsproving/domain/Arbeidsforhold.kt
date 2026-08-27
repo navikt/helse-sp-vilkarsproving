@@ -14,6 +14,9 @@ internal data class Arbeidsforhold(
         FRILANSER,
         MARITIMT,
         ORDINÆRT,
+
+        // Brukes når kilden (f.eks. spleis) ikke oppgir reell arbeidsforholdtype.
+        UKJENT,
     }
 
     constructor(orgnummer: String, ansattFom: LocalDate, ansattTom: LocalDate? = null, type: Arbeidsforholdtype) : this(orgnummer, ansattFom til (ansattTom ?: LocalDate.MAX), type)

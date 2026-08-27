@@ -189,4 +189,5 @@ internal enum class ApiArbeidsforholdtype {
     FRILANSER,
     MARITIMT,
     ORDINÆRT,
+    UKJENT,
 }

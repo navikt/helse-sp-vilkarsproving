@@ -31,6 +31,7 @@ internal enum class ArbeidsforholdtypeDto {
     FRILANSER,
     MARITIMT,
     ORDINÆRT,
+    UKJENT,
 }
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")

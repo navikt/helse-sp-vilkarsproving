@@ -4,6 +4,7 @@ import no.nav.helse.speil.backend.app.auth.Brukerrolle
 import no.nav.helse.speil.backend.app.auth.TilgangsgrupperTilBrukerroller
 import no.nav.helse.speil.backend.app.bootstrap.AppKonfigurasjon
 import no.nav.helse.speil.backend.app.bootstrap.startApp
+import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.PostgresTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingResultatRiver
@@ -40,7 +41,7 @@ fun main() {
             )
         },
         endepunkter = {
-            get(GetVilkårsvurderingerForPersonBehandler())
+            get(GetVilkårsvurderingerForPersonBehandler(SpleisOpptjeningsvurderingService(spleisClient)))
         },
     )
 }

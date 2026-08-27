@@ -81,6 +81,14 @@ internal sealed interface Kravvurdering {
             sti: List<Vilkårsvurdering>,
         ) = VurdertISpeil(id, krav, fødselsnummer, skjæringstidspunkt, sti)
 
+        fun overførtFraSpleis(
+            id: KravvurderingId,
+            krav: Krav,
+            fødselsnummer: String,
+            skjæringstidspunkt: LocalDate,
+            sti: List<Vilkårsvurdering>,
+        ) = VurdertISpeil(id, krav, fødselsnummer, skjæringstidspunkt, sti)
+
         fun infotrygdFraLagring(
             id: KravvurderingId,
             krav: Krav,
