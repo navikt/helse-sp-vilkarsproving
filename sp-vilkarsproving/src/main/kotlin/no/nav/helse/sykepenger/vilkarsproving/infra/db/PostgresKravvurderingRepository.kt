@@ -10,7 +10,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.VurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.VilkårsvurderingId
 import org.intellij.lang.annotations.Language
 import org.postgresql.util.PSQLException
 import java.time.LocalDate
@@ -172,7 +172,7 @@ internal class PostgresKravvurderingRepository(
 
     private fun tilVilkårsvurdering(row: Row) =
         Vilkårsvurdering.fraLagring(
-            id = VurderingId(row.uuid("id")),
+            id = VilkårsvurderingId(row.uuid("id")),
             vilkårskode = Vilkårskode.valueOf(row.string("vilkårskode")),
             utfall = Utfall.valueOf(row.string("utfall")),
             vurdertTidspunkt = row.instantOrNull("vurdert_tidspunkt"),

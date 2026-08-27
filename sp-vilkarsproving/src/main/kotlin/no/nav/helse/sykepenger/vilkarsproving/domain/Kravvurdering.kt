@@ -42,7 +42,7 @@ internal sealed interface Kravvurdering {
     companion object {
         fun automatisk(
             id: KravvurderingId = KravvurderingId.ny(),
-            prøvingId: PrøvingId,
+            opptjeningsprøvingId: OpptjeningsprøvingId,
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
             grunnlag: Vilkårsgrunnlag,
@@ -52,7 +52,7 @@ internal sealed interface Kravvurdering {
             val resultat = regel.vurder(skjæringstidspunkt, grunnlag)
             val vilkårsvurderinger =
                 resultat.vilkårsutfall.map { ledd ->
-                    Vilkårsvurdering.automatisk(prøvingId, ledd, grunnlag, regel.versjon, vurdertTidspunkt)
+                    Vilkårsvurdering.automatisk(opptjeningsprøvingId, ledd, grunnlag, regel.versjon, vurdertTidspunkt)
                 }
             return VurdertISpeil(id, grunnlag.krav, fødselsnummer, skjæringstidspunkt, vilkårsvurderinger)
         }

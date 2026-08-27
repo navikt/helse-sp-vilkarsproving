@@ -9,7 +9,7 @@ import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
  * (`infra/db`), mens disse testene handler om domenelogikken.
  */
 internal class InMemoryTransaksjonProvider(
-    override val kravprøvinger: InMemoryKravprøvingRepository = InMemoryKravprøvingRepository(),
+    override val opptjeningsprøvinger: InMemoryOpptjeningsprøvingRepository = InMemoryOpptjeningsprøvingRepository(),
     override val kravvurderinger: InMemoryKravvurderingRepository = InMemoryKravvurderingRepository(),
 ) : TransaksjonProvider<Transaksjonskontekst>,
     Transaksjonskontekst {

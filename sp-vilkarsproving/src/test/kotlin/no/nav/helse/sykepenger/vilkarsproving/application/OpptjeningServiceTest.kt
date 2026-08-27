@@ -13,7 +13,6 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforho
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
 import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
 import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kravprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
@@ -33,7 +32,7 @@ import java.time.LocalDate
 internal class OpptjeningServiceTest {
     private val transaksjon = InMemoryTransaksjonProvider()
     private val vurderinger = transaksjon.kravvurderinger
-    private val prøvinger = transaksjon.kravprøvinger
+    private val prøvinger = transaksjon.opptjeningsprøvinger
     private val service = OpptjeningService(transaksjon)
 
     @Test
@@ -142,12 +141,12 @@ internal class OpptjeningServiceTest {
 
         val nyVurdering = assertInstanceOf(BehandleGrunnlagResultat.NyVurderingForetatt::class.java, resultat)
         val prøving = prøvinger.allePrøvinger.single()
-        assertEquals(Kravprøving.Tilstand.Fullført(nyVurdering.kravvurderingId), prøving.tilstand)
+        assertEquals(Opptjeningsprøving.Tilstand.Fullført(nyVurdering.kravvurderingId), prøving.tilstand)
 
         val vurdering = vurderinger.finn(Krav.Opptjening, nyVurdering.kravvurderingId) as Kravvurdering.VurdertISpeil
         val ledd = vurdering.vilkårsvurderinger.single()
         val kilde = ledd.kilde as Vurderingskilde.Automatisk
-        assertEquals(prøving.id, kilde.prøvingId)
+        assertEquals(prøving.id, kilde.opptjeningsprøvingId)
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
         assertEquals(Utfall.Oppfylt, ledd.utfall)
         assertEquals(arbeidsforhold, (kilde.grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold)
@@ -226,15 +225,15 @@ internal class OpptjeningServiceTest {
     fun `finner lagret opptjeningsvurdering`() {
         val kravvurderingId = fullførtPrøving(1.februar)
 
-        assertEquals(kravvurderingId, service.finnOpptjeningsvurdering(kravvurderingId, "whatever").id)
+        assertEquals(kravvurderingId, service.finnOpptjeningsvurdering(kravvurderingId).id)
     }
 
     @Test
     fun `ukjent opptjeningsvurdering gir feil`() {
         val ukjentId = KravvurderingId.ny()
 
-        val feil = assertThrows<IllegalStateException> { service.finnOpptjeningsvurdering(ukjentId, "whatever") }
-        assertEquals("Fant ikke vurdering av Opptjening med id $ukjentId", feil.message)
+        val feil = assertThrows<IllegalStateException> { service.finnOpptjeningsvurdering(ukjentId) }
+        assertEquals("Fant ikke opptjeningsvurdering med id $ukjentId", feil.message)
     }
 
     private fun fullførtPrøving(

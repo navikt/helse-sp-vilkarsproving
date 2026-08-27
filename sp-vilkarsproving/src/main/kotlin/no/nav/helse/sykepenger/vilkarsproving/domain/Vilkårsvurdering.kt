@@ -3,7 +3,7 @@ package no.nav.helse.sykepenger.vilkarsproving.domain
 import java.time.Instant
 
 internal data class Vilkårsvurdering(
-    val id: VurderingId,
+    val id: VilkårsvurderingId,
     val vilkårskode: Vilkårskode,
     val utfall: Utfall,
     val vurdertTidspunkt: Instant?,
@@ -11,17 +11,17 @@ internal data class Vilkårsvurdering(
 ) {
     companion object {
         internal fun automatisk(
-            prøvingId: PrøvingId,
+            opptjeningsprøvingId: OpptjeningsprøvingId,
             vilkårsutfall: Vilkårsutfall,
             grunnlag: Vilkårsgrunnlag,
             versjonAvKildekode: String,
             vurdertTidspunkt: Instant,
         ) = Vilkårsvurdering(
-            id = VurderingId.ny(),
+            id = VilkårsvurderingId.ny(),
             vilkårskode = vilkårsutfall.vilkårskode,
             utfall = vilkårsutfall.utfall,
             vurdertTidspunkt = vurdertTidspunkt,
-            kilde = Vurderingskilde.Automatisk(prøvingId, grunnlag, vilkårsutfall.utledetFakta, versjonAvKildekode),
+            kilde = Vurderingskilde.Automatisk(opptjeningsprøvingId, grunnlag, vilkårsutfall.utledetFakta, versjonAvKildekode),
         )
 
         fun avSaksbehandler(
@@ -31,7 +31,7 @@ internal data class Vilkårsvurdering(
             fritekstbegrunnelse: String,
             vurdertTidspunkt: Instant?,
         ) = Vilkårsvurdering(
-            id = VurderingId.ny(),
+            id = VilkårsvurderingId.ny(),
             vilkårskode = vilkårskode,
             utfall = utfall,
             vurdertTidspunkt = vurdertTidspunkt,
@@ -45,7 +45,7 @@ internal data class Vilkårsvurdering(
             utledetFakta: UtledetFakta,
             vurdertTidspunkt: Instant? = null,
         ) = Vilkårsvurdering(
-            id = VurderingId.ny(),
+            id = VilkårsvurderingId.ny(),
             vilkårskode = vilkårskode,
             utfall = utfall,
             vurdertTidspunkt = vurdertTidspunkt,
@@ -53,7 +53,7 @@ internal data class Vilkårsvurdering(
         )
 
         fun fraLagring(
-            id: VurderingId,
+            id: VilkårsvurderingId,
             vilkårskode: Vilkårskode,
             utfall: Utfall,
             vurdertTidspunkt: Instant?,

@@ -4,7 +4,7 @@ import no.nav.helse.hendelser.til
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
-import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
@@ -156,6 +156,6 @@ internal class LagringsjsonTest {
     private fun rundtur(kilde: Vurderingskilde) = Vurderingskildejson.fraJson(Vurderingskildejson.tilJson(kilde))
 
     private companion object {
-        val PRØVING_ID = PrøvingId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+        val PRØVING_ID = OpptjeningsprøvingId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
     }
 }

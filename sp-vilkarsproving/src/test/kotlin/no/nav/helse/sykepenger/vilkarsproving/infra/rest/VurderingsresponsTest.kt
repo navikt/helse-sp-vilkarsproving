@@ -9,7 +9,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforho
 import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
-import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
@@ -131,7 +131,7 @@ internal class VurderingsresponsTest {
     fun `selvstendig naeringsdrivende gir grunnlag uten arbeidsforhold`() {
         val vurdering =
             Kravvurdering.automatisk(
-                prøvingId = PrøvingId.ny(),
+                opptjeningsprøvingId = OpptjeningsprøvingId.ny(),
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
                 grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,
@@ -145,7 +145,7 @@ internal class VurderingsresponsTest {
 
     private fun automatiskArbeidstakervurdering(ansettelseperiode: Periode) =
         Kravvurdering.automatisk(
-            prøvingId = PrøvingId.ny(),
+            opptjeningsprøvingId = OpptjeningsprøvingId.ny(),
             fødselsnummer = "12345678901",
             skjæringstidspunkt = 1.februar,
             grunnlag =

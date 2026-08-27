@@ -3,24 +3,24 @@ package no.nav.helse.sykepenger.vilkarsproving.domain
 import java.util.UUID
 
 @JvmInline
-internal value class PrøvingId(
+internal value class OpptjeningsprøvingId(
     val value: UUID,
 ) {
     override fun toString() = value.toString()
 
     companion object {
-        fun ny() = PrøvingId(UUID.randomUUID())
+        fun ny() = OpptjeningsprøvingId(UUID.randomUUID())
     }
 }
 
 @JvmInline
-internal value class VurderingId(
+internal value class VilkårsvurderingId(
     val value: UUID,
 ) {
     override fun toString() = value.toString()
 
     companion object {
-        fun ny() = VurderingId(UUID.randomUUID())
+        fun ny() = VilkårsvurderingId(UUID.randomUUID())
     }
 }
 

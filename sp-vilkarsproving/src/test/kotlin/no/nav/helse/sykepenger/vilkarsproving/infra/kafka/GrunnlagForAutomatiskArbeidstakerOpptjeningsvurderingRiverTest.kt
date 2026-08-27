@@ -16,7 +16,7 @@ import java.util.*
 internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
     private val transaksjon = InMemoryTransaksjonProvider()
     private val vurderinger = transaksjon.kravvurderinger
-    private val prøvinger = transaksjon.kravprøvinger
+    private val prøvinger = transaksjon.opptjeningsprøvinger
     private val rapid =
         TestRapid().apply {
             GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(this, transaksjon)
@@ -31,7 +31,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         assertTrue(påbegynt.erAvsluttet)
         val vurdering = vurdert()
         val kilde = vurdering.vilkårsvurderinger.single().kilde as Vurderingskilde.Automatisk
-        assertEquals(påbegynt.id, kilde.prøvingId)
+        assertEquals(påbegynt.id, kilde.opptjeningsprøvingId)
         assertEquals(OPPTJENING_ARBEID_MINST_4_UKER, vurdering.avgjørendeVilkårskode)
         assertTrue(vurdering.girRettTilSykepenger)
 

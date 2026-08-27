@@ -28,7 +28,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kravvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
-import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
@@ -180,7 +180,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             val transaksjonProvider = InMemoryTransaksjonProvider()
             val andresVurdering =
                 Kravvurdering.automatisk(
-                    prøvingId = PrøvingId.ny(),
+                    opptjeningsprøvingId = OpptjeningsprøvingId.ny(),
                     fødselsnummer = enAnnenIdentitetsnummer.value,
                     skjæringstidspunkt = LocalDate.of(2024, 1, 1),
                     grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,
@@ -211,7 +211,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             val transaksjonProvider = InMemoryTransaksjonProvider()
             val vurdering =
                 Kravvurdering.automatisk(
-                    prøvingId = PrøvingId.ny(),
+                    opptjeningsprøvingId = OpptjeningsprøvingId.ny(),
                     fødselsnummer = identitetsnummer.value,
                     skjæringstidspunkt = LocalDate.of(2024, 2, 1),
                     grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,

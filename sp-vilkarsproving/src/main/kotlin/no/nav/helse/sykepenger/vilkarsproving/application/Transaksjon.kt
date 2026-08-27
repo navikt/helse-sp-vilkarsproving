@@ -1,6 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.application
 
 internal interface Transaksjonskontekst {
-    val kravprøvinger: KravprøvingRepository
+    val opptjeningsprøvinger: OpptjeningsprøvingRepository
     val kravvurderinger: KravvurderingRepository
 }

@@ -3,7 +3,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.db
 import no.nav.helse.hendelser.Periode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
-import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
@@ -27,7 +27,7 @@ private fun Vurderingskilde.tilDto(): VurderingskildeDto =
     when (this) {
         is Vurderingskilde.Automatisk ->
             VurderingskildeDto.Automatisk(
-                prøvingId = prøvingId.value,
+                prøvingId = opptjeningsprøvingId.value,
                 grunnlag = grunnlag.tilDto(),
                 utledet = utledetFakta.tilDto(),
                 versjonAvKildekode = versjonAvKildekode,
@@ -43,7 +43,7 @@ private fun VurderingskildeDto.tilVurderingskilde(): Vurderingskilde =
     when (this) {
         is VurderingskildeDto.Automatisk ->
             Vurderingskilde.Automatisk(
-                prøvingId = PrøvingId(prøvingId),
+                opptjeningsprøvingId = OpptjeningsprøvingId(prøvingId),
                 grunnlag = grunnlag.tilVilkårsgrunnlag(),
                 utledetFakta = utledet.tilUtledet(),
                 versjonAvKildekode = versjonAvKildekode,

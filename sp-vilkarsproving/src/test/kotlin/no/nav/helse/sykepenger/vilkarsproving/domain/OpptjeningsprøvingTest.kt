@@ -31,7 +31,7 @@ internal class OpptjeningsprøvingTest {
         assertNotNull(vurdering)
         assertTrue(prøving.erAvsluttet)
         assertNull(prøving.uteståendeBehov)
-        assertEquals(Kravprøving.Tilstand.Fullført(vurdering!!.id), prøving.tilstand)
+        assertEquals(Opptjeningsprøving.Tilstand.Fullført(vurdering!!.id), prøving.tilstand)
         val ledd = vurdering.vilkårsvurderinger.single()
         assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (ledd.kilde as Vurderingskilde.Automatisk).grunnlag)
     }
@@ -49,7 +49,7 @@ internal class OpptjeningsprøvingTest {
 
         val ledd = vurdering.vilkårsvurderinger.single()
         val kilde = ledd.kilde as Vurderingskilde.Automatisk
-        assertEquals(prøving.id, kilde.prøvingId)
+        assertEquals(prøving.id, kilde.opptjeningsprøvingId)
         assertEquals(Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold), kilde.grunnlag)
         assertEquals(Opptjeningsregel.versjon, kilde.versjonAvKildekode)
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
@@ -64,7 +64,7 @@ internal class OpptjeningsprøvingTest {
         val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(listOf(arbeidsforhold())))
 
         assertTrue(prøving.erAvsluttet)
-        assertEquals(Kravprøving.Tilstand.Fullført(vurdering.id), prøving.tilstand)
+        assertEquals(Opptjeningsprøving.Tilstand.Fullført(vurdering.id), prøving.tilstand)
     }
 
     // En fullført prøving er endelig; duplikate svar skal ikke kunne overskrive resultatet

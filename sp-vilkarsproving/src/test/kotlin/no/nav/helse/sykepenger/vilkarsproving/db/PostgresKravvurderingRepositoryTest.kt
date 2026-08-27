@@ -161,16 +161,16 @@ internal class PostgresKravvurderingRepositoryTest : DatabaseTest() {
             when (grunnlag) {
                 is Opptjeningsgrunnlag.Arbeidstaker -> {
                     val påbegynt = Opptjeningsprøving.start(FØDSELSNUMMER, skjæringstidspunkt, Arbeidssituasjon.Arbeidstaker)
-                    kontekst.kravprøvinger.lagre(påbegynt.prøving)
+                    kontekst.opptjeningsprøvinger.lagre(påbegynt.prøving)
                     val vurdering = påbegynt.prøving.motta(grunnlag)
                     kontekst.kravvurderinger.lagre(vurdering)
-                    kontekst.kravprøvinger.lagre(påbegynt.prøving)
+                    kontekst.opptjeningsprøvinger.lagre(påbegynt.prøving)
                     vurdering
                 }
 
                 else -> {
                     val påbegynt = Opptjeningsprøving.start(FØDSELSNUMMER, skjæringstidspunkt, Arbeidssituasjon.SelvstendigNæringsdrivende)
-                    kontekst.kravprøvinger.lagre(påbegynt.prøving)
+                    kontekst.opptjeningsprøvinger.lagre(påbegynt.prøving)
                     checkNotNull(påbegynt.vurdering).also { kontekst.kravvurderinger.lagre(it) }
                 }
             }

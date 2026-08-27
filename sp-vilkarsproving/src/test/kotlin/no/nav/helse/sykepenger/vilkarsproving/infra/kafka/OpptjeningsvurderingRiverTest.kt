@@ -28,7 +28,7 @@ import java.util.UUID
 internal class OpptjeningsvurderingRiverTest {
     private val transaksjon = InMemoryTransaksjonProvider()
     private val vurderinger = transaksjon.kravvurderinger
-    private val prøvinger = transaksjon.kravprøvinger
+    private val prøvinger = transaksjon.opptjeningsprøvinger
     private val rapid =
         TestRapid().apply {
             OpptjeningsvurderingRiver(this, transaksjon)

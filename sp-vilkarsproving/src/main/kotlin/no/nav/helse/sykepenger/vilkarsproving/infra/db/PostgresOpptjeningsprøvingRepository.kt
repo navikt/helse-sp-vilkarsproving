@@ -3,20 +3,20 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.db
 import kotliquery.Row
 import kotliquery.Session
 import kotliquery.queryOf
-import no.nav.helse.sykepenger.vilkarsproving.application.KravprøvingRepository
+import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningsprøvingRepository
 import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
 import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kravprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId
-import no.nav.helse.sykepenger.vilkarsproving.domain.PrøvingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import org.intellij.lang.annotations.Language
 import java.time.LocalDate
 import java.util.UUID
 
-internal class PostgresKravprøvingRepository(
+internal class PostgresOpptjeningsprøvingRepository(
     private val session: Session,
-) : KravprøvingRepository {
-    override fun lagre(prøving: Kravprøving) {
+) : OpptjeningsprøvingRepository {
+    override fun lagre(prøving: Opptjeningsprøving) {
         val tilstand = prøving.tilstand.tilLagring()
 
         @Language("PostgreSQL")
@@ -34,7 +34,7 @@ internal class PostgresKravprøvingRepository(
                 sql,
                 mapOf(
                     "id" to prøving.id.value,
-                    "krav" to prøving.krav.name,
+                    "krav" to Krav.Opptjening.name,
                     "fodselsnummer" to prøving.fødselsnummer,
                     "skjaeringstidspunkt" to prøving.skjæringstidspunkt,
                     "startet" to prøving.startet,
@@ -47,13 +47,12 @@ internal class PostgresKravprøvingRepository(
     }
 
     override fun finnSiste(
-        krav: Krav,
         fødselsnummer: String,
         skjæringstidspunkt: LocalDate,
-    ): Kravprøving? {
+    ): Opptjeningsprøving? {
         @Language("PostgreSQL")
         val sql = """
-            select id, krav, fødselsnummer, skjæringstidspunkt, startet, tilstand, utestående_behov, kravvurdering_id
+            select id, fødselsnummer, skjæringstidspunkt, startet, tilstand, utestående_behov, kravvurdering_id
             from kravproving
             where krav = :krav and fødselsnummer = :fodselsnummer and skjæringstidspunkt = :skjaeringstidspunkt
             order by løpenummer desc
@@ -63,7 +62,7 @@ internal class PostgresKravprøvingRepository(
             queryOf(
                 sql,
                 mapOf(
-                    "krav" to krav.name,
+                    "krav" to Krav.Opptjening.name,
                     "fodselsnummer" to fødselsnummer,
                     "skjaeringstidspunkt" to skjæringstidspunkt,
                 ),
@@ -72,9 +71,8 @@ internal class PostgresKravprøvingRepository(
     }
 
     private fun tilPrøving(row: Row) =
-        Kravprøving.fraLagring(
-            id = PrøvingId(row.uuid("id")),
-            krav = Krav.valueOf(row.string("krav")),
+        Opptjeningsprøving.fraLagring(
+            id = OpptjeningsprøvingId(row.uuid("id")),
             fødselsnummer = row.string("fødselsnummer"),
             skjæringstidspunkt = row.localDate("skjæringstidspunkt"),
             startet = row.instant("startet"),
@@ -97,27 +95,27 @@ private class LagretTilstand(
     val kravvurderingId: UUID? = null,
 )
 
-private fun Kravprøving.Tilstand.tilLagring() =
+private fun Opptjeningsprøving.Tilstand.tilLagring() =
     when (this) {
-        Kravprøving.Tilstand.Startet -> LagretTilstand(STARTET)
-        is Kravprøving.Tilstand.VenterPåGrunnlag -> LagretTilstand(VENTER_PÅ_GRUNNLAG, behov = behov.name)
-        is Kravprøving.Tilstand.Fullført -> LagretTilstand(FULLFØRT, kravvurderingId = kravvurderingId.value)
+        Opptjeningsprøving.Tilstand.Startet -> LagretTilstand(STARTET)
+        is Opptjeningsprøving.Tilstand.VenterPåGrunnlag -> LagretTilstand(VENTER_PÅ_GRUNNLAG, behov = behov.name)
+        is Opptjeningsprøving.Tilstand.Fullført -> LagretTilstand(FULLFØRT, kravvurderingId = kravvurderingId.value)
     }
 
 private fun tilstandFraLagring(
     navn: String,
     behov: String?,
     kravvurderingId: UUID?,
-): Kravprøving.Tilstand =
+): Opptjeningsprøving.Tilstand =
     when (navn) {
-        STARTET -> Kravprøving.Tilstand.Startet
+        STARTET -> Opptjeningsprøving.Tilstand.Startet
         VENTER_PÅ_GRUNNLAG ->
-            Kravprøving.Tilstand.VenterPåGrunnlag(
+            Opptjeningsprøving.Tilstand.VenterPåGrunnlag(
                 Grunnlagsbehov.valueOf(requireNotNull(behov) { "Prøving i tilstand $navn mangler utestående behov" }),
             )
 
         FULLFØRT ->
-            Kravprøving.Tilstand.Fullført(
+            Opptjeningsprøving.Tilstand.Fullført(
                 KravvurderingId(requireNotNull(kravvurderingId) { "Prøving i tilstand $navn mangler kravvurdering" }),
             )
 
