@@ -10,17 +10,13 @@ spec:
     sqlInstances:
       - type: POSTGRES_18
         diskAutoresize: true
-        tier: {{ db.tier }}
+        tier: "db-f1-micro"
         name: sp-vilkarsproving
         databases:
           - name: sp-vilkarsproving
             envVarPrefix: DATABASE
-{{#if db.extraUsers}}
             users:
-{{#each db.extraUsers as |extraUser|}}
-              - name: {{ extraUser }}
-{{/each}}
-{{/if}}
+              - name: "sp-vilkarsproving-opprydding-dev"
   port: 8080
   startup:
     path: isready
@@ -50,14 +46,14 @@ spec:
     limits:
       memory: 512Mi
   replicas:
-    min: {{ minReplicas }}
-    max: {{ maxReplicas }}
+    min: 1
+    max: 2
   strategy:
     rollingUpdate:
       maxSurge: 50%
       maxUnavailable: 50%
   kafka:
-    pool: {{ kafkaPool }}
+    pool: nav-dev
   azure:
     application:
       enabled: true
@@ -65,8 +61,8 @@ spec:
         extra:
           - NAVident
         groups:
-          - id: {{ENTRAID_UUID_SPEIL_SAKSBEHANDLER}}
-          - id: {{ENTRAID_UUID_SPEIL_LESETILGANG}}
+          - id: {{ENTRAID_UUID_SPEIL_SAKSBEHANDLER_DEV}}
+          - id: {{ENTRAID_UUID_SPEIL_LESETILGANG_DEV}}
   valkey:
     - instance: personpseudoid
       access: read
@@ -79,15 +75,15 @@ spec:
     - name: KAFKA_RAPID_TOPIC
       value: tbd.rapid.v1
     - name: TILGANGSMASKINEN_SCOPE
-      value: {{ tilgangsmaskinenScope }}
+      value: "api://dev-gcp.tilgangsmaskin.populasjonstilgangskontroll/.default"
     - name: TILGANGSMASKINEN_BASE_URL
       value: http://populasjonstilgangskontroll.tilgangsmaskin
-    - name: TILGANG_LES
-      value: {{ENTRAID_UUID_SPEIL_LESETILGANG}}
     - name: TILGANG_SKRIV
-      value: {{ENTRAID_UUID_SPEIL_SAKSBEHANDLER}}
+      value: {{ENTRAID_UUID_SPEIL_SAKSBEHANDLER_DEV}}
+    - name: TILGANG_LES
+      value: {{ENTRAID_UUID_SPEIL_LESETILGANG_DEV}}
     - name: DB_POOL_SIZE
-      value: "{{ db.poolSize }}"
+      value: "5"
   accessPolicy:
     inbound:
       rules:

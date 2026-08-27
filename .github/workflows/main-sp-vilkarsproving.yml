@@ -61,8 +61,8 @@ jobs:
     uses: navikt/helse-sas-github-workflows/.github/workflows/deploy.yml@2f6844aa5e6852c64522681b3edb09c99445ad59 # v1.0.1
     with:
       CLUSTER: dev-gcp
-      RESOURCE: .nais/sp-vilkarsproving.yaml
-      VARS: .nais/sp-vilkarsproving-vars-dev.yaml
+      RESOURCE: .nais/dev.yaml
+      VARS: .nais/entra-id-vars.yml
       WORKLOAD_IMAGE: ${{ needs.bygg-image.outputs.image_ref }}
     permissions:
       contents: read
