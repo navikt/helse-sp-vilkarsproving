@@ -173,7 +173,9 @@ internal class OpptjeningsvurderingRiverTest {
           "@id": "${UUID.randomUUID()}",
           "@behov": ["Opptjeningsvurdering"],
           "fødselsnummer": "$FØDSELSNUMMER",
-          "arbeidssituasjon": "Arbeidstaker"
+          "Opptjeningsvurdering" : {
+            "arbeidssituasjon": "Arbeidstaker"
+          }
         }
         """
         rapid.sendTestMessage(melding)
@@ -202,8 +204,10 @@ internal class OpptjeningsvurderingRiverTest {
           "@id": "${UUID.randomUUID()}",
           "@behov": ["Opptjeningsvurdering"],
           "fødselsnummer": "$FØDSELSNUMMER",
-          "skjæringstidspunkt": "2018-02-01",
-          "arbeidssituasjon": "$arbeidssituasjon"
+          "Opptjeningsvurdering" : {
+              "skjæringstidspunkt": "2018-02-01",
+              "arbeidssituasjon": "$arbeidssituasjon"
+          }
         }
         """
     }

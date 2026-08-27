@@ -338,8 +338,10 @@ internal class OpptjeningE2ETest : DatabaseTest() {
           "@id": "$id",
           "@behov": ["Opptjeningsvurdering"],
           "fødselsnummer": "$FØDSELSNUMMER",
-          "skjæringstidspunkt": "2018-02-01",
-          "arbeidssituasjon": "$arbeidssituasjon"
+          "Opptjeningsvurdering" : {
+              "skjæringstidspunkt": "2018-02-01",
+              "arbeidssituasjon": "$arbeidssituasjon"
+          }
         }
         """
 

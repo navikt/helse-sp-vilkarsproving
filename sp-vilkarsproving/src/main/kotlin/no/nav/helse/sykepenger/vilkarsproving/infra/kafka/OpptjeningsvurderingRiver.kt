@@ -27,13 +27,14 @@ internal class OpptjeningsvurderingRiver(
         River(rapidsConnection)
             .apply {
                 precondition {
+                    it.requireValue("@event_name", "behov")
                     it.requireAllOrAny("@behov", listOf(behovKey))
                     it.forbid("@løsning")
                 }
                 validate {
                     it.requireKey("fødselsnummer")
-                    it.require("skjæringstidspunkt", JsonNode::asLocalDate)
-                    it.requireKey("arbeidssituasjon") // TODO strengere validering
+                    it.require("Opptjeningsvurdering.skjæringstidspunkt", JsonNode::asLocalDate)
+                    it.requireKey("Opptjeningsvurdering.arbeidssituasjon") // TODO strengere validering
                 }
             }.register(this)
     }
@@ -44,10 +45,10 @@ internal class OpptjeningsvurderingRiver(
         metadata: MessageMetadata,
         meterRegistry: MeterRegistry,
     ) {
-        sikkerLogg.info("Mottatt behov for $behovKey for fødselsnummer ${packet["fødselsnummer"].asString()} med skjæringstidspunkt ${packet["skjæringstidspunkt"].asLocalDate()}")
         val fødselsnummer = packet["fødselsnummer"].asString()
-        val skjæringstidspunkt = packet["skjæringstidspunkt"].asLocalDate()
-        val arbeidssituasjon = Arbeidssituasjon.valueOf(packet["arbeidssituasjon"].asString())
+        val skjæringstidspunkt = packet["Opptjeningsvurdering.skjæringstidspunkt"].asLocalDate()
+        val arbeidssituasjon = Arbeidssituasjon.valueOf(packet["Opptjeningsvurdering.arbeidssituasjon"].asString())
+        sikkerLogg.info("Mottatt behov for $behovKey for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt")
 
         val vurderOpptjeningResultat =
             transaksjonProvider.transaksjon { kontekst ->
