@@ -1,0 +1,106 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+metadata:
+  name: sp-vilkarsproving
+  namespace: tbd
+  labels:
+    team: tbd
+spec:
+  gcp:
+    sqlInstances:
+      - type: POSTGRES_18
+        name: sp-vilkarsproving
+        diskAutoresize: true
+        pointInTimeRecovery: true
+        tier: db-custom-1-3840
+        flags:
+          - name: "cloudsql.enable_pgaudit"
+            value: "on"
+          - name: "pgaudit.log"
+            value: "write,ddl,role"
+          - name: "pgaudit.log_parameter"
+            value: "on"
+          - name: "pgaudit.log_relation"
+            value: "on"
+        databases:
+          - name: sp-vilkarsproving
+            envVarPrefix: DATABASE
+  port: 8080
+  startup:
+    path: isready
+    initialDelay: 20
+    periodSeconds: 5
+    failureThreshold: 9
+  liveness:
+    path: isalive
+  readiness:
+    path: isready
+  preStopHook:
+    http:
+      path: /stop
+  observability:
+    autoInstrumentation:
+      enabled: true
+      runtime: java
+    logging:
+      destinations:
+        - id: elastic
+        - id: loki
+        - id: team_logs
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 512Mi
+  replicas:
+    min: 1
+    max: 2
+  strategy:
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 50%
+  kafka:
+    pool: nav-dev
+  azure:
+    application:
+      enabled: true
+      claims:
+        extra:
+          - NAVident
+        groups:
+          - id: {{ENTRAID_UUID_SAKSBEHANDLER}}
+          - id: {{ENTRAID_UUID_SPEIL_LESETILGANG}}
+          - id: {{ENTRAID_UUID_NAIS_TBD}}
+          - id: {{ENTRAID_UUID_TBD}}
+          - id: {{ENTRAID_UUID_SPEIL_RIKSREVISJONEN}}
+  valkey:
+    - instance: personpseudoid
+      access: read
+  prometheus:
+    enabled: true
+    path: /metrics
+  env:
+    - name: KAFKA_CONSUMER_GROUP_ID
+      value: tbd-sp-vilkarsproving-v1
+    - name: KAFKA_RAPID_TOPIC
+      value: tbd.rapid.v1
+    - name: TILGANGSMASKINEN_SCOPE
+      value: "api://prod-gcp.tilgangsmaskin.populasjonstilgangskontroll/.default"
+    - name: TILGANGSMASKINEN_BASE_URL
+      value: http://populasjonstilgangskontroll.tilgangsmaskin
+    - name: TILGANG_SKRIV
+      value: {{ENTRAID_UUID_SAKSBEHANDLER}}
+    - name: TILGANG_LES
+      value: {{ENTRAID_UUID_SPEIL_LESETILGANG}},{{ENTRAID_UUID_TBD}},{{ENTRAID_UUID_SPEIL_RIKSREVISJONEN}}
+  accessPolicy:
+    inbound:
+      rules:
+        - application: speil
+    outbound:
+      rules:
+        - application: logging
+          namespace: nais-system
+        - application: populasjonstilgangskontroll
+          namespace: tilgangsmaskin
+        - application: spleis-api
