@@ -1,7 +1,7 @@
 package no.nav.helse.sykepenger.vilkarsproving.domain
 
 internal sealed interface Opptjeningsgrunnlag {
-    val krav get() = Opptjeningsregel
+    val regel get() = Opptjeningsregel
 
     /** Behovet dette grunnlaget besvarer, eller null dersom det ikke må innhentes. */
     val besvarer: Grunnlagsbehov?

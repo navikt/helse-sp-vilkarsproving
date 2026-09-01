@@ -55,13 +55,13 @@ internal open class OpptjeningsvurderingResultatRiver(
             loggInfo("Mottatt behov for $behovnavn")
 
             try {
-                val kravvurdering =
+                val opptjeningsvurdering =
                     transaksjonProvider.transaksjon {
                         it.opptjeningsvurderinger.finn(opptjeningsvurderingId)
                     }
 
                 val utfall =
-                    kravvurdering?.girRettTilSykepenger ?: spleisClient
+                    opptjeningsvurdering?.girRettTilSykepenger ?: spleisClient
                         .hentOpptjeningsvurderinger(fødselsnummer = fødselsnummer)
                         .find { it.opptjeningsvurderingId == opptjeningsvurderingId }
                         ?.let { vurdering ->

@@ -16,7 +16,7 @@ import java.time.LocalDate
 internal class OpptjeningService(
     kontekst: Transaksjonskontekst,
 ) {
-    private val kravvurderingRepository = kontekst.opptjeningsvurderinger
+    private val opptjeningsvurderingRepository = kontekst.opptjeningsvurderinger
     private val opptjeningsprøvingRepository = kontekst.opptjeningsprøvinger
 
     fun vurderOpptjening(
@@ -30,7 +30,7 @@ internal class OpptjeningService(
         ) {
             // TODO: I fremtiden bør vi sjekke at eksisterende vurdering ble gjort på samme arbeidssituasjon,
             //  dersom situasjonen på et skjæringstidspunkt kan endre seg.
-            kravvurderingRepository.gjeldende(fødselsnummer, skjæringstidspunkt)?.let { vurdering ->
+            opptjeningsvurderingRepository.gjeldende(fødselsnummer, skjæringstidspunkt)?.let { vurdering ->
                 loggInfo(
                     "Har allerede opptjeningsvurdering",
                     "opptjeningsvurderingId" to vurdering.id,
@@ -58,7 +58,7 @@ internal class OpptjeningService(
                 return@medMdc TrengerArbeidsforhold(fødselsnummer, skjæringstidspunkt)
             }
 
-            kravvurderingRepository.lagre(vurdering)
+            opptjeningsvurderingRepository.lagre(vurdering)
             loggInfo(
                 "Opptjeningsprøving fullført uten innhenting",
                 "opptjeningsprøvingId" to prøving.id,
@@ -92,7 +92,7 @@ internal class OpptjeningService(
             }
 
             val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold))
-            kravvurderingRepository.lagre(vurdering)
+            opptjeningsvurderingRepository.lagre(vurdering)
             opptjeningsprøvingRepository.lagre(prøving)
             loggInfo(
                 "Opptjeningsprøving fullført",
@@ -115,6 +115,6 @@ internal class OpptjeningService(
     }
 
     fun finnOpptjeningsvurdering(opptjeningsvurderingId: OpptjeningsvurderingId): Opptjeningsvurdering =
-        kravvurderingRepository.finn(opptjeningsvurderingId)
+        opptjeningsvurderingRepository.finn(opptjeningsvurderingId)
             ?: error("Fant ikke opptjeningsvurdering med id $opptjeningsvurderingId")
 }

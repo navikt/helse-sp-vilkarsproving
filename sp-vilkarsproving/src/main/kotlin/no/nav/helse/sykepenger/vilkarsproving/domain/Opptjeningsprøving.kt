@@ -4,16 +4,12 @@ import java.time.Instant
 import java.time.LocalDate
 
 /**
- * Prosessen som leder fram til en [Opptjeningsvurdering.VurdertISpeil] av opptjeningskravet.
+ * Prosessen som leder fram til en [Opptjeningsvurdering.VurdertISpeil] av opptjening.
  *
  * Prøvingen eier livssyklusen — hva vi venter på, hvor lenge, og om vi er ferdige — mens selve
  * vurderingen er resultatet den produserer. En prøving i denne appen *er* en automatisk prøving: det
  * finnes ingen prøving for en manuell vurdering eller en vurdering overført fra Spleis eller Infotrygd,
  * se [Vurderingskilde].
- *
- * Prøvingen holder ikke på innhentede fakta. Det er ikke nødvendig så lenge den venter på ett grunnlag om
- * gangen: kommer svaret, konstrueres grunnlaget og vurderingen i samme operasjon. Skal kravet senere
- * vente på flere uavhengige svar må vi legge til et arbeidsminne her.
  */
 internal class Opptjeningsprøving private constructor(
     val id: OpptjeningsprøvingId,

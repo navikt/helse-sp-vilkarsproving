@@ -6,8 +6,6 @@ import no.nav.helse.hendelser.til
 import java.time.LocalDate
 
 internal object Opptjeningsregel {
-    /** Navnet dette kravet lagres og eksponeres under. */
-    const val NAVN = "Opptjening"
     val versjon = "1"
 
     private const val ANTALL_OPPTJENINGSDAGER_SOM_KREVES = 28
@@ -15,7 +13,7 @@ internal object Opptjeningsregel {
     fun vurder(
         skjæringstidspunkt: LocalDate,
         grunnlag: Opptjeningsgrunnlag,
-    ): Kravregelresultat =
+    ): OpptjeningsregelResultat =
         when (grunnlag) {
             is Opptjeningsgrunnlag.Arbeidstaker -> vurderArbeidstaker(skjæringstidspunkt, grunnlag.arbeidsforhold)
             Opptjeningsgrunnlag.SelvstendigNæringsdrivende -> vurderSelvstendigNæringsdrivende()
@@ -24,7 +22,7 @@ internal object Opptjeningsregel {
     private fun vurderArbeidstaker(
         skjæringstidspunkt: LocalDate,
         arbeidsforhold: List<Arbeidsforhold>,
-    ): Kravregelresultat {
+    ): OpptjeningsregelResultat {
         val opptjeningsperiode =
             arbeidsforhold
                 .map { it.ansettelseperiode }
@@ -35,7 +33,7 @@ internal object Opptjeningsregel {
                 ?.subset(opptjeningsperiode.start til skjæringstidspunkt.forrigeDag)
                 ?.count() ?: 0
 
-        return Kravregelresultat(
+        return OpptjeningsregelResultat(
             listOf(
                 Vilkårsutfall(
                     vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
@@ -47,7 +45,7 @@ internal object Opptjeningsregel {
     }
 
     private fun vurderSelvstendigNæringsdrivende() =
-        Kravregelresultat(
+        OpptjeningsregelResultat(
             listOf(
                 Vilkårsutfall(
                     vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
@@ -58,7 +56,7 @@ internal object Opptjeningsregel {
         )
 }
 
-internal data class Kravregelresultat(
+internal data class OpptjeningsregelResultat(
     val vilkårsutfall: List<Vilkårsutfall>,
 ) {
     init {

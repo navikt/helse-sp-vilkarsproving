@@ -33,14 +33,14 @@ internal class VurderingsresponsTest {
     }
 
     @Test
-    fun `skjaeringstidspunktet ligger paa rota, ikke per krav`() {
+    fun `skjaeringstidspunktet ligger på rota, ikke per opptjeningsvurdering`() {
         val respons = Vurderingsrespons.fra(automatiskArbeidstakervurdering(4.januar til 31.januar))
 
         assertEquals(1.februar, respons.skjæringstidspunkt)
     }
 
     @Test
-    fun `kravet peker paa vilkaaret som avgjorde det`() {
+    fun `opptjeningsvurderingen peker på vilkaaret som avgjorde det`() {
         val respons = Vurderingsrespons.fra(automatiskArbeidstakervurdering(4.januar til 31.januar))
         val krav = respons.krav.single() as ApiOpptjeningsvurdering.VurdertISpeil
 
