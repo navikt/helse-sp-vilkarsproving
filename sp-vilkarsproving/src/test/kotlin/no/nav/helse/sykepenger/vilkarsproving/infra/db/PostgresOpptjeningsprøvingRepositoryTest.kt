@@ -77,7 +77,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
             }
 
         val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar) }!!
-        assertEquals(1, Database.antallRader("kravproving"))
+        assertEquals(1, Database.antallRader("opptjeningsproving"))
         assertEquals(Opptjeningsprøving.Tilstand.Fullført(vurdering.id), lagret.tilstand)
         assertNull(lagret.uteståendeBehov)
     }
@@ -90,7 +90,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
         transaksjon { it.opptjeningsprøvinger.lagre(prøving) }
 
         val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar) }!!
-        assertEquals(1, Database.antallRader("kravproving"))
+        assertEquals(1, Database.antallRader("opptjeningsproving"))
         assertEquals(prøving.startet.truncatedTo(ChronoUnit.MILLIS), lagret.startet.truncatedTo(ChronoUnit.MILLIS))
     }
 
@@ -102,7 +102,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
 
         assertThrows<PSQLException> { transaksjon { it.opptjeningsprøvinger.lagre(nyPrøving()) } }
 
-        assertEquals(1, Database.antallRader("kravproving"))
+        assertEquals(1, Database.antallRader("opptjeningsproving"))
     }
 
     // ... men en fullført prøving er ikke aktiv, så en ny prøving kan startes etterpå
@@ -118,7 +118,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
         val andre = nyPrøving()
         transaksjon { it.opptjeningsprøvinger.lagre(andre) }
 
-        assertEquals(2, Database.antallRader("kravproving"))
+        assertEquals(2, Database.antallRader("opptjeningsproving"))
         assertEquals(andre.id, transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar) }!!.id)
     }
 
@@ -130,7 +130,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
             kontekst.opptjeningsprøvinger.lagre(nyPrøving(fødselsnummer = ANNET_FØDSELSNUMMER))
         }
 
-        assertEquals(3, Database.antallRader("kravproving"))
+        assertEquals(3, Database.antallRader("opptjeningsproving"))
     }
 
     @Test

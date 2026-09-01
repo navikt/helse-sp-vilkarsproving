@@ -17,7 +17,7 @@ internal class PostgresTransaksjonProviderTest : DatabaseTest() {
             kontekst.opptjeningsvurderinger.lagre(checkNotNull(påbegynt.vurdering))
         }
 
-        assertEquals(1, Database.antallRader("kravproving"))
+        assertEquals(1, Database.antallRader("opptjeningsproving"))
         assertEquals(1, Database.antallRader("kravvurdering"))
         assertEquals(1, Database.antallRader("vilkarsvurdering"))
     }
@@ -33,7 +33,7 @@ internal class PostgresTransaksjonProviderTest : DatabaseTest() {
             }
         }
 
-        assertEquals(0, Database.antallRader("kravproving"))
+        assertEquals(0, Database.antallRader("opptjeningsproving"))
         assertEquals(0, Database.antallRader("kravvurdering"))
         assertEquals(0, Database.antallRader("vilkarsvurdering"))
     }
@@ -69,9 +69,9 @@ internal class PostgresTransaksjonProviderTest : DatabaseTest() {
             // Innenfor transaksjonen ser vi vår egen skriving ...
             assertNotNull(kontekst.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar))
             // ... men en annen forbindelse gjør det ikke.
-            assertEquals(0, Database.antallRader("kravproving"))
+            assertEquals(0, Database.antallRader("opptjeningsproving"))
         }
 
-        assertEquals(1, Database.antallRader("kravproving"))
+        assertEquals(1, Database.antallRader("opptjeningsproving"))
     }
 }

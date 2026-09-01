@@ -8,7 +8,7 @@ internal object Database {
 
     val transaksjonProvider = PostgresTransaksjonProvider(database.dataSource)
 
-    fun tøm() = database.tøm("vilkarsvurdering", "kravproving", "kravvurdering")
+    fun tøm() = database.tøm("vilkarsvurdering", "opptjeningsproving", "kravvurdering")
 
     fun antallRader(tabell: String) = database.antallRader(tabell)
 

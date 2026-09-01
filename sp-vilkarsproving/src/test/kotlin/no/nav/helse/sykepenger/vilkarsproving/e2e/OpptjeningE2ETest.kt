@@ -48,7 +48,7 @@ internal class OpptjeningE2ETest : DatabaseTest() {
         assertEquals(listOf("ArbeidsforholdV2"), arbeidsforholdBehov.path("@behov").toList().map { it.asString() })
 
         // Prøvingen er lagret og venter på grunnlag; ingen vurdering ennå
-        assertEquals(1, Database.antallRader("kravproving"))
+        assertEquals(1, Database.antallRader("opptjeningsproving"))
         assertEquals(0, Database.antallRader("kravvurdering"))
 
         // Steg 2: Aareg svarer med arbeidsforhold som gir nok opptjening (28+ dager)
@@ -62,7 +62,7 @@ internal class OpptjeningE2ETest : DatabaseTest() {
         assertEquals(2, rapid.inspektør.size)
 
         // Vurderingen og den fullførte prøvingen ble skrevet i samme transaksjon
-        assertEquals(1, Database.antallRader("kravproving"))
+        assertEquals(1, Database.antallRader("opptjeningsproving"))
         assertEquals(1, Database.antallRader("kravvurdering"))
 
         val opptjeningsvurderingLøsning = rapid.inspektør.message(1)
@@ -295,7 +295,7 @@ internal class OpptjeningE2ETest : DatabaseTest() {
             feilendeRapid.sendTestMessage(opptjeningsvurderingBehov(UUID.randomUUID(), "SelvstendigNæringsdrivende"), FØDSELSNUMMER)
         }
 
-        assertEquals(0, Database.antallRader("kravproving"))
+        assertEquals(0, Database.antallRader("opptjeningsproving"))
         assertEquals(0, Database.antallRader("kravvurdering"))
     }
 

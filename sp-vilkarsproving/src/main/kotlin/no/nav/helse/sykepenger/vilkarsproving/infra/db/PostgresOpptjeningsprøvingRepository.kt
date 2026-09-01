@@ -7,7 +7,6 @@ import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningsprøvingRep
 import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsregel
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import org.intellij.lang.annotations.Language
 import java.time.LocalDate
@@ -21,8 +20,8 @@ internal class PostgresOpptjeningsprøvingRepository(
 
         @Language("PostgreSQL")
         val sql = """
-            insert into kravproving (id, krav, fødselsnummer, skjæringstidspunkt, startet, tilstand, utestående_behov, kravvurdering_id)
-            values (:id, :krav, :fodselsnummer, :skjaeringstidspunkt, :startet, :tilstand, :behov, :opptjeningsvurderingId)
+            insert into opptjeningsproving (id, fødselsnummer, skjæringstidspunkt, startet, tilstand, utestående_behov, kravvurdering_id)
+            values (:id, :fodselsnummer, :skjaeringstidspunkt, :startet, :tilstand, :behov, :opptjeningsvurderingId)
             on conflict (id) do update
             set tilstand = excluded.tilstand,
                 utestående_behov = excluded.utestående_behov,
@@ -34,7 +33,6 @@ internal class PostgresOpptjeningsprøvingRepository(
                 sql,
                 mapOf(
                     "id" to prøving.id.value,
-                    "krav" to Opptjeningsregel.NAVN,
                     "fodselsnummer" to prøving.fødselsnummer,
                     "skjaeringstidspunkt" to prøving.skjæringstidspunkt,
                     "startet" to prøving.startet,
@@ -53,8 +51,8 @@ internal class PostgresOpptjeningsprøvingRepository(
         @Language("PostgreSQL")
         val sql = """
             select id, fødselsnummer, skjæringstidspunkt, startet, tilstand, utestående_behov, kravvurdering_id
-            from kravproving
-            where krav = :krav and fødselsnummer = :fodselsnummer and skjæringstidspunkt = :skjaeringstidspunkt
+            from opptjeningsproving
+            where fødselsnummer = :fodselsnummer and skjæringstidspunkt = :skjaeringstidspunkt
             order by løpenummer desc
             limit 1
         """
@@ -62,7 +60,6 @@ internal class PostgresOpptjeningsprøvingRepository(
             queryOf(
                 sql,
                 mapOf(
-                    "krav" to Opptjeningsregel.NAVN,
                     "fodselsnummer" to fødselsnummer,
                     "skjaeringstidspunkt" to skjæringstidspunkt,
                 ),

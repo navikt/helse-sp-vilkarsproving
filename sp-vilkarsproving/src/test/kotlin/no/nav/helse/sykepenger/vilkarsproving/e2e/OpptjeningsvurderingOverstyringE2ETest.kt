@@ -57,7 +57,7 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
 
     private fun dump(steg: String) {
         if (!dump) return
-        Database.dump("kravproving", "kravvurdering", "vilkarsvurdering", overskrift = steg)
+        Database.dump("opptjeningsproving", "kravvurdering", "vilkarsvurdering", overskrift = steg)
     }
 
     private val transaksjon = Database.transaksjonProvider
