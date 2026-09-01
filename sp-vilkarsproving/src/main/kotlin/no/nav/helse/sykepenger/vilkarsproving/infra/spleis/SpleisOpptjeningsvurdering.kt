@@ -1,8 +1,8 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.spleis
 
-import no.nav.helse.hendelser.Periode
-import no.nav.helse.hendelser.til
+import no.nav.helse.Periode
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
+import no.nav.helse.til
 import java.time.LocalDate
 
 internal sealed interface SpleisOpptjeningsvurdering {

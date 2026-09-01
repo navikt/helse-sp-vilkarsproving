@@ -1,7 +1,7 @@
 package no.nav.helse.sykepenger.vilkarsproving.domain
 
-import no.nav.helse.hendelser.Periode
-import no.nav.helse.hendelser.til
+import no.nav.helse.Periode
+import no.nav.helse.til
 import java.time.LocalDate
 
 internal data class Arbeidsforhold(

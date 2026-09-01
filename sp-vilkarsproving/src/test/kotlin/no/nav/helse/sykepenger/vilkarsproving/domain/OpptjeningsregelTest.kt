@@ -1,11 +1,10 @@
 package no.nav.helse.sykepenger.vilkarsproving.domain
 
+import no.nav.helse.Periode
 import no.nav.helse.april
 import no.nav.helse.desember
 import no.nav.helse.februar
 import no.nav.helse.fredag
-import no.nav.helse.hendelser.Periode
-import no.nav.helse.hendelser.til
 import no.nav.helse.januar
 import no.nav.helse.lørdag
 import no.nav.helse.mai
@@ -14,6 +13,7 @@ import no.nav.helse.mars
 import no.nav.helse.oktober
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT
 import no.nav.helse.søndag
+import no.nav.helse.til
 import no.nav.helse.tirsdag
 import no.nav.helse.torsdag
 import org.junit.jupiter.api.Assertions.assertEquals

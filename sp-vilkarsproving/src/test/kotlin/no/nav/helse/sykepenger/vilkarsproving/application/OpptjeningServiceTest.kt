@@ -1,8 +1,7 @@
 package no.nav.helse.sykepenger.vilkarsproving.application
 
+import no.nav.helse.Periode
 import no.nav.helse.februar
-import no.nav.helse.hendelser.Periode
-import no.nav.helse.hendelser.til
 import no.nav.helse.januar
 import no.nav.helse.mars
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService.BehandleGrunnlagResultat
@@ -19,6 +18,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
+import no.nav.helse.til
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf

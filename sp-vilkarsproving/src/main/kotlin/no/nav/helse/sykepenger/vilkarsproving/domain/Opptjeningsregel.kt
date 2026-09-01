@@ -1,8 +1,8 @@
 package no.nav.helse.sykepenger.vilkarsproving.domain
 
+import no.nav.helse.Periode.Companion.grupperSammenhengendePerioderMedHensynTilHelg
 import no.nav.helse.forrigeDag
-import no.nav.helse.hendelser.Periode.Companion.grupperSammenhengendePerioderMedHensynTilHelg
-import no.nav.helse.hendelser.til
+import no.nav.helse.til
 import java.time.LocalDate
 
 internal object Opptjeningsregel {

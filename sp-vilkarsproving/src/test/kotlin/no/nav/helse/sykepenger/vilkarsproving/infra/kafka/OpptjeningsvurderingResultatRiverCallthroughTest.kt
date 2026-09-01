@@ -2,8 +2,8 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.kafka
 
 import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
 import no.nav.helse.februar
-import no.nav.helse.hendelser.somPeriode
 import no.nav.helse.januar
+import no.nav.helse.somPeriode
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient

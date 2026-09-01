@@ -1,10 +1,7 @@
 @file:Suppress("unused")
 
-package no.nav.helse.hendelser
+package no.nav.helse
 
-import no.nav.helse.erRettFør
-import no.nav.helse.forrigeDag
-import no.nav.helse.nesteDag
 import java.time.DayOfWeek.SATURDAY
 import java.time.DayOfWeek.SUNDAY
 import java.time.LocalDate

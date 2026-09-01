@@ -1,5 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
+import no.nav.helse.Periode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
@@ -92,7 +93,7 @@ private fun Opptjeningsgrunnlag.tilApi(utledetFakta: UtledetFakta): ApiVurdering
         Opptjeningsgrunnlag.SelvstendigNæringsdrivende -> ApiVurderingsgrunnlag.SelvstendigNæringsdrivende()
     }
 
-private fun no.nav.helse.hendelser.Periode.tilApi() = ApiPeriode(fom = start, tom = endInclusive)
+private fun Periode.tilApi() = ApiPeriode(fom = start, tom = endInclusive)
 
 private fun Arbeidsforhold.tilApi() =
     ApiArbeidsforhold(

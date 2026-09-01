@@ -2,8 +2,6 @@
 
 package no.nav.helse
 
-import no.nav.helse.hendelser.Periode
-import no.nav.helse.hendelser.til
 import java.time.DayOfWeek
 import java.time.DayOfWeek.FRIDAY
 import java.time.DayOfWeek.MONDAY
