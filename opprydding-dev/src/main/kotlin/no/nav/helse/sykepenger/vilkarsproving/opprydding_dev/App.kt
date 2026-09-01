@@ -14,5 +14,6 @@ fun main() {
     RapidApplication
         .create(env, consumerProducerFactory = consumerProducerFactory)
         .apply {
+            SlettPersonRiver(this, dataSource)
         }.start()
 }
