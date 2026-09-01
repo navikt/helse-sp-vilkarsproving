@@ -1,7 +1,7 @@
 package no.nav.helse.sykepenger.vilkarsproving.domain
 
 internal sealed interface Opptjeningsgrunnlag {
-    val krav get() = Krav.Opptjening
+    val krav get() = Opptjeningsregel
 
     /** Behovet dette grunnlaget besvarer, eller null dersom det ikke må innhentes. */
     val besvarer: Grunnlagsbehov?
@@ -15,4 +15,8 @@ internal sealed interface Opptjeningsgrunnlag {
     data object SelvstendigNæringsdrivende : Opptjeningsgrunnlag {
         override val besvarer = null
     }
+}
+
+internal enum class Grunnlagsbehov {
+    Arbeidsforhold,
 }

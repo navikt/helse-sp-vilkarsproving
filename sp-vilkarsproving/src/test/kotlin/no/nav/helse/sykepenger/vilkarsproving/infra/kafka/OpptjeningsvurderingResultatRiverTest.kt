@@ -3,7 +3,6 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.kafka
 import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
 import no.nav.helse.februar
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
-import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
@@ -187,7 +186,7 @@ internal class OpptjeningsvurderingResultatRiverTest {
         const val FØDSELSNUMMER = "12029240045"
 
         @JvmStatic
-        fun opptjeningsVilkårskoder(): Stream<Vilkårskode> = Vilkårskode.entries.filter { it.krav == Krav.Opptjening }.stream()
+        fun opptjeningsVilkårskoder(): Stream<Vilkårskode> = Vilkårskode.entries.stream()
 
         @Language("JSON")
         fun opptjeningsvurderingResultatBehov(opptjeningsvurderingId: UUID) =

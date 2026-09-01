@@ -4,7 +4,7 @@ import kotliquery.Row
 import kotliquery.Session
 import kotliquery.queryOf
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningsvurderingRepository
-import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsregel
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
@@ -44,7 +44,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                 kravvurderingSql,
                 mapOf(
                     "id" to vurdering.id.value,
-                    "krav" to Krav.Opptjening.name,
+                    "krav" to Opptjeningsregel.NAVN,
                     "fodselsnummer" to vurdering.fødselsnummer,
                     "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
                     "kravkilde" to KRAVKILDE_VURDERT_I_SPEIL,
@@ -86,7 +86,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                 sql,
                 mapOf(
                     "id" to vurdering.id.value,
-                    "krav" to Krav.Opptjening.name,
+                    "krav" to Opptjeningsregel.NAVN,
                     "fodselsnummer" to vurdering.fødselsnummer,
                     "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
                     "kravkilde" to KRAVKILDE_OVERFOERT_FRA_INFOTRYGD,
@@ -112,7 +112,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                 queryOf(
                     sql,
                     mapOf(
-                        "krav" to Krav.Opptjening.name,
+                        "krav" to Opptjeningsregel.NAVN,
                         "fodselsnummer" to fødselsnummer,
                         "skjaeringstidspunkt" to skjæringstidspunkt,
                     ),
@@ -130,7 +130,7 @@ internal class PostgresOpptjeningsvurderingRepository(
             .run(
                 queryOf(
                     sql,
-                    mapOf("krav" to Krav.Opptjening.name, "id" to opptjeningsvurderingId.value),
+                    mapOf("krav" to Opptjeningsregel.NAVN, "id" to opptjeningsvurderingId.value),
                 ).map(::tilOpptjeningsvurderingRad).asSingle,
             )?.let(::hydrer)
     }
@@ -179,7 +179,6 @@ internal class PostgresOpptjeningsvurderingRepository(
     private fun tilOpptjeningsvurderingRad(row: Row) =
         OpptjeningsvurderingRad(
             id = OpptjeningsvurderingId(row.uuid("id")),
-            krav = Krav.valueOf(row.string("krav")),
             fødselsnummer = row.string("fødselsnummer"),
             skjæringstidspunkt = row.localDate("skjæringstidspunkt"),
             kravkilde = row.string("kravkilde"),
@@ -188,7 +187,6 @@ internal class PostgresOpptjeningsvurderingRepository(
 
     private data class OpptjeningsvurderingRad(
         val id: OpptjeningsvurderingId,
-        val krav: Krav,
         val fødselsnummer: String,
         val skjæringstidspunkt: LocalDate,
         val kravkilde: String,

@@ -5,14 +5,12 @@ internal enum class Utfall {
     IkkeOppfylt,
 }
 
-internal enum class Vilkårskode(
-    val krav: Krav,
-) {
-    OPPTJENING_ARBEID_MINST_4_UKER(Krav.Opptjening),
+internal enum class Vilkårskode {
+    OPPTJENING_ARBEID_MINST_4_UKER,
 
-    OPPTJENING_LIKESTILT_YTELSE(Krav.Opptjening),
+    OPPTJENING_LIKESTILT_YTELSE,
 
-    OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP(Krav.Opptjening),
+    OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP,
 
-    OPPTJENING_YRKESAKTIV_FOER_FORELDREPENGER(Krav.Opptjening),
+    OPPTJENING_YRKESAKTIV_FOER_FORELDREPENGER,
 }

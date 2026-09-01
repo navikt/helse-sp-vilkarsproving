@@ -40,7 +40,7 @@ internal sealed interface Opptjeningsvurdering {
             grunnlag: Opptjeningsgrunnlag,
             vurdertTidspunkt: Instant,
         ): VurdertISpeil {
-            val regel = grunnlag.krav.regel
+            val regel = grunnlag.krav
             val resultat = regel.vurder(skjæringstidspunkt, grunnlag)
             val vilkårsvurderinger =
                 resultat.vilkårsutfall.map { ledd ->

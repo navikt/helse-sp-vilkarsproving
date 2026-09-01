@@ -1,7 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
-import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
@@ -24,14 +23,14 @@ private fun Opptjeningsvurdering.tilApi(): ApiOpptjeningsvurdering =
         is Opptjeningsvurdering.OverførtFraInfotrygd ->
             ApiOpptjeningsvurdering.OverførtFraInfotrygd(
                 id = id.value,
-                kravkode = Krav.Opptjening.tilApi(),
+                kravkode = ApiKravkode.OPPTJENING,
                 rettTilSykepenger = girRettTilSykepenger,
             )
 
         is Opptjeningsvurdering.VurdertISpeil ->
             ApiOpptjeningsvurdering.VurdertISpeil(
                 id = id.value,
-                kravkode = Krav.Opptjening.tilApi(),
+                kravkode = ApiKravkode.OPPTJENING,
                 rettTilSykepenger = girRettTilSykepenger,
                 avgjørendeVilkårskode = avgjørendeVilkårskode.tilApi(),
                 vurderinger = vilkårsvurderinger.map { it.tilApi() },
@@ -46,11 +45,6 @@ private fun Vilkårsvurdering.tilApi() =
         vurdertTidspunkt = vurdertTidspunkt,
         kilde = kilde.tilApi(),
     )
-
-private fun Krav.tilApi(): ApiKravkode =
-    when (this) {
-        Krav.Opptjening -> ApiKravkode.OPPTJENING
-    }
 
 private fun Utfall.tilApi(): ApiUtfall =
     when (this) {

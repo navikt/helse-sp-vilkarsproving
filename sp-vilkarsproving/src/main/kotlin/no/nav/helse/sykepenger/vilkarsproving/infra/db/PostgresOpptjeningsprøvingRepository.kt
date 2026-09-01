@@ -5,10 +5,10 @@ import kotliquery.Session
 import kotliquery.queryOf
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningsprøvingRepository
 import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
-import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsregel
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import org.intellij.lang.annotations.Language
 import java.time.LocalDate
 import java.util.UUID
@@ -34,7 +34,7 @@ internal class PostgresOpptjeningsprøvingRepository(
                 sql,
                 mapOf(
                     "id" to prøving.id.value,
-                    "krav" to Krav.Opptjening.name,
+                    "krav" to Opptjeningsregel.NAVN,
                     "fodselsnummer" to prøving.fødselsnummer,
                     "skjaeringstidspunkt" to prøving.skjæringstidspunkt,
                     "startet" to prøving.startet,
@@ -62,7 +62,7 @@ internal class PostgresOpptjeningsprøvingRepository(
             queryOf(
                 sql,
                 mapOf(
-                    "krav" to Krav.Opptjening.name,
+                    "krav" to Opptjeningsregel.NAVN,
                     "fodselsnummer" to fødselsnummer,
                     "skjaeringstidspunkt" to skjæringstidspunkt,
                 ),

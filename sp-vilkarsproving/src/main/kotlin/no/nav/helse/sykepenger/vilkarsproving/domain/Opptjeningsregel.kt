@@ -6,7 +6,8 @@ import no.nav.helse.hendelser.til
 import java.time.LocalDate
 
 internal object Opptjeningsregel {
-    val krav = Krav.Opptjening
+    /** Navnet dette kravet lagres og eksponeres under. */
+    const val NAVN = "Opptjening"
     val versjon = "1"
 
     private const val ANTALL_OPPTJENINGSDAGER_SOM_KREVES = 28
