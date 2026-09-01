@@ -206,6 +206,19 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
 
             dump("etter 4")
 
+            // Den nye vurderingen skal vise helheten: den automatiske 4-ukers-vurderingen er med, overstyringen er avgjørende
+            val getEtterOverstyring = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$nyId")
+            assertEquals(HttpStatusCode.OK, getEtterOverstyring.status)
+            val nyttKrav = objectMapper.readTree(getEtterOverstyring.bodyAsText())["krav"].single()
+            assertTrue(nyttKrav["rettTilSykepenger"].asBoolean())
+            assertEquals("OPPTJENING_LIKESTILT_YTELSE", nyttKrav["avgjørendeVilkårskode"].asString())
+            assertEquals(
+                listOf("OPPTJENING_ARBEID_MINST_4_UKER", "OPPTJENING_LIKESTILT_YTELSE"),
+                nyttKrav["vurderinger"].toList().map { it["vilkårskode"].asString() },
+            )
+            assertEquals("IKKE_OPPFYLT", nyttKrav["vurderinger"][0]["utfall"].asString())
+            assertEquals("OPPFYLT", nyttKrav["vurderinger"][1]["utfall"].asString())
+
             // Overstyringen skal ha publisert et event til utregningsappen om den nye opptjeningsvurderingen
             assertEquals(4, rapid.inspektør.size)
             val overstyringsevent = rapid.inspektør.message(3)

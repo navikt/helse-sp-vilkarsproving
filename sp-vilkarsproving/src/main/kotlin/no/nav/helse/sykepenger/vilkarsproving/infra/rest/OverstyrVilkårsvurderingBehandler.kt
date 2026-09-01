@@ -63,6 +63,11 @@ internal class OverstyrVilkårsvurderingBehandler(
                     fødselsnummer = identitetsnummer.value,
                     skjæringstidspunkt = request.skjæringstidspunkt,
                     sti = listOf(vilkårsvurdering),
+                    forrigeVurdering =
+                        kallKontekst.transaksjon.opptjeningsvurderinger.gjeldende(
+                            fødselsnummer = identitetsnummer.value,
+                            skjæringstidspunkt = request.skjæringstidspunkt,
+                        ),
                 )
 
             kallKontekst.transaksjon.opptjeningsvurderinger.lagre(kravvurdering)

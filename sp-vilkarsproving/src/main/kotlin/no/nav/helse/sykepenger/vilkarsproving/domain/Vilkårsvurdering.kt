@@ -9,6 +9,9 @@ internal data class Vilkårsvurdering(
     val vurdertTidspunkt: Instant?,
     val kilde: Vurderingskilde,
 ) {
+    /** Kopi til bruk i en ny opptjeningsvurdering. Kopien får ny id fordi id-en er unik per lagrede vilkårsvurdering. */
+    fun videreført() = copy(id = VilkårsvurderingId.ny())
+
     companion object {
         internal fun automatisk(
             opptjeningsprøvingId: OpptjeningsprøvingId,

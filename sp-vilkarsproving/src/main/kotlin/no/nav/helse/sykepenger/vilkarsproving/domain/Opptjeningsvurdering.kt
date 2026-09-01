@@ -49,12 +49,27 @@ internal sealed interface Opptjeningsvurdering {
             return VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, vilkårsvurderinger)
         }
 
+        /**
+         * Lager en ny vurdering av saksbehandlerens [sti]. Vilkårsvurderinger fra [forrigeVurdering] videreføres slik at
+         * den nye vurderingen viser helheten, men vurderinger av vilkårskoder saksbehandleren har tatt stilling til
+         * erstattes av saksbehandlerens egne.
+         */
         fun avSaksbehandler(
             id: OpptjeningsvurderingId = OpptjeningsvurderingId.ny(),
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
             sti: List<Vilkårsvurdering>,
-        ) = VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, sti)
+            forrigeVurdering: Opptjeningsvurdering? = null,
+        ): VurdertISpeil {
+            val overstyrteVilkårskoder = sti.map { it.vilkårskode }.toSet()
+            val videreførte =
+                (forrigeVurdering as? VurdertISpeil)
+                    ?.vilkårsvurderinger
+                    .orEmpty()
+                    .filterNot { it.vilkårskode in overstyrteVilkårskoder }
+                    .map { it.videreført() }
+            return VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, videreførte + sti)
+        }
 
         fun fraInfotrygd(
             id: OpptjeningsvurderingId = OpptjeningsvurderingId.ny(),

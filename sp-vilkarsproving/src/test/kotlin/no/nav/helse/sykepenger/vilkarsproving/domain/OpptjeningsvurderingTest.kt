@@ -3,6 +3,7 @@ package no.nav.helse.sykepenger.vilkarsproving.domain
 import no.nav.helse.februar
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -76,6 +77,127 @@ internal class OpptjeningsvurderingTest {
         assertTrue(vurdering.girRettTilSykepenger)
         assertEquals(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE, vurdering.avgjørendeVilkårskode)
         assertEquals(2, vurdering.vilkårsvurderinger.size)
+    }
+
+    @Test
+    fun `videreførte vilkårsvurderinger fra forrige vurdering blir med, men koder saksbehandleren overstyrer erstattes`() {
+        val automatiskIkkeOppfylt =
+            Vilkårsvurdering.avSaksbehandler(
+                vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+                utfall = Utfall.IkkeOppfylt,
+                saksbehandlerIdent = "Z111111",
+                fritekstbegrunnelse = "for kort opptjening",
+                vurdertTidspunkt = null,
+            )
+        val gammelLikestiltYtelse =
+            Vilkårsvurdering.avSaksbehandler(
+                vilkårskode = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE,
+                utfall = Utfall.IkkeOppfylt,
+                saksbehandlerIdent = "Z111111",
+                fritekstbegrunnelse = "fant ingen likestilt ytelse",
+                vurdertTidspunkt = null,
+            )
+        val forrige =
+            Opptjeningsvurdering.avSaksbehandler(
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                sti = listOf(automatiskIkkeOppfylt, gammelLikestiltYtelse),
+            )
+
+        val overstyring =
+            Vilkårsvurdering.avSaksbehandler(
+                vilkårskode = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE,
+                utfall = Utfall.Oppfylt,
+                saksbehandlerIdent = "Z999999",
+                fritekstbegrunnelse = "hadde dagpenger i forkant",
+                vurdertTidspunkt = null,
+            )
+
+        val vurdering =
+            Opptjeningsvurdering.avSaksbehandler(
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                sti = listOf(overstyring),
+                forrigeVurdering = forrige,
+            )
+
+        assertEquals(
+            listOf(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, Vilkårskode.OPPTJENING_LIKESTILT_YTELSE),
+            vurdering.vilkårsvurderinger.map { it.vilkårskode },
+        )
+        assertEquals(Utfall.IkkeOppfylt, vurdering.vilkårsvurderinger.first().utfall)
+        assertEquals(overstyring.id, vurdering.vilkårsvurderinger.last().id)
+        assertTrue(vurdering.girRettTilSykepenger)
+        assertEquals(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE, vurdering.avgjørendeVilkårskode)
+    }
+
+    @Test
+    fun `videreførte vilkårsvurderinger får nye id-er fordi de lagres som nye rader`() {
+        val tidligere =
+            Vilkårsvurdering.avSaksbehandler(
+                vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+                utfall = Utfall.IkkeOppfylt,
+                saksbehandlerIdent = "Z111111",
+                fritekstbegrunnelse = "for kort opptjening",
+                vurdertTidspunkt = null,
+            )
+        val forrige =
+            Opptjeningsvurdering.avSaksbehandler(
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                sti = listOf(tidligere),
+            )
+
+        val vurdering =
+            Opptjeningsvurdering.avSaksbehandler(
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                sti =
+                    listOf(
+                        Vilkårsvurdering.avSaksbehandler(
+                            vilkårskode = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE,
+                            utfall = Utfall.Oppfylt,
+                            saksbehandlerIdent = "Z999999",
+                            fritekstbegrunnelse = "hadde dagpenger i forkant",
+                            vurdertTidspunkt = null,
+                        ),
+                    ),
+                forrigeVurdering = forrige,
+            )
+
+        val videreført = vurdering.vilkårsvurderinger.first()
+        assertNotEquals(tidligere.id, videreført.id)
+        assertEquals(tidligere.kilde, videreført.kilde)
+        assertEquals(tidligere.utfall, videreført.utfall)
+    }
+
+    @Test
+    fun `en infotrygdvurdering har ingen sti å videreføre`() {
+        val forrige =
+            Opptjeningsvurdering.fraInfotrygd(
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                girRettTilSykepenger = false,
+            )
+
+        val vurdering =
+            Opptjeningsvurdering.avSaksbehandler(
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                sti =
+                    listOf(
+                        Vilkårsvurdering.avSaksbehandler(
+                            vilkårskode = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE,
+                            utfall = Utfall.Oppfylt,
+                            saksbehandlerIdent = "Z999999",
+                            fritekstbegrunnelse = "hadde dagpenger i forkant",
+                            vurdertTidspunkt = null,
+                        ),
+                    ),
+                forrigeVurdering = forrige,
+            )
+
+        assertEquals(1, vurdering.vilkårsvurderinger.size)
     }
 
     @Test
