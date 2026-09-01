@@ -51,22 +51,6 @@ import org.junit.jupiter.api.Test
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.util.UUID
 
-/**
- * E2E-test for hele overstyringsflyten, mot en ekte database og en delt [TestRapid]:
- *
- *   1. [OpptjeningsvurderingRiver] + [GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver]:
- *      automatisk vurdering av en arbeidstaker med for kort opptjening → ikke oppfylt.
- *   2. REST-GET (`GetVilkårsvurderingerForPersonBehandler`): henter den automatiske vurderingen —
- *      bekrefter at API-et også ser at den ikke er oppfylt.
- *   3. [OpptjeningsvurderingResultatRiver] svarer med `ok=false` for den automatiske vurderingen.
- *   4. REST-POST (`OverstyrVilkårsvurderingBehandler`): en saksbehandler overstyrer til oppfylt,
- *      begrunnet i opptjening via en likestilt ytelse — dette lager en helt ny kravvurdering/id, og
- *      publiserer et `opptjeningsvurdering_overstyrt`-event på rapiden.
- *   5. [OpptjeningsvurderingResultatRiver] spørres på nytt, nå med den *nye* id-en, og svarer `ok=true`.
- *
- * Testen bekrefter dermed at de tre samvirkende inngangene til appen (asynkron Kafka-behov/løsning,
- * synkron REST-GET og synkron REST-POST) alle er enige om samme tilstand i databasen.
- */
 internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
     /** Sett til `true` for å dumpe innholdet i databasetabellene mellom hvert steg, se [dump]. */
     private val dump = true

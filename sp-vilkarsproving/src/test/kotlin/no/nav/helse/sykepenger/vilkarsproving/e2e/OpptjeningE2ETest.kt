@@ -16,21 +16,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.*
 
-/**
- * E2E-tester for opptjeningsflyten gjennom alle tre rivers, mot en ekte database.
- *
- * Testene bekrefter både at meldingene går riktig vei og at tilstanden faktisk overlever lagringen:
- * radtellingene underveis viser at alt som skjer i kontekst av én melding havner i én transaksjon.
- *
- * Flyt for arbeidstaker:
- *   1. OpptjeningsvurderingRiver mottar Opptjeningsvurdering-behov → sender ArbeidsforholdV2-behov
- *   2. GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver mottar ArbeidsforholdV2-løsning → fullfører vurdering og besvarer opprinneligBehov
- *   3. OpptjeningsvurderingResultatRiver mottar OpptjeningsvurderingResultat-behov → svarer med ok=true/false
- *
- * Flyt for selvstendig næringsdrivende:
- *   1. OpptjeningsvurderingRiver mottar Opptjeningsvurdering-behov → besvarer direkte
- *   2. OpptjeningsvurderingResultatRiver mottar OpptjeningsvurderingResultat-behov → svarer med ok=true
- */
 internal class OpptjeningE2ETest : DatabaseTest() {
     private val transaksjon = Database.transaksjonProvider
     private val rapid =

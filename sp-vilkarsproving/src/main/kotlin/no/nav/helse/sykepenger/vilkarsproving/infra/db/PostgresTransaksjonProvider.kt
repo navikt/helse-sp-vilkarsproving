@@ -6,9 +6,6 @@ import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import javax.sql.DataSource
 
-/**
- * Kjører arbeidet i én databasetransaksjon: kaster [block] rulles alt tilbake, ellers commites alt.
- */
 internal class PostgresTransaksjonProvider(
     private val dataSource: DataSource,
 ) : TransaksjonProvider<Transaksjonskontekst> {

@@ -9,6 +9,5 @@ internal abstract class DatabaseTest {
         Database.tøm()
     }
 
-    /** Kjører blokken i én transaksjon, akkurat som behandlingen av én melding gjør. */
     protected fun <T> transaksjon(block: (Transaksjonskontekst) -> T): T = Database.transaksjonProvider.transaksjon(block)
 }

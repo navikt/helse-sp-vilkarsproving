@@ -2,12 +2,6 @@ package no.nav.helse.sykepenger.vilkarsproving.application
 
 import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
 
-/**
- * Kjører arbeidet rett mot in-memory-lagrene.
- *
- * Har ingen rollback — det er bevisst: transaksjonell oppførsel testes mot en ekte database
- * (`infra/db`), mens disse testene handler om domenelogikken.
- */
 internal class InMemoryTransaksjonProvider(
     override val opptjeningsprøvinger: InMemoryOpptjeningsprøvingRepository = InMemoryOpptjeningsprøvingRepository(),
     override val opptjeningsvurderinger: InMemoryOpptjeningsvurderingRepository = InMemoryOpptjeningsvurderingRepository(),

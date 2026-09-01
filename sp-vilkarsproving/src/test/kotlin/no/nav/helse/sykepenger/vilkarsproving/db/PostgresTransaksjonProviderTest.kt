@@ -10,11 +10,6 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
-/**
- * Transaksjonsgrensen er meldingsgrensen: alt arbeidet som gjøres for én melding skal enten bli
- * lagret i sin helhet, eller ikke i det hele tatt. Et halvferdig resultat — en vurdering uten
- * prøving, eller en prøving som er avsluttet uten at vurderingen finnes — skal være umulig.
- */
 internal class PostgresTransaksjonProviderTest : DatabaseTest() {
     @Test
     fun `alt arbeidet i transaksjonen lagres når blokken går gjennom`() {

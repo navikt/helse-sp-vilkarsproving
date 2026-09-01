@@ -17,11 +17,6 @@ import org.junit.jupiter.api.assertThrows
 import java.time.LocalDate
 import java.util.*
 
-/**
- * Tester SpleisClient mot en WireMock-stubbet spleis-api, i stedet for den ekte tjenesten.
- * Dermed slipper vi å mocke ut java.net.http.HttpClient, som ikke lar seg mocke uten
- * enten en betydelig mengde stubbing av abstrakte metoder eller et eget mocking-rammeverk.
- */
 internal class SpleisClientTest {
     private val server = WireMockServer(wireMockConfig().dynamicPort())
     private val scope = "api://dev-gcp.tbd.spleis-api/.default"

@@ -15,15 +15,6 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingOverstyrtMelding
 import java.time.Instant
 
-/**
- * Lar en saksbehandler overstyre utfallet av et vilkår (typisk fordi den automatiske vurderingen kom
- * til feil resultat) og publisere den nye [no.nav.helse.sykepenger.vilkarsproving.domain.KravvurderingId]
- * videre til utregningsappen for sykepenger.
- *
- * [meldingskontekst] er en lat referanse fordi Kafka-tilkoblingen (`RapidsConnection`) ikke finnes
- * ennå når REST-endepunktene registreres i `startApp` (`endepunkter`-blokken kjører før
- * `rivere`-blokken, se `bootstrap/App.kt`) — se `main()` for hvordan denne kobles sammen.
- */
 internal class OverstyrVilkårsvurderingBehandler(
     private val meldingskontekst: () -> MessageContext,
 ) : PostBehandler<

@@ -21,10 +21,6 @@ import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
-/**
- * Regelen er en ren funksjon fra grunnlag til en sti av vilkårsutfall, og testes uten prøving,
- * repository eller klokke.
- */
 internal class OpptjeningsregelTest {
     // 4.januar til 31.januar er nøyaktig 28 dager fram til dagen før skjæringstidspunktet
     @Test

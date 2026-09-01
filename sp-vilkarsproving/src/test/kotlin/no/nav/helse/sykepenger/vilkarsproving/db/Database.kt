@@ -4,9 +4,6 @@ import no.nav.helse.speil.backend.app.testfixtures.TestDatabase
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.PostgresTransaksjonProvider
 import java.sql.ResultSet
 
-/**
- * Vilkårsprøvings appspesifikke oppsett rundt den delte testdatabase-fixturen.
- */
 internal object Database {
     private val database = TestDatabase.start(postgresImage = "postgres:18").also { it.migrer() }
 

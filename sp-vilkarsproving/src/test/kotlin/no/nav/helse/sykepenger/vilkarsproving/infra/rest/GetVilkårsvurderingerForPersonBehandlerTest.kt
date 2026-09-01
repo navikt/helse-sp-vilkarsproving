@@ -24,13 +24,13 @@ import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonPro
 import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
-import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
@@ -257,7 +257,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
      * tom sti betyr «overtatt fra Infotrygd» eller «noe er galt».
      */
     @Test
-    fun `infotrygdkrav sendes uten sti og uten avgjoerende vilkaar`() =
+    fun `infotrygdkrav sendes uten sti og uten avgjoerende vilkår`() =
         testApplication {
             val transaksjonProvider = InMemoryTransaksjonProvider()
             val vurdering =

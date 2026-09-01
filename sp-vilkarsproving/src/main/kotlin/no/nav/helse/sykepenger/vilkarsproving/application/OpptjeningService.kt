@@ -5,19 +5,12 @@ import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResult
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.sikkerLogg
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import java.time.LocalDate
 
-/**
- * Orkestrerer prøvingen av opptjeningskravet: starter prøvinger, tar imot grunnlaget de venter på,
- * og henter fram tidligere vurderinger.
- *
- * Tjenesten konstrueres av en [Transaksjonskontekst] og lever like lenge som transaksjonen —
- * altså like lenge som behandlingen av én melding.
- */
 internal class OpptjeningService(
     kontekst: Transaksjonskontekst,
 ) {

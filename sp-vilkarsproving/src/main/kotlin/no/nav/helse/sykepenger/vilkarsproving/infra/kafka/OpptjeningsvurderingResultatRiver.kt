@@ -13,12 +13,6 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 
-/**
- * Svarer på spørsmål om utfallet av en ferdig kravvurdering.
- *
- * Fordi en kravvurdering ser likt ut uansett krav, er denne riveren felles: den slår opp resultatet
- * direkte, uten å gå veien om prøvingen. Det er hele poenget med å skille resultat fra prosess.
- */
 internal open class OpptjeningsvurderingResultatRiver(
     rapidsConnection: RapidsConnection,
     private val transaksjonProvider: TransaksjonProvider<Transaksjonskontekst>,

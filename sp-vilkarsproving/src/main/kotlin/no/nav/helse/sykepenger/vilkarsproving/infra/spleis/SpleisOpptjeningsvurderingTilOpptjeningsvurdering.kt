@@ -1,8 +1,8 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.spleis
 
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
@@ -11,12 +11,6 @@ import org.slf4j.LoggerFactory
 
 private val log = LoggerFactory.getLogger("OpptjeningsvurderingTilOpptjeningsvurdering")
 
-/**
- * Oversetter en [SpleisOpptjeningsvurdering] hentet fra spleis-api til domeneobjektet [Opptjeningsvurdering],
- * slik at den kan behandles likt med vurderinger hentet fra vår egen database — se
- * [no.nav.helse.sykepenger.vilkarsproving.infra.db.Lagringsjson] for tilsvarende oversettelse
- * for lagrede vurderinger.
- */
 internal fun SpleisOpptjeningsvurdering.tilOpptjeningsvurdering(fødselsnummer: String): Opptjeningsvurdering =
     when (this) {
         is SpleisOpptjeningsvurdering.SpleisArbeidstaker -> {
