@@ -11,7 +11,7 @@ testcontainers = "2.0.5"
 [libraries]
 flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 hikaricp = "com.zaxxer:HikariCP:7.1.0"
-cloud-sql-postgres-socket-factory = "com.google.cloud.sql:postgres-socket-factory:1.29.0"
+cloud-sql-postgres-socket-factory = "com.google.cloud.sql:postgres-socket-factory:1.30.0"
 kotliquery = "com.github.seratch:kotliquery:1.9.1"
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
 tbd-libs-speil-backend-app = {module = "com.github.navikt.tbd-libs:speil-backend-app", version.ref = "tbd-libs"}
