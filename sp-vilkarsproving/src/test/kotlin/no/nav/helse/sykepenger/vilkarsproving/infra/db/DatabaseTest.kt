@@ -1,4 +1,4 @@
-package no.nav.helse.sykepenger.vilkarsproving.db
+package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import org.junit.jupiter.api.BeforeEach

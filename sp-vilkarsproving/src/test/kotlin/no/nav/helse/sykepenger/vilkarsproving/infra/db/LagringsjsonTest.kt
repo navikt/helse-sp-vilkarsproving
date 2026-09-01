@@ -1,4 +1,4 @@
-package no.nav.helse.sykepenger.vilkarsproving.db
+package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
 import no.nav.helse.hendelser.til
 import no.nav.helse.januar
@@ -8,9 +8,6 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
-import no.nav.helse.sykepenger.vilkarsproving.infra.db.Vurderingskildejson
-import no.nav.helse.sykepenger.vilkarsproving.infra.db.arbeidsforhold
-import no.nav.helse.sykepenger.vilkarsproving.infra.db.arbeidstakergrunnlag
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows

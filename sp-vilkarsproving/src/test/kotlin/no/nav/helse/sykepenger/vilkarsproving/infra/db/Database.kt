@@ -1,4 +1,4 @@
-package no.nav.helse.sykepenger.vilkarsproving.db
+package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
 import no.nav.helse.speil.backend.app.testfixtures.TestDatabase
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.PostgresTransaksjonProvider
