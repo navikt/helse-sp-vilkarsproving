@@ -18,7 +18,7 @@ internal class PostgresTransaksjonProviderTest : DatabaseTest() {
         }
 
         assertEquals(1, Database.antallRader("opptjeningsproving"))
-        assertEquals(1, Database.antallRader("kravvurdering"))
+        assertEquals(1, Database.antallRader("opptjeningsvurdering"))
         assertEquals(1, Database.antallRader("vilkarsvurdering"))
     }
 
@@ -34,7 +34,7 @@ internal class PostgresTransaksjonProviderTest : DatabaseTest() {
         }
 
         assertEquals(0, Database.antallRader("opptjeningsproving"))
-        assertEquals(0, Database.antallRader("kravvurdering"))
+        assertEquals(0, Database.antallRader("opptjeningsvurdering"))
         assertEquals(0, Database.antallRader("vilkarsvurdering"))
     }
 
@@ -53,7 +53,7 @@ internal class PostgresTransaksjonProviderTest : DatabaseTest() {
             }
         }
 
-        assertEquals(0, Database.antallRader("kravvurdering"))
+        assertEquals(0, Database.antallRader("opptjeningsvurdering"))
         assertEquals(0, Database.antallRader("vilkarsvurdering"))
         val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar) }
         assertNotNull(lagret)

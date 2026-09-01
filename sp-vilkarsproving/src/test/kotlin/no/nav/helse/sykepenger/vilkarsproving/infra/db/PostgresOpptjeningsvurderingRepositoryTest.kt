@@ -115,7 +115,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         val gjeldende = transaksjon { it.opptjeningsvurderinger.gjeldende(FØDSELSNUMMER, 1.februar) }!!
 
         assertEquals(andre.id, gjeldende.id)
-        assertEquals(2, Database.antallRader("kravvurdering"))
+        assertEquals(2, Database.antallRader("opptjeningsvurdering"))
         assertEquals(første.id, transaksjon { it.opptjeningsvurderinger.finn(første.id) }!!.id)
     }
 
@@ -137,7 +137,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
 
         assertThrows<IllegalStateException> { transaksjon { it.opptjeningsvurderinger.lagre(vurdering) } }
 
-        assertEquals(1, Database.antallRader("kravvurdering"))
+        assertEquals(1, Database.antallRader("opptjeningsvurdering"))
     }
 
     @Test

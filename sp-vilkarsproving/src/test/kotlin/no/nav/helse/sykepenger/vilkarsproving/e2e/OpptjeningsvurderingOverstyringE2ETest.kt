@@ -57,7 +57,7 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
 
     private fun dump(steg: String) {
         if (!dump) return
-        Database.dump("opptjeningsproving", "kravvurdering", "vilkarsvurdering", overskrift = steg)
+        Database.dump("opptjeningsproving", "opptjeningsvurdering", "vilkarsvurdering", overskrift = steg)
     }
 
     private val transaksjon = Database.transaksjonProvider
@@ -202,11 +202,11 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
                 }
             assertEquals(HttpStatusCode.OK, postRespons.status)
             val nyId = objectMapper.readTree(postRespons.bodyAsText())["opptjeningsvurderingId"].asString()
-            assertNotEquals(automatiskId, nyId) { "Overstyringen skal lage en ny kravvurdering, ikke skrive over den gamle" }
+            assertNotEquals(automatiskId, nyId) { "Overstyringen skal lage en ny opptjeningsvurdering, ikke skrive over den gamle" }
 
             dump("etter 4")
 
-            // Overstyringen skal ha publisert et event til utregningsappen om den nye kravvurderingen
+            // Overstyringen skal ha publisert et event til utregningsappen om den nye opptjeningsvurderingen
             assertEquals(4, rapid.inspektør.size)
             val overstyringsevent = rapid.inspektør.message(3)
             assertEquals("endret_opptjeningsvurdering", overstyringsevent.path("@event_name").asString())

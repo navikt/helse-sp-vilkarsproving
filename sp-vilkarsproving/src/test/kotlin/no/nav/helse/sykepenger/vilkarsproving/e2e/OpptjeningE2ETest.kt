@@ -49,7 +49,7 @@ internal class OpptjeningE2ETest : DatabaseTest() {
 
         // Prøvingen er lagret og venter på grunnlag; ingen vurdering ennå
         assertEquals(1, Database.antallRader("opptjeningsproving"))
-        assertEquals(0, Database.antallRader("kravvurdering"))
+        assertEquals(0, Database.antallRader("opptjeningsvurdering"))
 
         // Steg 2: Aareg svarer med arbeidsforhold som gir nok opptjening (28+ dager)
         rapid.sendTestMessage(
@@ -63,7 +63,7 @@ internal class OpptjeningE2ETest : DatabaseTest() {
 
         // Vurderingen og den fullførte prøvingen ble skrevet i samme transaksjon
         assertEquals(1, Database.antallRader("opptjeningsproving"))
-        assertEquals(1, Database.antallRader("kravvurdering"))
+        assertEquals(1, Database.antallRader("opptjeningsvurdering"))
 
         val opptjeningsvurderingLøsning = rapid.inspektør.message(1)
         assertEquals(behovId.toString(), opptjeningsvurderingLøsning.path("@id").asString())
@@ -211,7 +211,7 @@ internal class OpptjeningE2ETest : DatabaseTest() {
 
         rapid.sendTestMessage(løsning, FØDSELSNUMMER)
         assertEquals(2, rapid.inspektør.size) // Ingen ny melding
-        assertEquals(1, Database.antallRader("kravvurdering"))
+        assertEquals(1, Database.antallRader("opptjeningsvurdering"))
     }
 
     // === Selvstendig næringsdrivende-flyt ===
@@ -280,7 +280,7 @@ internal class OpptjeningE2ETest : DatabaseTest() {
                 .path("id")
                 .asString(),
         ) { "Eksisterende vurdering skal gjenbrukes" }
-        assertEquals(1, Database.antallRader("kravvurdering"))
+        assertEquals(1, Database.antallRader("opptjeningsvurdering"))
     }
 
     // Feiler behandlingen av en melding etter at arbeidet er gjort, skal ingenting være lagret
@@ -296,7 +296,7 @@ internal class OpptjeningE2ETest : DatabaseTest() {
         }
 
         assertEquals(0, Database.antallRader("opptjeningsproving"))
-        assertEquals(0, Database.antallRader("kravvurdering"))
+        assertEquals(0, Database.antallRader("opptjeningsvurdering"))
     }
 
     /** Gjør alt arbeidet i en ekte transaksjon, men krasjer før commit. */

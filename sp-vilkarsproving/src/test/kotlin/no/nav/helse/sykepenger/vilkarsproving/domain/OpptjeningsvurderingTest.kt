@@ -79,7 +79,7 @@ internal class OpptjeningsvurderingTest {
     }
 
     @Test
-    fun `en vurdert kravvurdering må ha minst ett ledd i stien`() {
+    fun `en vurdert opptjeningsvurdering må ha minst ett ledd i stien`() {
         assertThrows<IllegalArgumentException> {
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,

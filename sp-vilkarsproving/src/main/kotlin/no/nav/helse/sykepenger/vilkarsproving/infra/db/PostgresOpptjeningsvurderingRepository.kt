@@ -4,7 +4,6 @@ import kotliquery.Row
 import kotliquery.Session
 import kotliquery.queryOf
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningsvurderingRepository
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsregel
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
@@ -35,16 +34,15 @@ internal class PostgresOpptjeningsvurderingRepository(
 
     private fun lagreVurdertISpeil(vurdering: Opptjeningsvurdering.VurdertISpeil) {
         @Language("PostgreSQL")
-        val kravvurderingSql = """
-            insert into kravvurdering (id, krav, fødselsnummer, skjæringstidspunkt, kravkilde, rett_til_sykepenger)
-            values (:id, :krav, :fodselsnummer, :skjaeringstidspunkt, :kravkilde, :rett_til_sykepenger)
+        val opptjeningsvurderingSql = """
+            insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, kravkilde, rett_til_sykepenger)
+            values (:id, :fodselsnummer, :skjaeringstidspunkt, :kravkilde, :rett_til_sykepenger)
         """
         session.run(
             queryOf(
-                kravvurderingSql,
+                opptjeningsvurderingSql,
                 mapOf(
                     "id" to vurdering.id.value,
-                    "krav" to Opptjeningsregel.NAVN,
                     "fodselsnummer" to vurdering.fødselsnummer,
                     "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
                     "kravkilde" to KRAVKILDE_VURDERT_I_SPEIL,
@@ -55,7 +53,7 @@ internal class PostgresOpptjeningsvurderingRepository(
 
         @Language("PostgreSQL")
         val vilkårsvurderingSql = """
-            insert into vilkarsvurdering (id, kravvurdering_id, vilkårskode, utfall, vurdert_tidspunkt, kilde)
+            insert into vilkarsvurdering (id, opptjeningsvurdering_id, vilkårskode, utfall, vurdert_tidspunkt, kilde)
             values (:id, :opptjeningsvurderingId, :vilkarskode, :utfall, :vurdertTidspunkt, cast(:kilde as jsonb))
         """
         vurdering.vilkårsvurderinger.forEach { ledd ->
@@ -78,15 +76,14 @@ internal class PostgresOpptjeningsvurderingRepository(
     private fun lagreInfotrygd(vurdering: Opptjeningsvurdering.OverførtFraInfotrygd) {
         @Language("PostgreSQL")
         val sql = """
-            insert into kravvurdering (id, krav, fødselsnummer, skjæringstidspunkt, kravkilde, rett_til_sykepenger)
-            values (:id, :krav, :fodselsnummer, :skjaeringstidspunkt, :kravkilde, :rett_til_sykepenger)
+            insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, kravkilde, rett_til_sykepenger)
+            values (:id, :fodselsnummer, :skjaeringstidspunkt, :kravkilde, :rett_til_sykepenger)
         """
         session.run(
             queryOf(
                 sql,
                 mapOf(
                     "id" to vurdering.id.value,
-                    "krav" to Opptjeningsregel.NAVN,
                     "fodselsnummer" to vurdering.fødselsnummer,
                     "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
                     "kravkilde" to KRAVKILDE_OVERFOERT_FRA_INFOTRYGD,
@@ -102,8 +99,8 @@ internal class PostgresOpptjeningsvurderingRepository(
     ): Opptjeningsvurdering? {
         @Language("PostgreSQL")
         val sql = """
-            $SELECT_KRAVVURDERING
-            where krav = :krav and fødselsnummer = :fodselsnummer and skjæringstidspunkt = :skjaeringstidspunkt
+            $SELECT_OPPTJENINGSVURDERING
+            where fødselsnummer = :fodselsnummer and skjæringstidspunkt = :skjaeringstidspunkt
             order by løpenummer desc
             limit 1
         """
@@ -112,7 +109,6 @@ internal class PostgresOpptjeningsvurderingRepository(
                 queryOf(
                     sql,
                     mapOf(
-                        "krav" to Opptjeningsregel.NAVN,
                         "fodselsnummer" to fødselsnummer,
                         "skjaeringstidspunkt" to skjæringstidspunkt,
                     ),
@@ -123,15 +119,12 @@ internal class PostgresOpptjeningsvurderingRepository(
     override fun finn(opptjeningsvurderingId: OpptjeningsvurderingId): Opptjeningsvurdering? {
         @Language("PostgreSQL")
         val sql = """
-            $SELECT_KRAVVURDERING
-            where krav = :krav and id = :id
+            $SELECT_OPPTJENINGSVURDERING
+            where id = :id
         """
         return session
             .run(
-                queryOf(
-                    sql,
-                    mapOf("krav" to Opptjeningsregel.NAVN, "id" to opptjeningsvurderingId.value),
-                ).map(::tilOpptjeningsvurderingRad).asSingle,
+                queryOf(sql, mapOf("id" to opptjeningsvurderingId.value)).map(::tilOpptjeningsvurderingRad).asSingle,
             )?.let(::hydrer)
     }
 
@@ -159,7 +152,7 @@ internal class PostgresOpptjeningsvurderingRepository(
         val sql = """
             select id, vilkårskode, utfall, vurdert_tidspunkt, kilde
             from vilkarsvurdering
-            where kravvurdering_id = :opptjeningsvurderingId
+            where opptjeningsvurdering_id = :opptjeningsvurderingId
             order by løpenummer
         """
         return session.run(
@@ -197,9 +190,9 @@ internal class PostgresOpptjeningsvurderingRepository(
         const val UNIKHETSBRUDD = "23505"
 
         @Language("PostgreSQL")
-        const val SELECT_KRAVVURDERING = """
-            select id, krav, fødselsnummer, skjæringstidspunkt, kravkilde, rett_til_sykepenger
-            from kravvurdering
+        const val SELECT_OPPTJENINGSVURDERING = """
+            select id, fødselsnummer, skjæringstidspunkt, kravkilde, rett_til_sykepenger
+            from opptjeningsvurdering
         """
     }
 }

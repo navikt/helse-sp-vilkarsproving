@@ -20,12 +20,12 @@ internal class PostgresOpptjeningsprøvingRepository(
 
         @Language("PostgreSQL")
         val sql = """
-            insert into opptjeningsproving (id, fødselsnummer, skjæringstidspunkt, startet, tilstand, utestående_behov, kravvurdering_id)
+            insert into opptjeningsproving (id, fødselsnummer, skjæringstidspunkt, startet, tilstand, utestående_behov, opptjeningsvurdering_id)
             values (:id, :fodselsnummer, :skjaeringstidspunkt, :startet, :tilstand, :behov, :opptjeningsvurderingId)
             on conflict (id) do update
             set tilstand = excluded.tilstand,
                 utestående_behov = excluded.utestående_behov,
-                kravvurdering_id = excluded.kravvurdering_id,
+                opptjeningsvurdering_id = excluded.opptjeningsvurdering_id,
                 endret = now()
         """
         session.run(
@@ -50,7 +50,7 @@ internal class PostgresOpptjeningsprøvingRepository(
     ): Opptjeningsprøving? {
         @Language("PostgreSQL")
         val sql = """
-            select id, fødselsnummer, skjæringstidspunkt, startet, tilstand, utestående_behov, kravvurdering_id
+            select id, fødselsnummer, skjæringstidspunkt, startet, tilstand, utestående_behov, opptjeningsvurdering_id
             from opptjeningsproving
             where fødselsnummer = :fodselsnummer and skjæringstidspunkt = :skjaeringstidspunkt
             order by løpenummer desc
@@ -77,7 +77,7 @@ internal class PostgresOpptjeningsprøvingRepository(
                 tilstandFraLagring(
                     navn = row.string("tilstand"),
                     behov = row.stringOrNull("utestående_behov"),
-                    opptjeningsvurderingId = row.uuidOrNull("kravvurdering_id"),
+                    opptjeningsvurderingId = row.uuidOrNull("opptjeningsvurdering_id"),
                 ),
         )
 }
@@ -113,7 +113,7 @@ private fun tilstandFraLagring(
 
         FULLFØRT ->
             Opptjeningsprøving.Tilstand.Fullført(
-                OpptjeningsvurderingId(requireNotNull(opptjeningsvurderingId) { "Prøving i tilstand $navn mangler kravvurdering" }),
+                OpptjeningsvurderingId(requireNotNull(opptjeningsvurderingId) { "Prøving i tilstand $navn mangler opptjeningsvurdering" }),
             )
 
         else -> error("Kjenner ikke igjen lagret tilstand $navn")
