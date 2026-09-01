@@ -2,11 +2,10 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Krav
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
@@ -83,7 +82,7 @@ private fun Vurderingskilde.tilApi(): ApiVurderingskilde =
             ApiVurderingskilde.OverførtFraSpleis(grunnlag = grunnlag.tilApi(utledetFakta))
     }
 
-private fun Vilkårsgrunnlag.tilApi(utledetFakta: UtledetFakta): ApiVurderingsgrunnlag =
+private fun Opptjeningsgrunnlag.tilApi(utledetFakta: UtledetFakta): ApiVurderingsgrunnlag =
     when (this) {
         is Opptjeningsgrunnlag.Arbeidstaker -> {
             check(utledetFakta is UtledetFakta.Opptjeningstid) {

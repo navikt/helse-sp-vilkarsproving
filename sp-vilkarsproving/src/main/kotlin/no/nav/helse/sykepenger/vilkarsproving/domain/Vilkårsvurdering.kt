@@ -13,7 +13,7 @@ internal data class Vilkårsvurdering(
         internal fun automatisk(
             opptjeningsprøvingId: OpptjeningsprøvingId,
             vilkårsutfall: Vilkårsutfall,
-            grunnlag: Vilkårsgrunnlag,
+            grunnlag: Opptjeningsgrunnlag,
             versjonAvKildekode: String,
             vurdertTidspunkt: Instant,
         ) = Vilkårsvurdering(
@@ -41,7 +41,7 @@ internal data class Vilkårsvurdering(
         fun overførtFraSpleis(
             vilkårskode: Vilkårskode,
             utfall: Utfall,
-            grunnlag: Vilkårsgrunnlag,
+            grunnlag: Opptjeningsgrunnlag,
             utledetFakta: UtledetFakta,
             vurdertTidspunkt: Instant? = null,
         ) = Vilkårsvurdering(

@@ -8,7 +8,7 @@ internal interface Kravregel {
 
     fun vurder(
         skjæringstidspunkt: LocalDate,
-        grunnlag: Vilkårsgrunnlag,
+        grunnlag: Opptjeningsgrunnlag,
     ): Kravregelresultat
 }
 

@@ -6,7 +6,6 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -146,7 +145,7 @@ internal class LagringsjsonTest {
     }
 
     private fun automatisk(
-        grunnlag: Vilkårsgrunnlag,
+        grunnlag: Opptjeningsgrunnlag,
         utledetFakta: UtledetFakta,
     ) = Vurderingskilde.Automatisk(PRØVING_ID, grunnlag, utledetFakta, versjonAvKildekode = "1")
 

@@ -37,7 +37,7 @@ internal sealed interface Opptjeningsvurdering {
             opptjeningsprøvingId: OpptjeningsprøvingId,
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
-            grunnlag: Vilkårsgrunnlag,
+            grunnlag: Opptjeningsgrunnlag,
             vurdertTidspunkt: Instant,
         ): VurdertISpeil {
             val regel = grunnlag.krav.regel

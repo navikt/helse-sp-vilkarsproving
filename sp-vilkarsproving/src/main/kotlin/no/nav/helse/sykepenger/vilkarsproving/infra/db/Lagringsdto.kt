@@ -9,9 +9,7 @@ import java.time.LocalDate
     JsonSubTypes.Type(value = OpptjeningsgrunnlagDto.Arbeidstaker::class, name = "ARBEIDSTAKER"),
     JsonSubTypes.Type(value = OpptjeningsgrunnlagDto.SelvstendigNæringsdrivende::class, name = "SELVSTENDIG_NÆRINGSDRIVENDE"),
 )
-internal sealed interface VilkårsgrunnlagDto
-
-internal sealed interface OpptjeningsgrunnlagDto : VilkårsgrunnlagDto {
+internal sealed interface OpptjeningsgrunnlagDto {
     data class Arbeidstaker(
         val arbeidsforhold: List<ArbeidsforholdDto>,
     ) : OpptjeningsgrunnlagDto
@@ -58,7 +56,7 @@ internal sealed interface UtledetDto {
 internal sealed interface VurderingskildeDto {
     data class Automatisk(
         val prøvingId: java.util.UUID,
-        val grunnlag: VilkårsgrunnlagDto,
+        val grunnlag: OpptjeningsgrunnlagDto,
         val utledet: UtledetDto,
         val versjonAvKildekode: String,
     ) : VurderingskildeDto
@@ -69,7 +67,7 @@ internal sealed interface VurderingskildeDto {
     ) : VurderingskildeDto
 
     data class OverførtFraSpleis(
-        val grunnlag: VilkårsgrunnlagDto,
+        val grunnlag: OpptjeningsgrunnlagDto,
         val utledet: UtledetDto,
     ) : VurderingskildeDto
 }

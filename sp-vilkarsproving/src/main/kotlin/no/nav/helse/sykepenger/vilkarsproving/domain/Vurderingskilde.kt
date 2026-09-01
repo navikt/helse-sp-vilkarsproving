@@ -3,7 +3,7 @@ package no.nav.helse.sykepenger.vilkarsproving.domain
 internal sealed interface Vurderingskilde {
     data class Automatisk(
         val opptjeningsprøvingId: OpptjeningsprøvingId,
-        val grunnlag: Vilkårsgrunnlag,
+        val grunnlag: Opptjeningsgrunnlag,
         val utledetFakta: UtledetFakta,
         val versjonAvKildekode: String,
     ) : Vurderingskilde
@@ -14,7 +14,7 @@ internal sealed interface Vurderingskilde {
     ) : Vurderingskilde
 
     data class OverførtFraSpleis(
-        val grunnlag: Vilkårsgrunnlag,
+        val grunnlag: Opptjeningsgrunnlag,
         val utledetFakta: UtledetFakta,
     ) : Vurderingskilde
 }

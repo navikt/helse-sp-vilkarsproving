@@ -13,7 +13,7 @@ internal object Opptjeningsregel : Kravregel {
 
     override fun vurder(
         skjæringstidspunkt: LocalDate,
-        grunnlag: Vilkårsgrunnlag,
+        grunnlag: Opptjeningsgrunnlag,
     ): Kravregelresultat =
         when (grunnlag) {
             is Opptjeningsgrunnlag.Arbeidstaker -> vurderArbeidstaker(skjæringstidspunkt, grunnlag.arbeidsforhold)

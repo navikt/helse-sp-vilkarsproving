@@ -5,7 +5,6 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import tools.jackson.module.kotlin.readValue
@@ -44,7 +43,7 @@ private fun VurderingskildeDto.tilVurderingskilde(): Vurderingskilde =
         is VurderingskildeDto.Automatisk ->
             Vurderingskilde.Automatisk(
                 opptjeningsprøvingId = OpptjeningsprøvingId(prøvingId),
-                grunnlag = grunnlag.tilVilkårsgrunnlag(),
+                grunnlag = grunnlag.tilOpptjeningsgrunnlag(),
                 utledetFakta = utledet.tilUtledet(),
                 versjonAvKildekode = versjonAvKildekode,
             )
@@ -52,17 +51,7 @@ private fun VurderingskildeDto.tilVurderingskilde(): Vurderingskilde =
         is VurderingskildeDto.Saksbehandler -> Vurderingskilde.Saksbehandler(ident = ident, fritekstbegrunnelse = fritekstbegrunnelse)
 
         is VurderingskildeDto.OverførtFraSpleis ->
-            Vurderingskilde.OverførtFraSpleis(grunnlag = grunnlag.tilVilkårsgrunnlag(), utledetFakta = utledet.tilUtledet())
-    }
-
-private fun Vilkårsgrunnlag.tilDto(): VilkårsgrunnlagDto =
-    when (this) {
-        is Opptjeningsgrunnlag -> tilDto()
-    }
-
-private fun VilkårsgrunnlagDto.tilVilkårsgrunnlag(): Vilkårsgrunnlag =
-    when (this) {
-        is OpptjeningsgrunnlagDto -> tilOpptjeningsgrunnlag()
+            Vurderingskilde.OverførtFraSpleis(grunnlag = grunnlag.tilOpptjeningsgrunnlag(), utledetFakta = utledet.tilUtledet())
     }
 
 private fun Opptjeningsgrunnlag.tilDto(): OpptjeningsgrunnlagDto =

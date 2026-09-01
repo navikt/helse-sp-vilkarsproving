@@ -9,7 +9,6 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
@@ -147,7 +146,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
     }
 
     private fun lagreVurdering(
-        grunnlag: Vilkårsgrunnlag,
+        grunnlag: Opptjeningsgrunnlag,
         skjæringstidspunkt: LocalDate = 1.februar,
     ): Opptjeningsvurdering.VurdertISpeil =
         transaksjon { kontekst ->
