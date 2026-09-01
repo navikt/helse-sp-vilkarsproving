@@ -35,7 +35,7 @@ fun main() {
 
     startApp(
         konfigurasjon = AppKonfigurasjon.fraEnv("sp-vilkarsproving"),
-        brukerroller = TilgangsgrupperTilBrukerroller<AppRolle>(emptyMap()),
+        brukerroller = TilgangsgrupperTilBrukerroller(emptyMap()),
         transaksjonProvider = ::PostgresTransaksjonProvider,
         rivere = { dataSource ->
             rapidsConnection = this
