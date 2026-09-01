@@ -5,13 +5,13 @@ import no.nav.helse.hendelser.Periode.Companion.grupperSammenhengendePerioderMed
 import no.nav.helse.hendelser.til
 import java.time.LocalDate
 
-internal object Opptjeningsregel : Kravregel {
-    override val krav = Krav.Opptjening
-    override val versjon = "1"
+internal object Opptjeningsregel {
+    val krav = Krav.Opptjening
+    val versjon = "1"
 
     private const val ANTALL_OPPTJENINGSDAGER_SOM_KREVES = 28
 
-    override fun vurder(
+    fun vurder(
         skjæringstidspunkt: LocalDate,
         grunnlag: Opptjeningsgrunnlag,
     ): Kravregelresultat =
@@ -56,3 +56,19 @@ internal object Opptjeningsregel : Kravregel {
             ),
         )
 }
+
+internal data class Kravregelresultat(
+    val vilkårsutfall: List<Vilkårsutfall>,
+) {
+    init {
+        require(vilkårsutfall.isNotEmpty()) { "En regel må ha prøvd minst ett vilkår" }
+    }
+
+    val utfall: Utfall get() = vilkårsutfall.last().utfall
+}
+
+internal data class Vilkårsutfall(
+    val vilkårskode: Vilkårskode,
+    val utfall: Utfall,
+    val utledetFakta: UtledetFakta,
+)

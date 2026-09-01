@@ -4,7 +4,7 @@ internal enum class Krav {
     Opptjening,
     ;
 
-    val regel: Kravregel
+    val regel: Opptjeningsregel
         get() =
             when (this) {
                 Opptjening -> Opptjeningsregel
