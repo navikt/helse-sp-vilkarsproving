@@ -22,4 +22,3 @@ internal class InMemoryOpptjeningsvurderingRepository : OpptjeningsvurderingRepo
 
     override fun finn(opptjeningsvurderingId: OpptjeningsvurderingId) = vurderinger.firstOrNull { it.id == opptjeningsvurderingId }
 }
-

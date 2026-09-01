@@ -28,6 +28,8 @@ internal class OverstyrVilkårsvurderingBehandler(
     override val påkrevdTilgang = Tilgang.Skriv
     override val tag = "vilkarsvurderinger"
 
+    private fun erProdGcp(): Boolean = System.getenv()["NAIS_CLUSTER_NAME"] == "prod-gcp"
+
     override fun behandle(
         resource: ApiOverstyrVilkårsvurderingResource,
         request: ApiOverstyrVilkårsvurderingRequest,
@@ -43,6 +45,9 @@ internal class OverstyrVilkårsvurderingBehandler(
             manglerTilgang = { ApiOverstyrVilkårsvurderingFeil.ManglerTilgang },
         ) { identitetsnummer ->
             val vilkårskode = request.vilkårskode.fraApi()
+            if (erProdGcp()) {
+                throw IllegalStateException("Overstyring av vilkårsvurdering er ikke båskrudd i prod-gcp")
+            }
 
             val vilkårsvurdering =
                 Vilkårsvurdering.avSaksbehandler(

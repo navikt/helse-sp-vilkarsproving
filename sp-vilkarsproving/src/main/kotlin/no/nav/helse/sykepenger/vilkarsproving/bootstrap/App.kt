@@ -21,8 +21,6 @@ enum class AppRolle(
     Saksbehandler("saksbehandler"),
 }
 
-private fun erDevGcp(): Boolean = System.getenv()["NAIS_CLUSTER_NAME"] == "dev-gcp"
-
 fun main() {
     val spleisClient = SpleisClient.fromEnv()
 
@@ -55,10 +53,8 @@ fun main() {
         },
         endepunkter = {
             get(GetVilkårsvurderingerForPersonBehandler(SpleisOpptjeningsvurderingService(spleisClient)))
-            if (erDevGcp()) {
-                loggInfo("setter opp OverstyrVilkårsvurderingBehandler-endepunkt")
-                post(OverstyrVilkårsvurderingBehandler(meldingskontekst = { rapidsConnection }))
-            }
+            loggInfo("setter opp OverstyrVilkårsvurderingBehandler-endepunkt")
+            post(OverstyrVilkårsvurderingBehandler(meldingskontekst = { rapidsConnection }))
         },
     )
 }
