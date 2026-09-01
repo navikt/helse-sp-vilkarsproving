@@ -7,11 +7,13 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
+import no.nav.helse.speil.backend.app.logging.loggInfo
+import no.nav.helse.speil.backend.app.logging.medMdc
 import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
+import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningMdcKeys
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResultat
-import no.nav.helse.sykepenger.vilkarsproving.bootstrap.sikkerLogg
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
 import tools.jackson.databind.JsonNode
 import tools.jackson.module.kotlin.jacksonObjectMapper
@@ -48,45 +50,58 @@ internal class OpptjeningsvurderingRiver(
         val fødselsnummer = packet["fødselsnummer"].asString()
         val skjæringstidspunkt = packet["Opptjeningsvurdering.skjæringstidspunkt"].asLocalDate()
         val arbeidssituasjon = Arbeidssituasjon.valueOf(packet["Opptjeningsvurdering.arbeidssituasjon"].asString())
-        sikkerLogg.info("Mottatt behov for $behovKey for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt")
 
-        val vurderOpptjeningResultat =
-            transaksjonProvider.transaksjon { kontekst ->
-                OpptjeningService(kontekst).vurderOpptjening(
-                    fødselsnummer = fødselsnummer,
-                    skjæringstidspunkt = skjæringstidspunkt,
-                    arbeidssituasjon = arbeidssituasjon,
-                )
-            }
+        medMdc(
+            OpptjeningMdcKeys.FØDSELSNUMMER to fødselsnummer,
+            OpptjeningMdcKeys.SKJÆRINGSTIDSPUNKT to skjæringstidspunkt.toString(),
+        ) {
+            loggInfo("Mottatt behov for $behovKey")
 
-        // Publisering skjer først etter at transaksjonen er commitet — vi forteller aldri
-        // omverdenen om en vurdering vi ikke har lagret.
-        when (vurderOpptjeningResultat) {
-            is VurderOpptjeningResultat.HarVurdering -> {
-                packet["@løsning"] =
-                    mapOf(
-                        "Opptjeningsvurdering" to
-                            mapOf(
-                                "id" to vurderOpptjeningResultat.opptjeningsvurderingId.toString(),
-                            ),
+            val vurderOpptjeningResultat =
+                transaksjonProvider.transaksjon { kontekst ->
+                    OpptjeningService(kontekst).vurderOpptjening(
+                        fødselsnummer = fødselsnummer,
+                        skjæringstidspunkt = skjæringstidspunkt,
+                        arbeidssituasjon = arbeidssituasjon,
                     )
-                sikkerLogg.info("Har vurdering for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. VurderingId: ${vurderOpptjeningResultat.opptjeningsvurderingId}. Løsning:\n\t${packet.toJson()}")
-                context.publish(packet.toJson())
-            }
+                }
 
-            is VurderOpptjeningResultat.TrengerArbeidsforhold -> {
-                val utgåendeBehov =
-                    JsonMessage.newNeed(
-                        behov = listOf("ArbeidsforholdV2"),
-                        map =
-                            mapOf(
-                                "skjæringstidspunkt" to skjæringstidspunkt.toString(),
-                                "fødselsnummer" to fødselsnummer,
-                                "opprinneligBehov" to jacksonObjectMapper().readTree(packet.toJson()), // TODO vi må være sikker på json eller string her?
-                            ),
+            // Publisering skjer først etter at transaksjonen er commitet — vi forteller aldri
+            // omverdenen om en vurdering vi ikke har lagret.
+            when (vurderOpptjeningResultat) {
+                is VurderOpptjeningResultat.HarVurdering -> {
+                    packet["@løsning"] =
+                        mapOf(
+                            "Opptjeningsvurdering" to
+                                mapOf(
+                                    "id" to vurderOpptjeningResultat.opptjeningsvurderingId.toString(),
+                                ),
+                        )
+                    loggInfo(
+                        "Har vurdering. Publiserer løsning",
+                        "opptjeningsvurderingId" to vurderOpptjeningResultat.opptjeningsvurderingId,
+                        "løsning" to packet.toJson(),
                     )
-                sikkerLogg.info("Trenger arbeidsforhold for fødselsnummer $fødselsnummer med skjæringstidspunkt $skjæringstidspunkt. Publiserer nytt behov:\n\t${utgåendeBehov.toJson()}")
-                context.publish(utgåendeBehov.toJson())
+                    context.publish(packet.toJson())
+                }
+
+                is VurderOpptjeningResultat.TrengerArbeidsforhold -> {
+                    val utgåendeBehov =
+                        JsonMessage.newNeed(
+                            behov = listOf("ArbeidsforholdV2"),
+                            map =
+                                mapOf(
+                                    "skjæringstidspunkt" to skjæringstidspunkt.toString(),
+                                    "fødselsnummer" to fødselsnummer,
+                                    "opprinneligBehov" to jacksonObjectMapper().readTree(packet.toJson()), // TODO vi må være sikker på json eller string her?
+                                ),
+                        )
+                    loggInfo(
+                        "Trenger arbeidsforhold. Publiserer nytt behov",
+                        "behov" to utgåendeBehov.toJson(),
+                    )
+                    context.publish(utgåendeBehov.toJson())
+                }
             }
         }
     }

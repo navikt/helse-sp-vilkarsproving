@@ -1,7 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
 import no.nav.helse.speil.backend.app.testfixtures.TestDatabase
-import no.nav.helse.sykepenger.vilkarsproving.infra.db.PostgresTransaksjonProvider
 import java.sql.ResultSet
 
 internal object Database {

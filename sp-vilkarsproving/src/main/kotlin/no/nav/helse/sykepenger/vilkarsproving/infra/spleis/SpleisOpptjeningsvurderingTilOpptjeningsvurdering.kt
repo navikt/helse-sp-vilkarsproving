@@ -1,5 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.spleis
 
+import no.nav.helse.speil.backend.app.logging.loggWarn
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
@@ -7,9 +8,6 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
-import org.slf4j.LoggerFactory
-
-private val log = LoggerFactory.getLogger("OpptjeningsvurderingTilOpptjeningsvurdering")
 
 internal fun SpleisOpptjeningsvurdering.tilOpptjeningsvurdering(fødselsnummer: String): Opptjeningsvurdering =
     when (this) {
@@ -64,7 +62,7 @@ private fun SpleisOpptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold.tilDome
     // Spleis oppgir ikke arbeidsforholdtype (ordinært, frilanser, maritimt o.l.), kun
     // ansettelsesperioder per orgnummer. Vi setter UKJENT inntil spleis-api eventuelt utvides
     // til å oppgi reell type.
-    log.warn(
+    loggWarn(
         "Mangler arbeidsforholdtype fra spleis-api for orgnummer $organisasjonsnummer — setter UKJENT",
     )
     return ansettelsesperioder.map { periode ->

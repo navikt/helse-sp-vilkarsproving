@@ -5,6 +5,7 @@ import no.nav.helse.speil.backend.app.auth.Brukerrolle
 import no.nav.helse.speil.backend.app.auth.TilgangsgrupperTilBrukerroller
 import no.nav.helse.speil.backend.app.bootstrap.AppKonfigurasjon
 import no.nav.helse.speil.backend.app.bootstrap.startApp
+import no.nav.helse.speil.backend.app.logging.loggInfo
 import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.PostgresTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver
@@ -55,7 +56,7 @@ fun main() {
         endepunkter = {
             get(GetVilkårsvurderingerForPersonBehandler(SpleisOpptjeningsvurderingService(spleisClient)))
             if (erDevGcp()) {
-                sikkerLogg.info("setter opp OverstyrVilkårsvurderingBehandler-endepunkt")
+                loggInfo("setter opp OverstyrVilkårsvurderingBehandler-endepunkt")
                 post(OverstyrVilkårsvurderingBehandler(meldingskontekst = { rapidsConnection }))
             }
         },
