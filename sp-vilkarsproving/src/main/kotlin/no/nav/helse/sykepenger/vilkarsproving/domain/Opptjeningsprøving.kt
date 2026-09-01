@@ -38,7 +38,7 @@ internal class Opptjeningsprøving private constructor(
     }
 
     /**
-     * Tar imot grunnlaget prøvingen venter på og produserer kravvurderingen.
+     * Tar imot grunnlaget prøvingen venter på og produserer opptjeningsvurderingen.
      * Vurderingen og den oppdaterte prøvingen må lagres i samme transaksjon.
      */
     fun motta(grunnlag: Opptjeningsgrunnlag): Opptjeningsvurdering.VurdertISpeil {

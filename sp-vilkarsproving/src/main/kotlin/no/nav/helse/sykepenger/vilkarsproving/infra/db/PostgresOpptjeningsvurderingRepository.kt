@@ -14,8 +14,8 @@ import org.intellij.lang.annotations.Language
 import org.postgresql.util.PSQLException
 import java.time.LocalDate
 
-private const val KRAVKILDE_VURDERT_I_SPEIL = "VURDERT_I_SPEIL"
-private const val KRAVKILDE_OVERFOERT_FRA_INFOTRYGD = "OVERFOERT_FRA_INFOTRYGD"
+private const val VURDERINGSKILDE_VURDERT_I_SPEIL = "VURDERT_I_SPEIL"
+private const val VURDERINGSKILDE_OVERFOERT_FRA_INFOTRYGD = "OVERFOERT_FRA_INFOTRYGD"
 
 internal class PostgresOpptjeningsvurderingRepository(
     private val session: Session,
@@ -35,8 +35,8 @@ internal class PostgresOpptjeningsvurderingRepository(
     private fun lagreVurdertISpeil(vurdering: Opptjeningsvurdering.VurdertISpeil) {
         @Language("PostgreSQL")
         val opptjeningsvurderingSql = """
-            insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, kravkilde, rett_til_sykepenger)
-            values (:id, :fodselsnummer, :skjaeringstidspunkt, :kravkilde, :rett_til_sykepenger)
+            insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, rett_til_sykepenger)
+            values (:id, :fodselsnummer, :skjaeringstidspunkt, :vurderingskilde, :rett_til_sykepenger)
         """
         session.run(
             queryOf(
@@ -45,7 +45,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                     "id" to vurdering.id.value,
                     "fodselsnummer" to vurdering.fødselsnummer,
                     "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
-                    "kravkilde" to KRAVKILDE_VURDERT_I_SPEIL,
+                    "vurderingskilde" to VURDERINGSKILDE_VURDERT_I_SPEIL,
                     "rett_til_sykepenger" to vurdering.girRettTilSykepenger,
                 ),
             ).asUpdate,
@@ -76,8 +76,8 @@ internal class PostgresOpptjeningsvurderingRepository(
     private fun lagreInfotrygd(vurdering: Opptjeningsvurdering.OverførtFraInfotrygd) {
         @Language("PostgreSQL")
         val sql = """
-            insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, kravkilde, rett_til_sykepenger)
-            values (:id, :fodselsnummer, :skjaeringstidspunkt, :kravkilde, :rett_til_sykepenger)
+            insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, rett_til_sykepenger)
+            values (:id, :fodselsnummer, :skjaeringstidspunkt, :vurderingskilde, :rett_til_sykepenger)
         """
         session.run(
             queryOf(
@@ -86,7 +86,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                     "id" to vurdering.id.value,
                     "fodselsnummer" to vurdering.fødselsnummer,
                     "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
-                    "kravkilde" to KRAVKILDE_OVERFOERT_FRA_INFOTRYGD,
+                    "vurderingskilde" to VURDERINGSKILDE_OVERFOERT_FRA_INFOTRYGD,
                     "rett_til_sykepenger" to vurdering.girRettTilSykepenger,
                 ),
             ).asUpdate,
@@ -129,8 +129,8 @@ internal class PostgresOpptjeningsvurderingRepository(
     }
 
     private fun hydrer(rad: OpptjeningsvurderingRad): Opptjeningsvurdering =
-        when (rad.kravkilde) {
-            KRAVKILDE_OVERFOERT_FRA_INFOTRYGD ->
+        when (rad.vurderingskilde) {
+            VURDERINGSKILDE_OVERFOERT_FRA_INFOTRYGD ->
                 Opptjeningsvurdering.infotrygdFraLagring(
                     id = rad.id,
                     fødselsnummer = rad.fødselsnummer,
@@ -174,7 +174,7 @@ internal class PostgresOpptjeningsvurderingRepository(
             id = OpptjeningsvurderingId(row.uuid("id")),
             fødselsnummer = row.string("fødselsnummer"),
             skjæringstidspunkt = row.localDate("skjæringstidspunkt"),
-            kravkilde = row.string("kravkilde"),
+            vurderingskilde = row.string("vurderingskilde"),
             girRettTilSykepenger = row.boolean("rett_til_sykepenger"),
         )
 
@@ -182,7 +182,7 @@ internal class PostgresOpptjeningsvurderingRepository(
         val id: OpptjeningsvurderingId,
         val fødselsnummer: String,
         val skjæringstidspunkt: LocalDate,
-        val kravkilde: String,
+        val vurderingskilde: String,
         val girRettTilSykepenger: Boolean,
     )
 
@@ -191,7 +191,7 @@ internal class PostgresOpptjeningsvurderingRepository(
 
         @Language("PostgreSQL")
         const val SELECT_OPPTJENINGSVURDERING = """
-            select id, fødselsnummer, skjæringstidspunkt, kravkilde, rett_til_sykepenger
+            select id, fødselsnummer, skjæringstidspunkt, vurderingskilde, rett_til_sykepenger
             from opptjeningsvurdering
         """
     }
