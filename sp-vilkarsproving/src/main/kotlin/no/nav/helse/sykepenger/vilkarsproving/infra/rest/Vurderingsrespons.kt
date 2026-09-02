@@ -25,14 +25,14 @@ private fun Opptjeningsvurdering.tilApi(): ApiOpptjeningsvurdering =
             ApiOpptjeningsvurdering.OverførtFraInfotrygd(
                 id = id.value,
                 kravkode = ApiKravkode.OPPTJENING,
-                rettTilSykepenger = girRettTilSykepenger,
+                opptjeningOk = erOk,
             )
 
         is Opptjeningsvurdering.VurdertISpeil ->
             ApiOpptjeningsvurdering.VurdertISpeil(
                 id = id.value,
                 kravkode = ApiKravkode.OPPTJENING,
-                rettTilSykepenger = girRettTilSykepenger,
+                opptjeningOk = erOk,
                 avgjørendeVilkårskode = avgjørendeVilkårskode.tilApi(),
                 vurderinger = vilkårsvurderinger.map { it.tilApi() },
             )

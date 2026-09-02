@@ -33,7 +33,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         val kilde = vurdering.vilkårsvurderinger.single().kilde as Vurderingskilde.Automatisk
         assertEquals(påbegynt.id, kilde.opptjeningsprøvingId)
         assertEquals(OPPTJENING_ARBEID_MINST_4_UKER, vurdering.avgjørendeVilkårskode)
-        assertTrue(vurdering.girRettTilSykepenger)
+        assertTrue(vurdering.erOk)
 
         assertEquals(1, rapid.inspektør.size)
         val svar = rapid.inspektør.message(0)
@@ -59,7 +59,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
 
         val vurdering = vurdert()
         assertEquals(OPPTJENING_ARBEID_MINST_4_UKER, vurdering.avgjørendeVilkårskode)
-        assertFalse(vurdering.girRettTilSykepenger)
+        assertFalse(vurdering.erOk)
     }
 
     @Test
@@ -71,7 +71,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         val arbeidsforhold = arbeidsforholdPåVurdering().single()
         assertEquals(1.januar, arbeidsforhold.ansettelseperiode.start)
         assertEquals(LocalDate.MAX, arbeidsforhold.ansettelseperiode.endInclusive)
-        assertTrue(vurdert().girRettTilSykepenger)
+        assertTrue(vurdert().erOk)
     }
 
     @Test

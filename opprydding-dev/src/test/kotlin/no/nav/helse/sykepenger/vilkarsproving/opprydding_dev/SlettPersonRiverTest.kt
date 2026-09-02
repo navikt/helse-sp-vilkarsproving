@@ -119,7 +119,7 @@ internal class SlettPersonRiverTest {
                 .prepareStatement(
                     """
                 INSERT INTO opptjeningsvurdering
-                    (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, rett_til_sykepenger)
+                    (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok)
                 VALUES (?, ?, ?, 'VURDERT_I_SPEIL', true)
                 """,
                 ).use { stmt ->

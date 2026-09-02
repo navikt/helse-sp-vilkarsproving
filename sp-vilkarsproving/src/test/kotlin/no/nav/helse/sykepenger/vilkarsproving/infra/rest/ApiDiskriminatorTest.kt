@@ -15,7 +15,7 @@ class ApiDiskriminatorTest {
             ApiOpptjeningsvurdering.VurdertISpeil(
                 id = UUID.randomUUID(),
                 kravkode = ApiKravkode.OPPTJENING,
-                rettTilSykepenger = true,
+                opptjeningOk = true,
                 avgjørendeVilkårskode = ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                 vurderinger =
                     listOf(
@@ -35,7 +35,7 @@ class ApiDiskriminatorTest {
             ApiOpptjeningsvurdering.OverførtFraInfotrygd(
                 id = UUID.randomUUID(),
                 kravkode = ApiKravkode.OPPTJENING,
-                rettTilSykepenger = true,
+                opptjeningOk = true,
             ),
         )
     }

@@ -16,11 +16,11 @@ internal class OpptjeningsvurderingTest {
             Opptjeningsvurdering.fraInfotrygd(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                girRettTilSykepenger = true,
+                erOk = true,
             )
 
         assertInstanceOf(Opptjeningsvurdering.OverførtFraInfotrygd::class.java, vurdering)
-        assertTrue(vurdering.girRettTilSykepenger)
+        assertTrue(vurdering.erOk)
     }
 
     @Test
@@ -41,7 +41,7 @@ internal class OpptjeningsvurderingTest {
                 sti = listOf(ledd),
             )
 
-        assertTrue(vurdering.girRettTilSykepenger)
+        assertTrue(vurdering.erOk)
         assertEquals(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE, vurdering.avgjørendeVilkårskode)
         val kilde = vurdering.vilkårsvurderinger.single().kilde
         assertInstanceOf(Vurderingskilde.Saksbehandler::class.java, kilde)
@@ -74,7 +74,7 @@ internal class OpptjeningsvurderingTest {
                 sti = listOf(ikkeOppfylt, avgjørende),
             )
 
-        assertTrue(vurdering.girRettTilSykepenger)
+        assertTrue(vurdering.erOk)
         assertEquals(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE, vurdering.avgjørendeVilkårskode)
         assertEquals(2, vurdering.vilkårsvurderinger.size)
     }
@@ -127,7 +127,7 @@ internal class OpptjeningsvurderingTest {
         )
         assertEquals(Utfall.IkkeOppfylt, vurdering.vilkårsvurderinger.first().utfall)
         assertEquals(overstyring.id, vurdering.vilkårsvurderinger.last().id)
-        assertTrue(vurdering.girRettTilSykepenger)
+        assertTrue(vurdering.erOk)
         assertEquals(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE, vurdering.avgjørendeVilkårskode)
     }
 
@@ -177,7 +177,7 @@ internal class OpptjeningsvurderingTest {
             Opptjeningsvurdering.fraInfotrygd(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                girRettTilSykepenger = false,
+                erOk = false,
             )
 
         val vurdering =

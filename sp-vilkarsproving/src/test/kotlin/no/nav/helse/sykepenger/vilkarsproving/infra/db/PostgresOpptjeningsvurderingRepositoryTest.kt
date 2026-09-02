@@ -38,7 +38,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         assertEquals(vurdering.id, lagret.id)
         assertEquals(FØDSELSNUMMER, lagret.fødselsnummer)
         assertEquals(1.februar, lagret.skjæringstidspunkt)
-        assertEquals(vurdering.girRettTilSykepenger, lagret.girRettTilSykepenger)
+        assertEquals(vurdering.erOk, lagret.erOk)
         assertEquals(vurdering.avgjørendeVilkårskode, lagret.avgjørendeVilkårskode)
 
         val ledd = lagret.vilkårsvurderinger.single()
@@ -88,7 +88,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         assertInstanceOf(Vurderingskilde.Saksbehandler::class.java, kilde)
         assertEquals("A123456", (kilde as Vurderingskilde.Saksbehandler).ident)
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, lagret.avgjørendeVilkårskode)
-        assertFalse(lagret.girRettTilSykepenger)
+        assertFalse(lagret.erOk)
     }
 
     @Test
@@ -97,14 +97,14 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
             Opptjeningsvurdering.fraInfotrygd(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                girRettTilSykepenger = true,
+                erOk = true,
             )
         transaksjon { it.opptjeningsvurderinger.lagre(vurdering) }
 
         val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) }
 
         assertInstanceOf(Opptjeningsvurdering.OverførtFraInfotrygd::class.java, lagret)
-        assertTrue(lagret!!.girRettTilSykepenger)
+        assertTrue(lagret!!.erOk)
     }
 
     @Test

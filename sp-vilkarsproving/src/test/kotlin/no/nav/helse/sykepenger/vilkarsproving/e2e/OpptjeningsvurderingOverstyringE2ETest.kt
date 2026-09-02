@@ -169,7 +169,7 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
             assertEquals(HttpStatusCode.OK, getRespons.status)
             val getResponsBody = getRespons.bodyAsText()
             val getJson = objectMapper.readTree(getResponsBody)
-            assertFalse(getJson["krav"].single()["rettTilSykepenger"].asBoolean()) {
+            assertFalse(getJson["krav"].single()["opptjeningOk"].asBoolean()) {
                 "Automatikken skulle kommet til at opptjeningsvilkåret ikke er oppfylt: $getResponsBody"
             }
 
@@ -210,7 +210,7 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
             val getEtterOverstyring = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$nyId")
             assertEquals(HttpStatusCode.OK, getEtterOverstyring.status)
             val nyttKrav = objectMapper.readTree(getEtterOverstyring.bodyAsText())["krav"].single()
-            assertTrue(nyttKrav["rettTilSykepenger"].asBoolean())
+            assertTrue(nyttKrav["opptjeningOk"].asBoolean())
             assertEquals("OPPTJENING_LIKESTILT_YTELSE", nyttKrav["avgjørendeVilkårskode"].asString())
             assertEquals(
                 listOf("OPPTJENING_ARBEID_MINST_4_UKER", "OPPTJENING_LIKESTILT_YTELSE"),

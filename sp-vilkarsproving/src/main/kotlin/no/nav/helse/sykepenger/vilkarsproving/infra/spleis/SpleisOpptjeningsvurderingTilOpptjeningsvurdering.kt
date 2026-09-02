@@ -54,7 +54,7 @@ internal fun SpleisOpptjeningsvurdering.tilOpptjeningsvurdering(fødselsnummer: 
                 id = opptjeningsvurderingId,
                 fødselsnummer = fødselsnummer,
                 skjæringstidspunkt = skjæringstidspunkt,
-                girRettTilSykepenger = true,
+                erOk = true,
             )
     }
 

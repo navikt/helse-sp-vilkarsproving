@@ -61,7 +61,7 @@ internal open class OpptjeningsvurderingResultatRiver(
                     }
 
                 val utfall =
-                    opptjeningsvurdering?.girRettTilSykepenger ?: spleisClient
+                    opptjeningsvurdering?.erOk ?: spleisClient
                         .hentOpptjeningsvurderinger(fødselsnummer = fødselsnummer)
                         .find { it.opptjeningsvurderingId == opptjeningsvurderingId }
                         ?.let { vurdering ->

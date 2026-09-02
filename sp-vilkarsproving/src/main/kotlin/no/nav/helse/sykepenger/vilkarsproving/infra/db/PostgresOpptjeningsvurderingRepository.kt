@@ -35,8 +35,8 @@ internal class PostgresOpptjeningsvurderingRepository(
     private fun lagreVurdertISpeil(vurdering: Opptjeningsvurdering.VurdertISpeil) {
         @Language("PostgreSQL")
         val opptjeningsvurderingSql = """
-            insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, rett_til_sykepenger)
-            values (:id, :fodselsnummer, :skjaeringstidspunkt, :vurderingskilde, :rett_til_sykepenger)
+            insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok)
+            values (:id, :fodselsnummer, :skjaeringstidspunkt, :vurderingskilde, :opptjening_ok)
         """
         session.run(
             queryOf(
@@ -46,7 +46,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                     "fodselsnummer" to vurdering.fødselsnummer,
                     "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
                     "vurderingskilde" to VURDERINGSKILDE_VURDERT_I_SPEIL,
-                    "rett_til_sykepenger" to vurdering.girRettTilSykepenger,
+                    "opptjening_ok" to vurdering.erOk,
                 ),
             ).asUpdate,
         )
@@ -76,8 +76,8 @@ internal class PostgresOpptjeningsvurderingRepository(
     private fun lagreInfotrygd(vurdering: Opptjeningsvurdering.OverførtFraInfotrygd) {
         @Language("PostgreSQL")
         val sql = """
-            insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, rett_til_sykepenger)
-            values (:id, :fodselsnummer, :skjaeringstidspunkt, :vurderingskilde, :rett_til_sykepenger)
+            insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok)
+            values (:id, :fodselsnummer, :skjaeringstidspunkt, :vurderingskilde, :opptjening_ok)
         """
         session.run(
             queryOf(
@@ -87,7 +87,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                     "fodselsnummer" to vurdering.fødselsnummer,
                     "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
                     "vurderingskilde" to VURDERINGSKILDE_OVERFOERT_FRA_INFOTRYGD,
-                    "rett_til_sykepenger" to vurdering.girRettTilSykepenger,
+                    "opptjening_ok" to vurdering.erOk,
                 ),
             ).asUpdate,
         )
@@ -135,7 +135,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                     id = rad.id,
                     fødselsnummer = rad.fødselsnummer,
                     skjæringstidspunkt = rad.skjæringstidspunkt,
-                    girRettTilSykepenger = rad.girRettTilSykepenger,
+                    erOk = rad.erOk,
                 )
 
             else ->
@@ -175,7 +175,7 @@ internal class PostgresOpptjeningsvurderingRepository(
             fødselsnummer = row.string("fødselsnummer"),
             skjæringstidspunkt = row.localDate("skjæringstidspunkt"),
             vurderingskilde = row.string("vurderingskilde"),
-            girRettTilSykepenger = row.boolean("rett_til_sykepenger"),
+            erOk = row.boolean("opptjening_ok"),
         )
 
     private data class OpptjeningsvurderingRad(
@@ -183,7 +183,7 @@ internal class PostgresOpptjeningsvurderingRepository(
         val fødselsnummer: String,
         val skjæringstidspunkt: LocalDate,
         val vurderingskilde: String,
-        val girRettTilSykepenger: Boolean,
+        val erOk: Boolean,
     )
 
     private companion object {
@@ -191,7 +191,7 @@ internal class PostgresOpptjeningsvurderingRepository(
 
         @Language("PostgreSQL")
         const val SELECT_OPPTJENINGSVURDERING = """
-            select id, fødselsnummer, skjæringstidspunkt, vurderingskilde, rett_til_sykepenger
+            select id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok
             from opptjeningsvurdering
         """
     }

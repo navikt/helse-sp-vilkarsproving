@@ -7,7 +7,7 @@ internal sealed interface Opptjeningsvurdering {
     val id: OpptjeningsvurderingId
     val fødselsnummer: String
     val skjæringstidspunkt: LocalDate
-    val girRettTilSykepenger: Boolean
+    val erOk: Boolean
 
     data class VurdertISpeil(
         override val id: OpptjeningsvurderingId,
@@ -19,7 +19,7 @@ internal sealed interface Opptjeningsvurdering {
             require(vilkårsvurderinger.isNotEmpty()) { "Opptjeningsvurdering $id må ha minst én vilkårsvurdering" }
         }
 
-        override val girRettTilSykepenger: Boolean get() = vilkårsvurderinger.last().utfall == Utfall.Oppfylt
+        override val erOk: Boolean get() = vilkårsvurderinger.last().utfall == Utfall.Oppfylt
 
         val avgjørendeVilkårskode: Vilkårskode get() = vilkårsvurderinger.last().vilkårskode
     }
@@ -28,7 +28,7 @@ internal sealed interface Opptjeningsvurdering {
         override val id: OpptjeningsvurderingId,
         override val fødselsnummer: String,
         override val skjæringstidspunkt: LocalDate,
-        override val girRettTilSykepenger: Boolean,
+        override val erOk: Boolean,
     ) : Opptjeningsvurdering
 
     companion object {
@@ -75,8 +75,8 @@ internal sealed interface Opptjeningsvurdering {
             id: OpptjeningsvurderingId = OpptjeningsvurderingId.ny(),
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
-            girRettTilSykepenger: Boolean,
-        ) = OverførtFraInfotrygd(id, fødselsnummer, skjæringstidspunkt, girRettTilSykepenger)
+            erOk: Boolean,
+        ) = OverførtFraInfotrygd(id, fødselsnummer, skjæringstidspunkt, erOk)
 
         fun fraLagring(
             id: OpptjeningsvurderingId,
@@ -96,7 +96,7 @@ internal sealed interface Opptjeningsvurdering {
             id: OpptjeningsvurderingId,
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
-            girRettTilSykepenger: Boolean,
-        ) = OverførtFraInfotrygd(id, fødselsnummer, skjæringstidspunkt, girRettTilSykepenger)
+            erOk: Boolean,
+        ) = OverførtFraInfotrygd(id, fødselsnummer, skjæringstidspunkt, erOk)
     }
 }

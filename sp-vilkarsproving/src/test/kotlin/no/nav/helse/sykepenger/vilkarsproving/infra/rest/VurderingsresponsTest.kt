@@ -45,7 +45,7 @@ internal class VurderingsresponsTest {
         val krav = respons.krav.single() as ApiOpptjeningsvurdering.VurdertISpeil
 
         assertEquals(ApiKravkode.OPPTJENING, krav.kravkode)
-        assertTrue(krav.rettTilSykepenger)
+        assertTrue(krav.opptjeningOk)
         assertEquals(ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, krav.avgjørendeVilkårskode)
         assertEquals(listOf(krav.avgjørendeVilkårskode), krav.vurderinger.map { it.vilkårskode })
     }
@@ -113,14 +113,14 @@ internal class VurderingsresponsTest {
             Opptjeningsvurdering.fraInfotrygd(
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
-                girRettTilSykepenger = true,
+                erOk = true,
             )
 
         val krav = Vurderingsrespons.fra(vurdering).krav.single()
 
         assertInstanceOf(ApiOpptjeningsvurdering.OverførtFraInfotrygd::class.java, krav)
         assertEquals(ApiKravkode.OPPTJENING, krav.kravkode)
-        assertTrue(krav.rettTilSykepenger)
+        assertTrue(krav.opptjeningOk)
     }
 
     @Test

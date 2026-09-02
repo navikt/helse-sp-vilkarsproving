@@ -234,7 +234,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
 
             val krav = json["krav"].single()
             assertEquals("OPPTJENING", krav["kravkode"].asString())
-            assertEquals(true, krav["rettTilSykepenger"].asBoolean())
+            assertEquals(true, krav["opptjeningOk"].asBoolean())
             assertEquals("VURDERT_I_SPEIL", krav["kravkilde"].asString())
             assertEquals("OPPTJENING_ARBEID_MINST_4_UKER", krav["avgjørendeVilkårskode"].asString())
 
@@ -264,7 +264,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
                 Opptjeningsvurdering.fraInfotrygd(
                     fødselsnummer = identitetsnummer.value,
                     skjæringstidspunkt = LocalDate.of(2024, 2, 1),
-                    girRettTilSykepenger = true,
+                    erOk = true,
                 )
             transaksjonProvider.opptjeningsvurderinger.lagre(vurdering)
 
@@ -281,7 +281,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             val krav = jacksonObjectMapper().readTree(response.bodyAsText())["krav"].single()
 
             assertEquals("OVERFOERT_FRA_INFOTRYGD", krav["kravkilde"].asString())
-            assertEquals(true, krav["rettTilSykepenger"].asBoolean())
+            assertEquals(true, krav["opptjeningOk"].asBoolean())
             assertFalse(krav.has("vurderinger")) { "Infotrygd-kravet skal ikke ha en sti: $krav" }
             assertFalse(krav.has("avgjørendeVilkårskode")) { "Vi kjenner ikke det avgjørende vilkåret: $krav" }
         }
@@ -332,7 +332,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
 
             val krav = jacksonObjectMapper().readTree(response.bodyAsText())["krav"].single()
             assertEquals("VURDERT_I_SPEIL", krav["kravkilde"].asString())
-            assertEquals(true, krav["rettTilSykepenger"].asBoolean())
+            assertEquals(true, krav["opptjeningOk"].asBoolean())
 
             val kilde = krav["vurderinger"].single()["kilde"]
             assertEquals("OVERFOERT_FRA_SPLEIS", kilde["kildetype"].asString())
@@ -363,7 +363,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             assertEquals(HttpStatusCode.OK, response.status)
 
             val krav = jacksonObjectMapper().readTree(response.bodyAsText())["krav"].single()
-            assertEquals(true, krav["rettTilSykepenger"].asBoolean())
+            assertEquals(true, krav["opptjeningOk"].asBoolean())
         }
 
     @Test
@@ -392,7 +392,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
 
             val krav = jacksonObjectMapper().readTree(response.bodyAsText())["krav"].single()
             assertEquals("OVERFOERT_FRA_INFOTRYGD", krav["kravkilde"].asString())
-            assertEquals(true, krav["rettTilSykepenger"].asBoolean())
+            assertEquals(true, krav["opptjeningOk"].asBoolean())
         }
 
     @Test

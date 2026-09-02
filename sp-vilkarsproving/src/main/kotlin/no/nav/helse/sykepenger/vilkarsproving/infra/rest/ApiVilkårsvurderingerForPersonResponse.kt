@@ -25,7 +25,7 @@ internal data class ApiVilkårsvurderingerForPersonResponse(
 internal sealed interface ApiOpptjeningsvurdering {
     val id: UUID
     val kravkode: ApiKravkode
-    val rettTilSykepenger: Boolean
+    val opptjeningOk: Boolean
 
     val kravkilde: ApiKravkilde
 
@@ -33,7 +33,7 @@ internal sealed interface ApiOpptjeningsvurdering {
     data class VurdertISpeil(
         override val id: UUID,
         override val kravkode: ApiKravkode,
-        override val rettTilSykepenger: Boolean,
+        override val opptjeningOk: Boolean,
         val avgjørendeVilkårskode: ApiVilkårskode,
         val vurderinger: List<ApiVilkårsvurdering>,
     ) : ApiOpptjeningsvurdering {
@@ -51,7 +51,7 @@ internal sealed interface ApiOpptjeningsvurdering {
     data class OverførtFraInfotrygd(
         override val id: UUID,
         override val kravkode: ApiKravkode,
-        override val rettTilSykepenger: Boolean,
+        override val opptjeningOk: Boolean,
     ) : ApiOpptjeningsvurdering {
         override val kravkilde: ApiKravkilde = ApiKravkilde.OVERFOERT_FRA_INFOTRYGD
     }
