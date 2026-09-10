@@ -1,17 +1,18 @@
 package no.nav.helse.sykepenger.vilkarsproving.domain
 
 import no.nav.helse.februar
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertInstanceOf
-import org.junit.jupiter.api.Assertions.assertNotEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
-import java.time.Instant
+import no.nav.helse.januar
+import no.nav.helse.til
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 internal class OpptjeningsvurderingTest {
     @Test
-    fun `infotrygdvurdering har ingen sti, kun et utfall`() {
+    fun `infotrygdvurdering har ingen vilkårsvurderinger, kun et utfall`() {
+        // given
         val vurdering =
             Opptjeningsvurdering.fraInfotrygd(
                 fødselsnummer = FØDSELSNUMMER,
@@ -19,75 +20,58 @@ internal class OpptjeningsvurderingTest {
                 erOk = true,
             )
 
-        assertInstanceOf(Opptjeningsvurdering.OverførtFraInfotrygd::class.java, vurdering)
+        // then
+        assertIs<Opptjeningsvurdering.OverførtFraInfotrygd>(vurdering)
         assertTrue(vurdering.erOk)
     }
 
     @Test
-    fun `saksbehandlervurdering har sti uten prøving`() {
-        val ledd =
+    fun `saksbehandlervurdering har vilkårsvurderinger uten prøving`() {
+        // given
+        val vilkårsvurdering =
             Vilkårsvurdering.avSaksbehandler(
                 vilkårskode = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE,
                 utfall = Utfall.Oppfylt,
                 saksbehandlerIdent = "Z999999",
                 fritekstbegrunnelse = "vurdert etter dialog med bruker",
-                vurdertTidspunkt = Instant.parse("2018-02-01T09:00:00Z"),
             )
 
+        // when
         val vurdering =
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                sti = listOf(ledd),
+                vilkårsvurdering = vilkårsvurdering,
             )
 
+        // then
         assertTrue(vurdering.erOk)
         assertEquals(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE, vurdering.avgjørendeVilkårskode)
         val kilde = vurdering.vilkårsvurderinger.single().kilde
-        assertInstanceOf(Vurderingskilde.Saksbehandler::class.java, kilde)
-        assertEquals("Z999999", (kilde as Vurderingskilde.Saksbehandler).ident)
-    }
-
-    @Test
-    fun `utfallet er det siste leddet i en flerleddet sti`() {
-        val ikkeOppfylt =
-            Vilkårsvurdering.avSaksbehandler(
-                vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
-                utfall = Utfall.IkkeOppfylt,
-                saksbehandlerIdent = "Z999999",
-                fritekstbegrunnelse = "ikke sammenhengende arbeid",
-                vurdertTidspunkt = null,
-            )
-        val avgjørende =
-            Vilkårsvurdering.avSaksbehandler(
-                vilkårskode = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE,
-                utfall = Utfall.Oppfylt,
-                saksbehandlerIdent = "Z999999",
-                fritekstbegrunnelse = "hadde dagpenger i forkant",
-                vurdertTidspunkt = null,
-            )
-
-        val vurdering =
-            Opptjeningsvurdering.avSaksbehandler(
-                fødselsnummer = FØDSELSNUMMER,
-                skjæringstidspunkt = 1.februar,
-                sti = listOf(ikkeOppfylt, avgjørende),
-            )
-
-        assertTrue(vurdering.erOk)
-        assertEquals(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE, vurdering.avgjørendeVilkårskode)
-        assertEquals(2, vurdering.vilkårsvurderinger.size)
+        assertIs<Vurderingskilde.Saksbehandler>(kilde)
+        assertEquals("Z999999", kilde.ident)
     }
 
     @Test
     fun `videreførte vilkårsvurderinger fra forrige vurdering blir med, men koder saksbehandleren overstyrer erstattes`() {
+        // given
+        val grunnlag =
+            Opptjeningsgrunnlag.Arbeidstaker(
+                arbeidsforhold =
+                    listOf(
+                        Arbeidsforhold(
+                            orgnummer = "123456789",
+                            ansettelseperiode = 31.januar til 31.januar,
+                            type = Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT,
+                        ),
+                    ),
+            )
         val automatiskIkkeOppfylt =
-            Vilkårsvurdering.avSaksbehandler(
-                vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
-                utfall = Utfall.IkkeOppfylt,
-                saksbehandlerIdent = "Z111111",
-                fritekstbegrunnelse = "for kort opptjening",
-                vurdertTidspunkt = null,
+            Opptjeningsvurdering.automatisk(
+                opptjeningsprøvingId = OpptjeningsprøvingId.ny(),
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                grunnlag = grunnlag,
             )
         val gammelLikestiltYtelse =
             Vilkårsvurdering.avSaksbehandler(
@@ -95,29 +79,24 @@ internal class OpptjeningsvurderingTest {
                 utfall = Utfall.IkkeOppfylt,
                 saksbehandlerIdent = "Z111111",
                 fritekstbegrunnelse = "fant ingen likestilt ytelse",
-                vurdertTidspunkt = null,
-            )
-        val forrige =
-            Opptjeningsvurdering.avSaksbehandler(
-                fødselsnummer = FØDSELSNUMMER,
-                skjæringstidspunkt = 1.februar,
-                sti = listOf(automatiskIkkeOppfylt, gammelLikestiltYtelse),
             )
 
-        val overstyring =
+        val forrige = automatiskIkkeOppfylt.prøvPåNyttMed(gammelLikestiltYtelse)
+
+        // when
+        val nyLikestiltYtelseVurdering =
             Vilkårsvurdering.avSaksbehandler(
                 vilkårskode = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE,
                 utfall = Utfall.Oppfylt,
                 saksbehandlerIdent = "Z999999",
                 fritekstbegrunnelse = "hadde dagpenger i forkant",
-                vurdertTidspunkt = null,
             )
 
         val vurdering =
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                sti = listOf(overstyring),
+                vilkårsvurdering = nyLikestiltYtelseVurdering,
                 forrigeVurdering = forrige,
             )
 
@@ -126,41 +105,38 @@ internal class OpptjeningsvurderingTest {
             vurdering.vilkårsvurderinger.map { it.vilkårskode },
         )
         assertEquals(Utfall.IkkeOppfylt, vurdering.vilkårsvurderinger.first().utfall)
-        assertEquals(overstyring.id, vurdering.vilkårsvurderinger.last().id)
+        assertEquals(nyLikestiltYtelseVurdering.id, vurdering.vilkårsvurderinger.last().id)
         assertTrue(vurdering.erOk)
         assertEquals(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE, vurdering.avgjørendeVilkårskode)
     }
 
     @Test
     fun `videreførte vilkårsvurderinger får nye id-er fordi de lagres som nye rader`() {
+        // when
         val tidligere =
             Vilkårsvurdering.avSaksbehandler(
                 vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                 utfall = Utfall.IkkeOppfylt,
                 saksbehandlerIdent = "Z111111",
                 fritekstbegrunnelse = "for kort opptjening",
-                vurdertTidspunkt = null,
             )
         val forrige =
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                sti = listOf(tidligere),
+                vilkårsvurdering = tidligere,
             )
 
         val vurdering =
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                sti =
-                    listOf(
-                        Vilkårsvurdering.avSaksbehandler(
-                            vilkårskode = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE,
-                            utfall = Utfall.Oppfylt,
-                            saksbehandlerIdent = "Z999999",
-                            fritekstbegrunnelse = "hadde dagpenger i forkant",
-                            vurdertTidspunkt = null,
-                        ),
+                vilkårsvurdering =
+                    Vilkårsvurdering.avSaksbehandler(
+                        vilkårskode = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE,
+                        utfall = Utfall.Oppfylt,
+                        saksbehandlerIdent = "Z999999",
+                        fritekstbegrunnelse = "hadde dagpenger i forkant",
                     ),
                 forrigeVurdering = forrige,
             )
@@ -184,15 +160,12 @@ internal class OpptjeningsvurderingTest {
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                sti =
-                    listOf(
-                        Vilkårsvurdering.avSaksbehandler(
-                            vilkårskode = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE,
-                            utfall = Utfall.Oppfylt,
-                            saksbehandlerIdent = "Z999999",
-                            fritekstbegrunnelse = "hadde dagpenger i forkant",
-                            vurdertTidspunkt = null,
-                        ),
+                vilkårsvurdering =
+                    Vilkårsvurdering.avSaksbehandler(
+                        vilkårskode = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE,
+                        utfall = Utfall.Oppfylt,
+                        saksbehandlerIdent = "Z999999",
+                        fritekstbegrunnelse = "hadde dagpenger i forkant",
                     ),
                 forrigeVurdering = forrige,
             )
@@ -201,28 +174,27 @@ internal class OpptjeningsvurderingTest {
     }
 
     @Test
-    fun `en vurdert opptjeningsvurdering må ha minst ett ledd i stien`() {
-        assertThrows<IllegalArgumentException> {
-            Opptjeningsvurdering.avSaksbehandler(
-                fødselsnummer = FØDSELSNUMMER,
-                skjæringstidspunkt = 1.februar,
-                sti = emptyList(),
-            )
-        }
-    }
-
-    @Test
     fun `vurdertTidspunkt kan være null`() {
         val ledd =
-            Vilkårsvurdering.avSaksbehandler(
+            Vilkårsvurdering.overførtFraSpleis(
                 vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                 utfall = Utfall.Oppfylt,
-                saksbehandlerIdent = "Z999999",
-                fritekstbegrunnelse = "vurdert uten kjent tidspunkt",
+                utledetFakta = UtledetFakta.Ingen,
                 vurdertTidspunkt = null,
+                grunnlag =
+                    Opptjeningsgrunnlag.Arbeidstaker(
+                        arbeidsforhold =
+                            listOf(
+                                Arbeidsforhold(
+                                    orgnummer = "123456789",
+                                    ansettelseperiode = 31.januar til 31.januar,
+                                    type = Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT,
+                                ),
+                            ),
+                    ),
             )
 
-        assertTrue(ledd.vurdertTidspunkt == null)
+        assertEquals(null, ledd.vurdertTidspunkt)
     }
 
     private companion object {

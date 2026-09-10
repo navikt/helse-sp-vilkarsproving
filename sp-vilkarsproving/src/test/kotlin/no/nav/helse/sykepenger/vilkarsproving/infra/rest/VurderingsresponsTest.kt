@@ -3,24 +3,15 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 import no.nav.helse.Periode
 import no.nav.helse.februar
 import no.nav.helse.januar
-import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
+import no.nav.helse.sykepenger.vilkarsproving.domain.*
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
-import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.til
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
-import java.time.Instant
 import kotlin.test.assertTrue
 
 internal class VurderingsresponsTest {
-    private val vurdertTidspunkt = Instant.parse("2024-02-01T12:00:00Z")
-
     @Test
     fun `arbeidstakerresponsen inneholder vurdert opptjeningsperiode og opptjeningsdager`() {
         val vurdering = automatiskArbeidstakervurdering(4.januar til 31.januar)
@@ -62,19 +53,18 @@ internal class VurderingsresponsTest {
 
     @Test
     fun `manuell vurdering har saksbehandler som kilde og ikke noe grunnlag`() {
-        val ledd =
+        val vilkårsvurdering =
             Vilkårsvurdering.avSaksbehandler(
                 vilkårskode = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE,
                 utfall = Utfall.Oppfylt,
                 saksbehandlerIdent = "Z999999",
                 fritekstbegrunnelse = "Mottok foreldrepenger fram til skjæringstidspunktet.",
-                vurdertTidspunkt = vurdertTidspunkt,
             )
         val vurdering =
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
-                sti = listOf(ledd),
+                vilkårsvurdering = vilkårsvurdering,
             )
 
         val api = Vurderingsrespons.fra(vurdering).enesteVurdering()
@@ -86,19 +76,18 @@ internal class VurderingsresponsTest {
 
     @Test
     fun `unntaksvilkaar er en helt vanlig vilkaarsvurdering i stien`() {
-        val ledd =
+        val vilkårsvurdering =
             Vilkårsvurdering.avSaksbehandler(
                 vilkårskode = Vilkårskode.OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP,
                 utfall = Utfall.IkkeOppfylt,
                 saksbehandlerIdent = "Z999999",
                 fritekstbegrunnelse = "Ingen AAP forut for foreldrepengeperioden.",
-                vurdertTidspunkt = vurdertTidspunkt,
             )
         val vurdering =
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
-                sti = listOf(ledd),
+                vilkårsvurdering = vilkårsvurdering,
             )
 
         val api = Vurderingsrespons.fra(vurdering).enesteVurdering()
@@ -131,7 +120,6 @@ internal class VurderingsresponsTest {
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
                 grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,
-                vurdertTidspunkt = vurdertTidspunkt,
             )
 
         val kilde = Vurderingsrespons.fra(vurdering).enesteVurdering().kilde as ApiVurderingskilde.Automatisk
@@ -148,7 +136,6 @@ internal class VurderingsresponsTest {
                 Opptjeningsgrunnlag.Arbeidstaker(
                     listOf(Arbeidsforhold(orgnummer = "987654321", ansettelseperiode = ansettelseperiode, type = ORDINÆRT)),
                 ),
-            vurdertTidspunkt = vurdertTidspunkt,
         )
 }
 

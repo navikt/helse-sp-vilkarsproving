@@ -35,7 +35,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import tools.jackson.module.kotlin.jacksonObjectMapper
-import java.time.Instant
 import java.time.LocalDate
 import java.util.*
 
@@ -183,7 +182,6 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
                     fødselsnummer = enAnnenIdentitetsnummer.value,
                     skjæringstidspunkt = LocalDate.of(2024, 1, 1),
                     grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,
-                    vurdertTidspunkt = Instant.now(),
                 )
             transaksjonProvider.opptjeningsvurderinger.lagre(andresVurdering)
 
@@ -214,7 +212,6 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
                     fødselsnummer = identitetsnummer.value,
                     skjæringstidspunkt = LocalDate.of(2024, 2, 1),
                     grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,
-                    vurdertTidspunkt = Instant.parse("2024-02-01T12:00:00Z"),
                 )
             transaksjonProvider.opptjeningsvurderinger.lagre(vurdering)
 

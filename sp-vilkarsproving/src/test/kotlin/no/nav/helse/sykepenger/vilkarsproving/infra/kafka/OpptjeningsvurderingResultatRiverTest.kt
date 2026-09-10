@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.time.Instant
 import java.util.UUID
 import java.util.stream.Stream
 
@@ -166,19 +165,18 @@ internal class OpptjeningsvurderingResultatRiverTest {
         vilkårskode: Vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
         utfall: Utfall,
     ): Opptjeningsvurdering.VurdertISpeil {
-        val ledd =
+        val vilkårsvurdering =
             Vilkårsvurdering.avSaksbehandler(
                 vilkårskode = vilkårskode,
                 utfall = utfall,
                 saksbehandlerIdent = "Z999999",
                 fritekstbegrunnelse = "",
-                vurdertTidspunkt = Instant.parse("2018-02-01T09:00:00Z"),
             )
         return Opptjeningsvurdering
             .avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                sti = listOf(ledd),
+                vilkårsvurdering = vilkårsvurdering,
             ).also { repository.lagre(it) }
     }
 

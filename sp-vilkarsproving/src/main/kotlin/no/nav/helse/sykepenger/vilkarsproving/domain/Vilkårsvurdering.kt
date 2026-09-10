@@ -32,12 +32,11 @@ internal data class Vilkårsvurdering(
             utfall: Utfall,
             saksbehandlerIdent: String,
             fritekstbegrunnelse: String,
-            vurdertTidspunkt: Instant?,
         ) = Vilkårsvurdering(
             id = VilkårsvurderingId.ny(),
             vilkårskode = vilkårskode,
             utfall = utfall,
-            vurdertTidspunkt = vurdertTidspunkt,
+            vurdertTidspunkt = Instant.now(),
             kilde = Vurderingskilde.Saksbehandler(saksbehandlerIdent, fritekstbegrunnelse),
         )
 

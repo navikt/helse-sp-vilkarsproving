@@ -58,7 +58,6 @@ internal class Opptjeningsprøving private constructor(
                 fødselsnummer = fødselsnummer,
                 skjæringstidspunkt = skjæringstidspunkt,
                 grunnlag = grunnlag,
-                vurdertTidspunkt = Instant.now(),
             )
         tilstand = Tilstand.Fullført(vurdering.id)
         return vurdering

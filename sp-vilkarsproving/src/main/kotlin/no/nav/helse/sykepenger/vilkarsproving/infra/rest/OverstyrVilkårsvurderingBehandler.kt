@@ -13,7 +13,6 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingOverstyrtMelding
-import java.time.Instant
 
 internal class OverstyrVilkårsvurderingBehandler(
     private val meldingskontekst: () -> MessageContext,
@@ -46,7 +45,7 @@ internal class OverstyrVilkårsvurderingBehandler(
         ) { identitetsnummer ->
             val vilkårskode = request.vilkårskode.fraApi()
             if (erProdGcp()) {
-                throw IllegalStateException("Overstyring av vilkårsvurdering er ikke båskrudd i prod-gcp")
+                throw IllegalStateException("Overstyring av vilkårsvurdering er ikke påskrudd i prod-gcp")
             }
 
             val vilkårsvurdering =
@@ -55,14 +54,13 @@ internal class OverstyrVilkårsvurderingBehandler(
                     utfall = request.utfall.fraApi(),
                     saksbehandlerIdent = kallKontekst.saksbehandler.navIdent.value,
                     fritekstbegrunnelse = request.fritekstbegrunnelse,
-                    vurdertTidspunkt = Instant.now(),
                 )
 
             val kravvurdering =
                 Opptjeningsvurdering.avSaksbehandler(
                     fødselsnummer = identitetsnummer.value,
                     skjæringstidspunkt = request.skjæringstidspunkt,
-                    sti = listOf(vilkårsvurdering),
+                    vilkårsvurdering = vilkårsvurdering,
                     forrigeVurdering =
                         kallKontekst.transaksjon.opptjeningsvurderinger.gjeldende(
                             fødselsnummer = identitetsnummer.value,

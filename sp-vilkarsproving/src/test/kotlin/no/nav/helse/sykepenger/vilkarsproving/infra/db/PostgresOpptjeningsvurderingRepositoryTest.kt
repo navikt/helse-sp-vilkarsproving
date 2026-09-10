@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.test.assertFalse
@@ -66,19 +65,18 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
 
     @Test
     fun `saksbehandlervurdering lagres og hentes tilbake`() {
-        val ledd =
+        val vilkårsvurdering =
             Vilkårsvurdering.avSaksbehandler(
                 vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                 utfall = Utfall.IkkeOppfylt,
                 saksbehandlerIdent = "A123456",
                 fritekstbegrunnelse = "Ikke nok opptjening",
-                vurdertTidspunkt = Instant.now(),
             )
         val vurdering =
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                sti = listOf(ledd),
+                vilkårsvurdering = vilkårsvurdering,
             )
         transaksjon { it.opptjeningsvurderinger.lagre(vurdering) }
 

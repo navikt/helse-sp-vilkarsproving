@@ -9,6 +9,8 @@ internal sealed interface Opptjeningsvurdering {
     val skjæringstidspunkt: LocalDate
     val erOk: Boolean
 
+    fun prøvPåNyttMed(vilkårsvurdering: Vilkårsvurdering): VurdertISpeil
+
     data class VurdertISpeil(
         override val id: OpptjeningsvurderingId,
         override val fødselsnummer: String,
@@ -22,6 +24,31 @@ internal sealed interface Opptjeningsvurdering {
         override val erOk: Boolean get() = vilkårsvurderinger.last().utfall == Utfall.Oppfylt
 
         val avgjørendeVilkårskode: Vilkårskode get() = vilkårsvurderinger.last().vilkårskode
+
+        override fun prøvPåNyttMed(vilkårsvurdering: Vilkårsvurdering): VurdertISpeil =
+            VurdertISpeil(
+                id = OpptjeningsvurderingId.ny(),
+                fødselsnummer = fødselsnummer,
+                skjæringstidspunkt = skjæringstidspunkt,
+                vilkårsvurderinger =
+                    vilkårsvurderinger
+                        .filter { it.vilkårskode != vilkårsvurdering.vilkårskode }
+                        .map { it.videreført() } +
+                        vilkårsvurdering,
+            )
+
+        internal companion object {
+            fun ny(
+                fødselsnummer: String,
+                skjæringstidspunkt: LocalDate,
+                vilkårsvurdering: Vilkårsvurdering,
+            ) = VurdertISpeil(
+                id = OpptjeningsvurderingId.ny(),
+                fødselsnummer = fødselsnummer,
+                skjæringstidspunkt = skjæringstidspunkt,
+                vilkårsvurderinger = listOf(vilkårsvurdering),
+            )
+        }
     }
 
     data class OverførtFraInfotrygd(
@@ -29,7 +56,15 @@ internal sealed interface Opptjeningsvurdering {
         override val fødselsnummer: String,
         override val skjæringstidspunkt: LocalDate,
         override val erOk: Boolean,
-    ) : Opptjeningsvurdering
+    ) : Opptjeningsvurdering {
+        override fun prøvPåNyttMed(vilkårsvurdering: Vilkårsvurdering): VurdertISpeil =
+            VurdertISpeil(
+                id = OpptjeningsvurderingId.ny(),
+                fødselsnummer = fødselsnummer,
+                skjæringstidspunkt = skjæringstidspunkt,
+                vilkårsvurderinger = listOf(vilkårsvurdering),
+            )
+    }
 
     companion object {
         fun automatisk(
@@ -38,37 +73,24 @@ internal sealed interface Opptjeningsvurdering {
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
             grunnlag: Opptjeningsgrunnlag,
-            vurdertTidspunkt: Instant,
         ): VurdertISpeil {
             val regel = grunnlag.regel
             val resultat = regel.vurder(skjæringstidspunkt, grunnlag)
             val vilkårsvurderinger =
                 resultat.vilkårsutfall.map { ledd ->
-                    Vilkårsvurdering.automatisk(opptjeningsprøvingId, ledd, grunnlag, regel.versjon, vurdertTidspunkt)
+                    Vilkårsvurdering.automatisk(opptjeningsprøvingId, ledd, grunnlag, regel.versjon, Instant.now())
                 }
             return VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, vilkårsvurderinger)
         }
 
-        /**
-         * Lager en ny vurdering av saksbehandlerens [sti]. Vilkårsvurderinger fra [forrigeVurdering] videreføres slik at
-         * den nye vurderingen viser helheten, men vurderinger av vilkårskoder saksbehandleren har tatt stilling til
-         * erstattes av saksbehandlerens egne.
-         */
         fun avSaksbehandler(
-            id: OpptjeningsvurderingId = OpptjeningsvurderingId.ny(),
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
-            sti: List<Vilkårsvurdering>,
+            vilkårsvurdering: Vilkårsvurdering,
             forrigeVurdering: Opptjeningsvurdering? = null,
         ): VurdertISpeil {
-            val overstyrteVilkårskoder = sti.map { it.vilkårskode }.toSet()
-            val videreførte =
-                (forrigeVurdering as? VurdertISpeil)
-                    ?.vilkårsvurderinger
-                    .orEmpty()
-                    .filterNot { it.vilkårskode in overstyrteVilkårskoder }
-                    .map { it.videreført() }
-            return VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, videreførte + sti)
+            if (forrigeVurdering == null) return VurdertISpeil.ny(fødselsnummer, skjæringstidspunkt, vilkårsvurdering)
+            return forrigeVurdering.prøvPåNyttMed(vilkårsvurdering)
         }
 
         fun fraInfotrygd(
