@@ -58,7 +58,10 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         rapid.sendTestMessage(arbeidsforholdløsning(arbeidsforhold(ansattSiden = "2018-01-05", ansattTil = "2018-01-31")))
 
         val vurdering = vurdert()
-        assertEquals(OPPTJENING_ARBEID_MINST_4_UKER, vurdering.avgjørendeVilkårskode)
+        // Hovedregelen alene er ikke oppfylt, og det finnes ingen unntaksvilkår i en automatisk vurdering
+        // med kun 4-ukersvilkåret, så avgjørendeVilkårskode()-regelen gir null (se
+        // Vilkårsvurdering.avgjørendeVilkårskode()).
+        assertNull(vurdering.avgjørendeVilkårskode)
         assertFalse(vurdering.erOk)
     }
 

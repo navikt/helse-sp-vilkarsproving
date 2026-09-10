@@ -35,8 +35,8 @@ internal class PostgresOpptjeningsvurderingRepository(
     private fun lagreVurdertISpeil(vurdering: Opptjeningsvurdering.VurdertISpeil) {
         @Language("PostgreSQL")
         val opptjeningsvurderingSql = """
-            insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok)
-            values (:id, :fodselsnummer, :skjaeringstidspunkt, :vurderingskilde, :opptjening_ok)
+            insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok, avgjørende_vilkårskode)
+            values (:id, :fodselsnummer, :skjaeringstidspunkt, :vurderingskilde, :opptjening_ok, :avgjorendeVilkarskode)
         """
         session.run(
             queryOf(
@@ -47,6 +47,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                     "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
                     "vurderingskilde" to VURDERINGSKILDE_VURDERT_I_SPEIL,
                     "opptjening_ok" to vurdering.erOk,
+                    "avgjorendeVilkarskode" to vurdering.avgjørendeVilkårskode?.name,
                 ),
             ).asUpdate,
         )
@@ -163,6 +164,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                     fødselsnummer = rad.fødselsnummer,
                     skjæringstidspunkt = rad.skjæringstidspunkt,
                     vilkårsvurderinger = finnVilkårsvurderingerFor(rad.id),
+                    avgjørendeVilkårskode = rad.avgjørendeVilkårskode,
                 )
         }
 
@@ -196,6 +198,7 @@ internal class PostgresOpptjeningsvurderingRepository(
             skjæringstidspunkt = row.localDate("skjæringstidspunkt"),
             vurderingskilde = row.string("vurderingskilde"),
             erOk = row.boolean("opptjening_ok"),
+            avgjørendeVilkårskode = row.stringOrNull("avgjørende_vilkårskode")?.let(Vilkårskode::valueOf),
         )
 
     private data class OpptjeningsvurderingRad(
@@ -204,6 +207,7 @@ internal class PostgresOpptjeningsvurderingRepository(
         val skjæringstidspunkt: LocalDate,
         val vurderingskilde: String,
         val erOk: Boolean,
+        val avgjørendeVilkårskode: Vilkårskode?,
     )
 
     private companion object {
@@ -211,7 +215,7 @@ internal class PostgresOpptjeningsvurderingRepository(
 
         @Language("PostgreSQL")
         const val SELECT_OPPTJENINGSVURDERING = """
-            select id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok
+            select id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok, avgjørende_vilkårskode
             from opptjeningsvurdering
         """
     }

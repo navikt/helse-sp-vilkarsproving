@@ -33,7 +33,7 @@ private fun Opptjeningsvurdering.tilApi(): ApiOpptjeningsvurdering =
                 id = id.value,
                 kravkode = ApiKravkode.OPPTJENING,
                 opptjeningOk = erOk,
-                avgjørendeVilkårskode = avgjørendeVilkårskode.tilApi(),
+                avgjørendeVilkårskode = avgjørendeVilkårskode?.tilApi(),
                 vurderinger = vilkårsvurderinger.map { it.tilApi() },
             )
     }
@@ -59,7 +59,7 @@ private fun Vilkårskode.tilApi(): ApiVilkårskode =
         Vilkårskode.OPPTJENING_LIKESTILT_YTELSE -> ApiVilkårskode.OPPTJENING_LIKESTILT_YTELSE
         Vilkårskode.OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP ->
             ApiVilkårskode.OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP
-        Vilkårskode.OPPTJENING_YRKESAKTIV_FOER_FORELDREPENGER -> ApiVilkårskode.OPPTJENING_YRKESAKTIV_FOER_FORELDREPENGER
+        Vilkårskode.OPPTJENING_YRKESAKTIV_FØR_FORELDREPENGER -> ApiVilkårskode.OPPTJENING_YRKESAKTIV_FOER_FORELDREPENGER
     }
 
 private fun Vurderingskilde.tilApi(): ApiVurderingskilde =

@@ -34,17 +34,10 @@ internal sealed interface ApiOpptjeningsvurdering {
         override val id: UUID,
         override val kravkode: ApiKravkode,
         override val opptjeningOk: Boolean,
-        val avgjørendeVilkårskode: ApiVilkårskode,
+        val avgjørendeVilkårskode: ApiVilkårskode?,
         val vurderinger: List<ApiVilkårsvurdering>,
     ) : ApiOpptjeningsvurdering {
         override val kravkilde: ApiKravkilde = ApiKravkilde.VURDERT_I_SPEIL
-
-        init {
-            require(vurderinger.isNotEmpty()) { "En kravvurdering gjort hos oss må ha minst én vilkårsvurdering" }
-            require(vurderinger.any { it.vilkårskode == avgjørendeVilkårskode }) {
-                "Det avgjørende vilkåret $avgjørendeVilkårskode må finnes blant vilkårsvurderingene"
-            }
-        }
     }
 
     @Serializable

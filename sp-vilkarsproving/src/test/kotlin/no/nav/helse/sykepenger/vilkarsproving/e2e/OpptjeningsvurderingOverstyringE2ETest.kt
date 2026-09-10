@@ -211,7 +211,11 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
             assertEquals(HttpStatusCode.OK, getEtterOverstyring.status)
             val nyttKrav = objectMapper.readTree(getEtterOverstyring.bodyAsText())["krav"].single()
             assertTrue(nyttKrav["opptjeningOk"].asBoolean())
-            assertEquals("OPPTJENING_LIKESTILT_YTELSE", nyttKrav["avgjørendeVilkårskode"].asString())
+            // Hovedregelen (OPPTJENING_ARBEID_MINST_4_UKER) er ikke oppfylt, og
+            // OPPTJENING_YRKESAKTIV_FØR_FORELDREPENGER er ikke blant vilkårsvurderingene, så
+            // avgjørendeVilkårskode()-regelen gir null selv om OPPTJENING_LIKESTILT_YTELSE er oppfylt
+            // (se Vilkårsvurdering.avgjørendeVilkårskode()).
+            assertTrue(nyttKrav["avgjørendeVilkårskode"].isNull)
             assertEquals(
                 listOf("OPPTJENING_ARBEID_MINST_4_UKER", "OPPTJENING_LIKESTILT_YTELSE"),
                 nyttKrav["vurderinger"].toList().map { it["vilkårskode"].asString() },

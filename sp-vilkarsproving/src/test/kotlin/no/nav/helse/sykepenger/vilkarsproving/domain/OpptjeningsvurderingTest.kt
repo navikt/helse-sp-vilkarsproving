@@ -45,7 +45,10 @@ internal class OpptjeningsvurderingTest {
 
         // then
         assertTrue(vurdering.erOk)
-        assertEquals(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE, vurdering.avgjørendeVilkårskode)
+        // avgjørendeVilkårskode()-regelen krever at hovedregelen (OPPTJENING_ARBEID_MINST_4_UKER) i det
+        // hele tatt er blant vilkårsvurderingene før et unntak kan bli avgjørende. Her er den ikke det,
+        // så det finnes ingen avgjørende vilkår selv om utfallet er oppfylt.
+        assertEquals(null, vurdering.avgjørendeVilkårskode)
         val kilde = vurdering.vilkårsvurderinger.single().kilde
         assertIs<Vurderingskilde.Saksbehandler>(kilde)
         assertEquals("Z999999", kilde.ident)
@@ -106,7 +109,10 @@ internal class OpptjeningsvurderingTest {
         assertEquals(Utfall.IkkeOppfylt, vurdering.vilkårsvurderinger.first().utfall)
         assertEquals(nyLikestiltYtelseVurdering.id, vurdering.vilkårsvurderinger.last().id)
         assertTrue(vurdering.erOk)
-        assertEquals(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE, vurdering.avgjørendeVilkårskode)
+        // Hovedregelen er ikke oppfylt, og OPPTJENING_YRKESAKTIV_FØR_FORELDREPENGER er ikke blant
+        // vilkårsvurderingene, så avgjørendeVilkårskode()-regelen gir null her selv om
+        // OPPTJENING_LIKESTILT_YTELSE er oppfylt (se Vilkårsvurdering.avgjørendeVilkårskode()).
+        assertEquals(null, vurdering.avgjørendeVilkårskode)
     }
 
     @Test
