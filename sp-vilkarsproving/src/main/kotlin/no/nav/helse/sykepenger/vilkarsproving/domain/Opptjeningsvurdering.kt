@@ -32,8 +32,7 @@ internal sealed interface Opptjeningsvurdering {
                 skjæringstidspunkt = skjæringstidspunkt,
                 vilkårsvurderinger =
                     vilkårsvurderinger
-                        .filter { it.vilkårskode != vilkårsvurdering.vilkårskode }
-                        .map { it.videreført() } +
+                        .filter { it.vilkårskode != vilkårsvurdering.vilkårskode } +
                         vilkårsvurdering,
             )
 
@@ -104,15 +103,15 @@ internal sealed interface Opptjeningsvurdering {
             id: OpptjeningsvurderingId,
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
-            sti: List<Vilkårsvurdering>,
-        ) = VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, sti)
+            vilkårsvurderinger: List<Vilkårsvurdering>,
+        ) = VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, vilkårsvurderinger)
 
         fun overførtFraSpleis(
             id: OpptjeningsvurderingId,
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
-            sti: List<Vilkårsvurdering>,
-        ) = VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, sti)
+            vilkårsvurderinger: List<Vilkårsvurdering>,
+        ) = VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, vilkårsvurderinger)
 
         fun infotrygdFraLagring(
             id: OpptjeningsvurderingId,

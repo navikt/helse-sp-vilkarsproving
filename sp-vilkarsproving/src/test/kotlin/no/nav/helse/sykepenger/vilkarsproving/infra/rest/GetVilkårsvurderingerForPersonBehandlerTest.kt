@@ -248,13 +248,8 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             assertEquals(1, Regex("\"kildetype\"").findAll(response.bodyAsText()).count())
         }
 
-    /**
-     * Infotrygd-kravet har verken sti eller avgjørende vilkår. Feltene skal da være helt fraværende
-     * i json-en, ikke stå der som null eller tom liste — en konsument skal ikke måtte gjette om en
-     * tom sti betyr «overtatt fra Infotrygd» eller «noe er galt».
-     */
     @Test
-    fun `infotrygdkrav sendes uten sti og uten avgjoerende vilkår`() =
+    fun `infotrygdkrav sendes uten enkeltvurderinger og uten avgjørende vilkår`() =
         testApplication {
             val transaksjonProvider = InMemoryTransaksjonProvider()
             val vurdering =
@@ -279,7 +274,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
 
             assertEquals("OVERFOERT_FRA_INFOTRYGD", krav["kravkilde"].asString())
             assertEquals(true, krav["opptjeningOk"].asBoolean())
-            assertFalse(krav.has("vurderinger")) { "Infotrygd-kravet skal ikke ha en sti: $krav" }
+            assertFalse(krav.has("vurderinger")) { "Infotrygd-kravet skal ikke ha enkeltvurderinger: $krav" }
             assertFalse(krav.has("avgjørendeVilkårskode")) { "Vi kjenner ikke det avgjørende vilkåret: $krav" }
         }
 

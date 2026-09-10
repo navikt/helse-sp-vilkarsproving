@@ -18,7 +18,7 @@ internal fun SpleisOpptjeningsvurdering.tilOpptjeningsvurdering(fødselsnummer: 
                 id = opptjeningsvurderingId,
                 fødselsnummer = fødselsnummer,
                 skjæringstidspunkt = skjæringstidspunkt,
-                sti =
+                vilkårsvurderinger =
                     listOf(
                         Vilkårsvurdering.overførtFraSpleis(
                             vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
@@ -35,7 +35,7 @@ internal fun SpleisOpptjeningsvurdering.tilOpptjeningsvurdering(fødselsnummer: 
                 id = opptjeningsvurderingId,
                 fødselsnummer = fødselsnummer,
                 skjæringstidspunkt = skjæringstidspunkt,
-                sti =
+                vilkårsvurderinger =
                     listOf(
                         Vilkårsvurdering.overførtFraSpleis(
                             vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
@@ -46,9 +46,6 @@ internal fun SpleisOpptjeningsvurdering.tilOpptjeningsvurdering(fødselsnummer: 
                     ),
             )
 
-        // Infotrygd-krav har verken sti eller avgjørende vilkår i vår modell. Spleis overfører kun
-        // opptjeningsvurderinger som Infotrygd har innvilget, så vi kan trygt anta rett til
-        // sykepenger — jf. samme antakelse i OpptjeningsvurderingResultatRiver.
         is SpleisOpptjeningsvurdering.InfotrygdArbeidstaker ->
             Opptjeningsvurdering.fraInfotrygd(
                 id = opptjeningsvurderingId,

@@ -41,6 +41,8 @@ object Database {
 
     fun countVilkarsvurdering(dataSource: DataSource = this.dataSource) = countRows("vilkarsvurdering", dataSource)
 
+    fun countOpptjeningsvurderingVilkarsvurdering(dataSource: DataSource = this.dataSource) = countRows("opptjeningsvurdering_vilkarsvurdering", dataSource)
+
     private fun countRows(
         tabell: String,
         dataSource: DataSource,

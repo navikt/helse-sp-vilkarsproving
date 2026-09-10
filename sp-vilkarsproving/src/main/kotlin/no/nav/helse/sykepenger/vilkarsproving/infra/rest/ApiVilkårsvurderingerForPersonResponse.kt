@@ -42,7 +42,7 @@ internal sealed interface ApiOpptjeningsvurdering {
         init {
             require(vurderinger.isNotEmpty()) { "En kravvurdering gjort hos oss må ha minst én vilkårsvurdering" }
             require(vurderinger.any { it.vilkårskode == avgjørendeVilkårskode }) {
-                "Det avgjørende vilkåret $avgjørendeVilkårskode må finnes i stien"
+                "Det avgjørende vilkåret $avgjørendeVilkårskode må finnes blant vilkårsvurderingene"
             }
         }
     }

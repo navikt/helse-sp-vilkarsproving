@@ -75,7 +75,7 @@ internal class VurderingsresponsTest {
     }
 
     @Test
-    fun `unntaksvilkaar er en helt vanlig vilkaarsvurdering i stien`() {
+    fun `unntaksvilkår er en helt vanlig vilkårsvurdering`() {
         val vilkårsvurdering =
             Vilkårsvurdering.avSaksbehandler(
                 vilkårskode = Vilkårskode.OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP,
@@ -97,7 +97,7 @@ internal class VurderingsresponsTest {
     }
 
     @Test
-    fun `infotrygdvurdering blir et krav uten sti`() {
+    fun `infotrygdvurdering blir en opptjeningsvurdering uten enkeltvurderinger`() {
         val vurdering =
             Opptjeningsvurdering.fraInfotrygd(
                 fødselsnummer = "12345678901",

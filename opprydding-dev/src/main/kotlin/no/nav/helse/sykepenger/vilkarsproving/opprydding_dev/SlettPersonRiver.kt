@@ -11,6 +11,7 @@ import kotliquery.queryOf
 import kotliquery.sessionOf
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
+import java.util.UUID
 import javax.sql.DataSource
 
 internal class SlettPersonRiver(
@@ -46,31 +47,58 @@ internal class SlettPersonRiver(
         context.publish(fødselsnummer, lagPersonSlettet(fødselsnummer))
     }
 
-    // 🔴 Rekkefølgen er ikke tilfeldig: `vilkarsvurdering` har en fremmednøkkel til
-    // `opptjeningsvurdering`, så barnet må slettes før forelderen. `opptjeningsproving` har derimot
-    // ingen fremmednøkkel til `opptjeningsvurdering` (bevisst, jf. kommentarene i migreringene), så den
-    // kan slettes uavhengig av rekkefølgen på de to andre.
+    // 🔴 Rekkefølgen er ikke tilfeldig: `opptjeningsvurdering_vilkarsvurdering` har fremmednøkler til
+    // både `vilkarsvurdering` og `opptjeningsvurdering`, så koblingsradene må slettes før begge disse.
+    // En vilkarsvurdering-rad kan i praksis bare være koblet til opptjeningsvurderinger for samme
+    // person (den gjenbrukes aldri på tvers av personer), men vi henter likevel ut de koblede
+    // vilkarsvurdering-id-ene før koblingene slettes, og sjekker at ingen andre fortsatt peker på dem,
+    // i stedet for å anta eksklusivitet. `opptjeningsproving` har derimot ingen fremmednøkkel til
+    // `opptjeningsvurdering` (bevisst, jf. kommentarene i migreringene), så den kan slettes uavhengig av
+    // rekkefølgen på de tre andre.
     private fun slettPerson(
         tx: TransactionalSession,
         fødselsnummer: String,
     ) {
-        slettVilkarsvurdering(tx, fødselsnummer)
+        val vilkarsvurderingIder = slettKoblingerTilOpptjeningsvurdering(tx, fødselsnummer)
+        slettVilkarsvurdering(tx, vilkarsvurderingIder)
         slettOpptjeningsvurdering(tx, fødselsnummer)
         slettOpptjeningsproving(tx, fødselsnummer)
     }
 
-    private fun slettVilkarsvurdering(
+    private fun slettKoblingerTilOpptjeningsvurdering(
         tx: TransactionalSession,
         fødselsnummer: String,
-    ) {
+    ): List<UUID> {
         @Language("PostgreSQL")
         val query = """
-            DELETE FROM vilkarsvurdering
+            DELETE FROM opptjeningsvurdering_vilkarsvurdering
             WHERE opptjeningsvurdering_id IN (
                 SELECT id FROM opptjeningsvurdering WHERE fødselsnummer = :fnr
             )
+            RETURNING vilkarsvurdering_id
         """
-        tx.run(queryOf(query, mapOf("fnr" to fødselsnummer)).asUpdate)
+        return tx.run(queryOf(query, mapOf("fnr" to fødselsnummer)).map { it.uuid("vilkarsvurdering_id") }.asList)
+    }
+
+    private fun slettVilkarsvurdering(
+        tx: TransactionalSession,
+        vilkarsvurderingIder: List<UUID>,
+    ) {
+        if (vilkarsvurderingIder.isEmpty()) return
+        @Language("PostgreSQL")
+        val query = """
+            DELETE FROM vilkarsvurdering
+            WHERE id = ANY (:ider)
+            AND NOT EXISTS (
+                SELECT 1 FROM opptjeningsvurdering_vilkarsvurdering WHERE vilkarsvurdering_id = vilkarsvurdering.id
+            )
+        """
+        tx.run(
+            queryOf(
+                query,
+                mapOf("ider" to tx.createArrayOf("uuid", vilkarsvurderingIder)),
+            ).asUpdate,
+        )
     }
 
     private fun slettOpptjeningsvurdering(

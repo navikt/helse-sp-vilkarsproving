@@ -6,7 +6,6 @@ import no.nav.helse.til
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 internal class OpptjeningsvurderingTest {
@@ -111,7 +110,7 @@ internal class OpptjeningsvurderingTest {
     }
 
     @Test
-    fun `videreførte vilkårsvurderinger får nye id-er fordi de lagres som nye rader`() {
+    fun `videreførte vilkårsvurderinger beholder id-en sin fordi raden gjenbrukes`() {
         // when
         val tidligere =
             Vilkårsvurdering.avSaksbehandler(
@@ -142,13 +141,13 @@ internal class OpptjeningsvurderingTest {
             )
 
         val videreført = vurdering.vilkårsvurderinger.first()
-        assertNotEquals(tidligere.id, videreført.id)
+        assertEquals(tidligere.id, videreført.id)
         assertEquals(tidligere.kilde, videreført.kilde)
         assertEquals(tidligere.utfall, videreført.utfall)
     }
 
     @Test
-    fun `en infotrygdvurdering har ingen sti å videreføre`() {
+    fun `en infotrygdvurdering har ingen vilkårsvurderinger å videreføre`() {
         val forrige =
             Opptjeningsvurdering.fraInfotrygd(
                 fødselsnummer = FØDSELSNUMMER,

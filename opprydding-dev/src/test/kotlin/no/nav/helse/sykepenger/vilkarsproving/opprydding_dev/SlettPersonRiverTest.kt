@@ -40,12 +40,14 @@ internal class SlettPersonRiverTest {
         assertEquals(1, Database.countOpptjeningsproving())
         assertEquals(1, Database.countOpptjeningsvurdering())
         assertEquals(1, Database.countVilkarsvurdering())
+        assertEquals(1, Database.countOpptjeningsvurderingVilkarsvurdering())
 
         rapid.sendTestMessage(slettPersonMelding(fødselsnummer))
 
         assertEquals(0, Database.countOpptjeningsproving())
         assertEquals(0, Database.countOpptjeningsvurdering())
         assertEquals(0, Database.countVilkarsvurdering())
+        assertEquals(0, Database.countOpptjeningsvurderingVilkarsvurdering())
     }
 
     @Test
@@ -66,6 +68,7 @@ internal class SlettPersonRiverTest {
         assertEquals(1, Database.countOpptjeningsproving())
         assertEquals(1, Database.countOpptjeningsvurdering())
         assertEquals(1, Database.countVilkarsvurdering())
+        assertEquals(1, Database.countOpptjeningsvurderingVilkarsvurdering())
     }
 
     @Test
@@ -141,12 +144,23 @@ internal class SlettPersonRiverTest {
                 .prepareStatement(
                     """
                 INSERT INTO vilkarsvurdering
-                    (id, opptjeningsvurdering_id, vilkårskode, utfall, kilde)
-                VALUES (?, ?, 'FIREUKERSVILKAARET', 'OPPFYLT', '{}'::jsonb)
+                    (id, vilkårskode, utfall, kilde)
+                VALUES (?, 'FIREUKERSVILKAARET', 'OPPFYLT', '{}'::jsonb)
                 """,
                 ).use { stmt ->
                     stmt.setObject(1, id)
-                    stmt.setObject(2, opptjeningsvurderingId)
+                    stmt.executeUpdate()
+                }
+            conn
+                .prepareStatement(
+                    """
+                INSERT INTO opptjeningsvurdering_vilkarsvurdering
+                    (opptjeningsvurdering_id, vilkarsvurdering_id)
+                VALUES (?, ?)
+                """,
+                ).use { stmt ->
+                    stmt.setObject(1, opptjeningsvurderingId)
+                    stmt.setObject(2, id)
                     stmt.executeUpdate()
                 }
         }

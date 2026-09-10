@@ -51,10 +51,20 @@ internal class PostgresOpptjeningsvurderingRepository(
             ).asUpdate,
         )
 
+        // En videreført vilkårsvurdering gjenbruker samme id og finnes derfor allerede i tabellen —
+        // ON CONFLICT DO NOTHING gjør innsettingen idempotent uten å måtte skille på om leddet er nytt
+        // eller videreført. Innholdet kan uansett ikke ha endret seg: vilkårsvurderinger er immutable.
         @Language("PostgreSQL")
         val vilkårsvurderingSql = """
-            insert into vilkarsvurdering (id, opptjeningsvurdering_id, vilkårskode, utfall, vurdert_tidspunkt, kilde)
-            values (:id, :opptjeningsvurderingId, :vilkarskode, :utfall, :vurdertTidspunkt, cast(:kilde as jsonb))
+            insert into vilkarsvurdering (id, vilkårskode, utfall, vurdert_tidspunkt, kilde)
+            values (:id, :vilkarskode, :utfall, :vurdertTidspunkt, cast(:kilde as jsonb))
+            on conflict (id) do nothing
+        """
+
+        @Language("PostgreSQL")
+        val kobleTilStiSql = """
+            insert into opptjeningsvurdering_vilkarsvurdering (opptjeningsvurdering_id, vilkarsvurdering_id)
+            values (:opptjeningsvurderingId, :vilkarsvurderingId)
         """
         vurdering.vilkårsvurderinger.forEach { ledd ->
             session.run(
@@ -62,11 +72,20 @@ internal class PostgresOpptjeningsvurderingRepository(
                     vilkårsvurderingSql,
                     mapOf(
                         "id" to ledd.id.value,
-                        "opptjeningsvurderingId" to vurdering.id.value,
                         "vilkarskode" to ledd.vilkårskode.name,
                         "utfall" to ledd.utfall.name,
                         "vurdertTidspunkt" to ledd.vurdertTidspunkt,
                         "kilde" to Vurderingskildejson.tilJson(ledd.kilde),
+                    ),
+                ).asUpdate,
+            )
+
+            session.run(
+                queryOf(
+                    kobleTilStiSql,
+                    mapOf(
+                        "opptjeningsvurderingId" to vurdering.id.value,
+                        "vilkarsvurderingId" to ledd.id.value,
                     ),
                 ).asUpdate,
             )
@@ -143,17 +162,18 @@ internal class PostgresOpptjeningsvurderingRepository(
                     id = rad.id,
                     fødselsnummer = rad.fødselsnummer,
                     skjæringstidspunkt = rad.skjæringstidspunkt,
-                    sti = finnSti(rad.id),
+                    vilkårsvurderinger = finnVilkårsvurderingerFor(rad.id),
                 )
         }
 
-    private fun finnSti(opptjeningsvurderingId: OpptjeningsvurderingId): List<Vilkårsvurdering> {
+    private fun finnVilkårsvurderingerFor(opptjeningsvurderingId: OpptjeningsvurderingId): List<Vilkårsvurdering> {
         @Language("PostgreSQL")
         val sql = """
-            select id, vilkårskode, utfall, vurdert_tidspunkt, kilde
-            from vilkarsvurdering
-            where opptjeningsvurdering_id = :opptjeningsvurderingId
-            order by løpenummer
+            select v.id, v.vilkårskode, v.utfall, v.vurdert_tidspunkt, v.kilde
+            from opptjeningsvurdering_vilkarsvurdering ov
+            join vilkarsvurdering v on v.id = ov.vilkarsvurdering_id
+            where ov.opptjeningsvurdering_id = :opptjeningsvurderingId
+            order by ov.løpenummer
         """
         return session.run(
             queryOf(sql, mapOf("opptjeningsvurderingId" to opptjeningsvurderingId.value)).map(::tilVilkårsvurdering).asList,
