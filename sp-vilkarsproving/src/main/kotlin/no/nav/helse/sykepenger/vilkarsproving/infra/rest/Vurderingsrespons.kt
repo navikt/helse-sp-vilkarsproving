@@ -56,10 +56,6 @@ private fun Utfall.tilApi(): ApiUtfall =
 private fun Vilkårskode.tilApi(): ApiVilkårskode =
     when (this) {
         Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER -> ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER
-        Vilkårskode.OPPTJENING_LIKESTILT_YTELSE -> ApiVilkårskode.OPPTJENING_LIKESTILT_YTELSE
-        Vilkårskode.OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP ->
-            ApiVilkårskode.OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP
-        Vilkårskode.OPPTJENING_YRKESAKTIV_FØR_FORELDREPENGER -> ApiVilkårskode.OPPTJENING_YRKESAKTIV_FOER_FORELDREPENGER
     }
 
 private fun Vurderingskilde.tilApi(): ApiVurderingskilde =

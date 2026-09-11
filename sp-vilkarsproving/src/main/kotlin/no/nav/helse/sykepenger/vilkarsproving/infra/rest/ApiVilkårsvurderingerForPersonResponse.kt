@@ -79,12 +79,6 @@ internal enum class ApiKravkode {
 @Serializable
 internal enum class ApiVilkårskode {
     OPPTJENING_ARBEID_MINST_4_UKER,
-
-    OPPTJENING_LIKESTILT_YTELSE,
-
-    OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP,
-
-    OPPTJENING_YRKESAKTIV_FOER_FORELDREPENGER,
 }
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "kildetype", visible = true)

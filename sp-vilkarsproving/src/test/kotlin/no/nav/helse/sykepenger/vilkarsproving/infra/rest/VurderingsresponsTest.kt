@@ -55,7 +55,7 @@ internal class VurderingsresponsTest {
     fun `manuell vurdering har saksbehandler som kilde og ikke noe grunnlag`() {
         val vilkårsvurdering =
             Vilkårsvurdering.avSaksbehandler(
-                vilkårskode = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE,
+                vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                 utfall = Utfall.Oppfylt,
                 saksbehandlerIdent = "Z999999",
                 fritekstbegrunnelse = "Mottok foreldrepenger fram til skjæringstidspunktet.",
@@ -70,7 +70,7 @@ internal class VurderingsresponsTest {
         val api = Vurderingsrespons.fra(vurdering).enesteVurdering()
         val kilde = api.kilde as ApiVurderingskilde.Saksbehandler
 
-        assertEquals(ApiVilkårskode.OPPTJENING_LIKESTILT_YTELSE, api.vilkårskode)
+        assertEquals(ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, api.vilkårskode)
         assertEquals("Z999999", kilde.ident)
     }
 
@@ -78,7 +78,7 @@ internal class VurderingsresponsTest {
     fun `unntaksvilkår er en helt vanlig vilkårsvurdering`() {
         val vilkårsvurdering =
             Vilkårsvurdering.avSaksbehandler(
-                vilkårskode = Vilkårskode.OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP,
+                vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                 utfall = Utfall.IkkeOppfylt,
                 saksbehandlerIdent = "Z999999",
                 fritekstbegrunnelse = "Ingen AAP forut for foreldrepengeperioden.",
@@ -92,7 +92,7 @@ internal class VurderingsresponsTest {
 
         val api = Vurderingsrespons.fra(vurdering).enesteVurdering()
 
-        assertEquals(ApiVilkårskode.OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP, api.vilkårskode)
+        assertEquals(ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, api.vilkårskode)
         assertEquals(ApiUtfall.IKKE_OPPFYLT, api.utfall)
     }
 

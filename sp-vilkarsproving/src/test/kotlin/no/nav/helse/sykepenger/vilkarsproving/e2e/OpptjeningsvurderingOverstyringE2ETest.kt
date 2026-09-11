@@ -190,9 +190,9 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
             val overstyringsrequest = """
             {
               "skjæringstidspunkt": "2018-02-01",
-              "vilkårskode": "OPPTJENING_LIKESTILT_YTELSE",
+              "vilkårskode": "OPPTJENING_ARBEID_MINST_4_UKER",
               "utfall": "OPPFYLT",
-              "fritekstbegrunnelse": "Har hatt en likestilt ytelse rett før skjæringstidspunktet"
+              "fritekstbegrunnelse": "Mangelfulle opplysninger i registeret, har likevel tilstrekkelig opptjening"
             }
             """
             val postRespons =
@@ -209,19 +209,14 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
             // Den nye vurderingen skal vise helheten: den automatiske 4-ukers-vurderingen er med, overstyringen er avgjørende
             val getEtterOverstyring = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$nyId")
             assertEquals(HttpStatusCode.OK, getEtterOverstyring.status)
-            val nyttKrav = objectMapper.readTree(getEtterOverstyring.bodyAsText())["krav"].single()
-            assertTrue(nyttKrav["opptjeningOk"].asBoolean())
-            // Hovedregelen (OPPTJENING_ARBEID_MINST_4_UKER) er ikke oppfylt, og
-            // OPPTJENING_YRKESAKTIV_FØR_FORELDREPENGER er ikke blant vilkårsvurderingene, så
-            // avgjørendeVilkårskode()-regelen gir null selv om OPPTJENING_LIKESTILT_YTELSE er oppfylt
-            // (se Vilkårsvurdering.avgjørendeVilkårskode()).
-            assertTrue(nyttKrav["avgjørendeVilkårskode"].isNull)
+            val nyOpptjeningsvurdering = objectMapper.readTree(getEtterOverstyring.bodyAsText())["krav"].single()
+            assertTrue(nyOpptjeningsvurdering["opptjeningOk"].asBoolean())
+            assertEquals("OPPTJENING_ARBEID_MINST_4_UKER", nyOpptjeningsvurdering["avgjørendeVilkårskode"].asString())
             assertEquals(
-                listOf("OPPTJENING_ARBEID_MINST_4_UKER", "OPPTJENING_LIKESTILT_YTELSE"),
-                nyttKrav["vurderinger"].toList().map { it["vilkårskode"].asString() },
+                listOf("OPPTJENING_ARBEID_MINST_4_UKER"),
+                nyOpptjeningsvurdering["vurderinger"].toList().map { it["vilkårskode"].asString() },
             )
-            assertEquals("IKKE_OPPFYLT", nyttKrav["vurderinger"][0]["utfall"].asString())
-            assertEquals("OPPFYLT", nyttKrav["vurderinger"][1]["utfall"].asString())
+            assertEquals("OPPFYLT", nyOpptjeningsvurdering["vurderinger"][0]["utfall"].asString())
 
             // Overstyringen skal ha publisert et event til utregningsappen om den nye opptjeningsvurderingen
             assertEquals(4, rapid.inspektør.size)

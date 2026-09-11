@@ -85,10 +85,6 @@ internal class OverstyrVilkårsvurderingBehandler(
 private fun ApiVilkårskode.fraApi(): Vilkårskode =
     when (this) {
         ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER -> Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER
-        ApiVilkårskode.OPPTJENING_LIKESTILT_YTELSE -> Vilkårskode.OPPTJENING_LIKESTILT_YTELSE
-        ApiVilkårskode.OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP ->
-            Vilkårskode.OPPTJENING_UNNTAK_FORELDREPENGER_UTEN_FORUTGAAENDE_AAP
-        ApiVilkårskode.OPPTJENING_YRKESAKTIV_FOER_FORELDREPENGER -> Vilkårskode.OPPTJENING_YRKESAKTIV_FØR_FORELDREPENGER
     }
 
 private fun ApiUtfall.fraApi(): Utfall =

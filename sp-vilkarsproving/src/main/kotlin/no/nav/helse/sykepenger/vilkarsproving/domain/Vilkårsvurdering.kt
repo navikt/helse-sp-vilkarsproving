@@ -14,21 +14,9 @@ internal data class Vilkårsvurdering(
     companion object {
         fun List<Vilkårsvurdering>.finn(vilkårskode: Vilkårskode): Vilkårsvurdering? = this.find { it.vilkårskode == vilkårskode }
 
-        fun List<Vilkårsvurdering>.avgjørendeVilkårskode(): Vilkårskode? {
-            check(this.isNotEmpty()) { "Listen med vilkårsvurderinger kan ikke være tom" }
-            val hovedregel = this.finn(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER)
-            if (hovedregel != null) {
-                if (hovedregel.erOppfylt()) return hovedregel.vilkårskode
-
-                val likestiltYtelse = this.finn(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE)
-                if (likestiltYtelse != null && likestiltYtelse.erOppfylt()) {
-                    val ikkeAAPFørForeldrepenger = this.finn(Vilkårskode.OPPTJENING_YRKESAKTIV_FØR_FORELDREPENGER)
-                    if (ikkeAAPFørForeldrepenger != null) {
-                        return ikkeAAPFørForeldrepenger.vilkårskode
-                    }
-                }
-                return null
-            }
+        fun List<Vilkårsvurdering>.avgjørendeVilkårsvurdering(): Vilkårsvurdering? {
+            val hovedregel = this.finn(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER) ?: return null
+            if (hovedregel.erOppfylt()) return hovedregel
             return null
         }
 

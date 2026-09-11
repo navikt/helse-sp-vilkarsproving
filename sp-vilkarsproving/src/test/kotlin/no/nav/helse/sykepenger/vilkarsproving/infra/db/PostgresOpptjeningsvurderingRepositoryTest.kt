@@ -92,54 +92,6 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
     }
 
     @Test
-    fun `overstyring gjenbruker vilkarsvurdering-raden til videreførte ledd i stedet for å duplisere den`() {
-        val førsteVilkårsvurdering =
-            Vilkårsvurdering.avSaksbehandler(
-                vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
-                utfall = Utfall.IkkeOppfylt,
-                saksbehandlerIdent = "Z111111",
-                fritekstbegrunnelse = "for kort opptjening",
-            )
-        val førsteVurdering =
-            Opptjeningsvurdering.avSaksbehandler(
-                fødselsnummer = FØDSELSNUMMER,
-                skjæringstidspunkt = 1.februar,
-                vilkårsvurdering = førsteVilkårsvurdering,
-            )
-        transaksjon { it.opptjeningsvurderinger.lagre(førsteVurdering) }
-
-        val overstyrtVilkårsvurdering =
-            Vilkårsvurdering.avSaksbehandler(
-                vilkårskode = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE,
-                utfall = Utfall.Oppfylt,
-                saksbehandlerIdent = "Z999999",
-                fritekstbegrunnelse = "hadde dagpenger i forkant",
-            )
-        val andreVurdering =
-            Opptjeningsvurdering.avSaksbehandler(
-                fødselsnummer = FØDSELSNUMMER,
-                skjæringstidspunkt = 1.februar,
-                vilkårsvurdering = overstyrtVilkårsvurdering,
-                forrigeVurdering = førsteVurdering,
-            )
-        transaksjon { it.opptjeningsvurderinger.lagre(andreVurdering) }
-
-        val lagretAndreVurdering = transaksjon { it.opptjeningsvurderinger.finn(andreVurdering.id) } as Opptjeningsvurdering.VurdertISpeil
-        val videreførtLedd = lagretAndreVurdering.vilkårsvurderinger.first()
-
-        // Det videreførte leddet skal ha samme id som originalen — ikke en kopi.
-        assertEquals(førsteVilkårsvurdering.id, videreførtLedd.id)
-
-        // vilkarsvurdering-tabellen skal kun ha to rader totalt: den videreførte og den nye
-        // overstyringen — ikke en tredje kopirad.
-        assertEquals(2, Database.antallRader("vilkarsvurdering"))
-
-        // Lenketabellen skal derimot koble det videreførte leddet til begge opptjeningsvurderingene:
-        // én kobling fra første vurdering, og to koblinger (videreført + ny) fra andre vurdering.
-        assertEquals(3, Database.antallRader("opptjeningsvurdering_vilkarsvurdering"))
-    }
-
-    @Test
     fun `infotrygdvurdering lagres uten enkeltvurderinger`() {
         val vurdering =
             Opptjeningsvurdering.fraInfotrygd(

@@ -165,6 +165,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                     skjæringstidspunkt = rad.skjæringstidspunkt,
                     vilkårsvurderinger = finnVilkårsvurderingerFor(rad.id),
                     avgjørendeVilkårskode = rad.avgjørendeVilkårskode,
+                    erOk = rad.erOk,
                 )
         }
 
