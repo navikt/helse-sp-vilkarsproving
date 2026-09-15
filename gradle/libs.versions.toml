@@ -1,7 +1,7 @@
 [versions]
 flyway = "13.5.0"
 # Må følge Kotlin-versjonen som sas-kotlin-pluginen bruker
-kotlin = "2.4.10"
+kotlin = "2.4.20"
 ktor = "3.5.2"
 tbd-libs = "20260827.1253"
 rapidsAndRivers = "2026071513121784113927"
