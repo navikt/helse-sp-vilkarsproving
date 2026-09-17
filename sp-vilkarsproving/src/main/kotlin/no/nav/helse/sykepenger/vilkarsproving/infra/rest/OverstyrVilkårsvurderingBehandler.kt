@@ -1,6 +1,5 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
-import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
 import no.nav.helse.speil.backend.app.auth.Tilgang
 import no.nav.helse.speil.backend.app.person.PersonPseudoId
 import no.nav.helse.speil.backend.app.rest.KallKontekst
@@ -14,9 +13,8 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingOverstyrtMelding
 
-internal class OverstyrVilkårsvurderingBehandler(
-    private val meldingskontekst: () -> MessageContext,
-) : PostBehandler<
+internal class OverstyrVilkårsvurderingBehandler :
+    PostBehandler<
         ApiOverstyrVilkårsvurderingResource,
         ApiOverstyrVilkårsvurderingRequest,
         ApiOverstyrVilkårsvurderingResponse,
@@ -71,7 +69,7 @@ internal class OverstyrVilkårsvurderingBehandler(
             kallKontekst.transaksjon.opptjeningsvurderinger.lagre(kravvurdering)
 
             OpptjeningsvurderingOverstyrtMelding.publiser(
-                context = meldingskontekst(),
+                kontekst = kallKontekst.transaksjon,
                 fødselsnummer = identitetsnummer.value,
                 skjæringstidspunkt = kravvurdering.skjæringstidspunkt,
                 opptjeningsvurderingId = kravvurdering.id,

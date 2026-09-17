@@ -14,6 +14,7 @@ dependencies {
     implementation(libs.tbd.libs.access.token.provider.texas)
 
     implementation(libs.kotliquery)
+    implementation(libs.kotlinx.coroutines.core)
     implementation(project(":migreringer"))
     testImplementation(libs.rapids.and.rivers.test)
     testImplementation(libs.wiremock)

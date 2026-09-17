@@ -38,6 +38,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.db.DatabaseTest
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingResultatRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
+import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OutboxPubliseringsjobb
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.OverstyrVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
@@ -75,6 +76,8 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
                 },
             )
         }
+
+    private val outboxJobb = OutboxPubliseringsjobb(rapid, transaksjon)
 
     private val saksbehandler = Saksbehandler(NavIdent("Z999999"), SaksbehandlerOid("oid"), "Test Testesen")
     private val identitetsnummer = Identitetsnummer(FØDSELSNUMMER)
@@ -129,7 +132,7 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
                 ),
                 restAdapter,
             )
-            post(OverstyrVilkårsvurderingBehandler(meldingskontekst = { rapid }), restAdapter)
+            post(OverstyrVilkårsvurderingBehandler(), restAdapter)
         }
     }
 
@@ -203,6 +206,8 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
             assertEquals(HttpStatusCode.OK, postRespons.status)
             val nyId = objectMapper.readTree(postRespons.bodyAsText())["opptjeningsvurderingId"].asString()
             assertNotEquals(automatiskId, nyId) { "Overstyringen skal lage en ny opptjeningsvurdering, ikke skrive over den gamle" }
+
+            outboxJobb.kjørEnRunde()
 
             dump("etter 4")
 

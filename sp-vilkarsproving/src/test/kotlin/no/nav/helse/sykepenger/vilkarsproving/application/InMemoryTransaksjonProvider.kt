@@ -5,6 +5,7 @@ import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
 internal class InMemoryTransaksjonProvider(
     override val opptjeningsprøvinger: InMemoryOpptjeningsprøvingRepository = InMemoryOpptjeningsprøvingRepository(),
     override val opptjeningsvurderinger: InMemoryOpptjeningsvurderingRepository = InMemoryOpptjeningsvurderingRepository(),
+    override val outbox: InMemoryOutbox = InMemoryOutbox(),
 ) : TransaksjonProvider<Transaksjonskontekst>,
     Transaksjonskontekst {
     override fun <T> transaksjon(block: (Transaksjonskontekst) -> T): T = block(this)

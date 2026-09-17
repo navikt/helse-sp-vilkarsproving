@@ -2,10 +2,6 @@ package no.nav.helse.sykepenger.vilkarsproving.bootstrap
 
 import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
-import com.github.navikt.tbd_libs.rapids_and_rivers_api.FailedMessage
-import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
-import com.github.navikt.tbd_libs.rapids_and_rivers_api.OutgoingMessage
-import com.github.navikt.tbd_libs.rapids_and_rivers_api.SentMessage
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
@@ -51,7 +47,6 @@ fun main() {
                 endepunkter =
                     endepunkter(
                         spleisClient = TomSpleisClient(),
-                        meldingskontekst = { LoggendeMeldingskontekst },
                     ),
             )
         }
@@ -91,26 +86,6 @@ private fun Application.installerLokalAutentisering() {
 
 private class TomSpleisClient : ISpleisClient {
     override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> = emptyList()
-}
-
-private object LoggendeMeldingskontekst : MessageContext {
-    override fun publish(message: String) {
-        println("[LocalApp] publiserer melding: $message")
-    }
-
-    override fun publish(
-        key: String,
-        message: String,
-    ) {
-        println("[LocalApp] publiserer melding på nøkkel $key: $message")
-    }
-
-    override fun publish(messages: List<OutgoingMessage>): Pair<List<SentMessage>, List<FailedMessage>> {
-        messages.forEachIndexed { index, melding -> println("[LocalApp] publiserer melding $index: ${melding.body}") }
-        return emptyList<SentMessage>() to emptyList()
-    }
-
-    override fun rapidName() = "local"
 }
 
 private class TillatAltPopulasjonstilgangskontrollProvider : PopulasjonstilgangskontrollProvider {

@@ -1,7 +1,9 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.kafka
 
 import com.github.navikt.tbd_libs.rapids_and_rivers.JsonMessage
-import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
+import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMeldingId
+import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
+import no.nav.helse.sykepenger.vilkarsproving.application.UtgåendeLøsning
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import java.time.LocalDate
 
@@ -9,7 +11,7 @@ internal object OpptjeningsvurderingOverstyrtMelding {
     private const val EVENT_NAME = "endret_opptjeningsvurdering"
 
     fun publiser(
-        context: MessageContext,
+        kontekst: Transaksjonskontekst,
         fødselsnummer: String,
         skjæringstidspunkt: LocalDate,
         opptjeningsvurderingId: OpptjeningsvurderingId,
@@ -25,6 +27,12 @@ internal object OpptjeningsvurderingOverstyrtMelding {
                         "manuellVurdering" to true,
                     ),
             )
-        context.publish(fødselsnummer, melding.toJson())
+        kontekst.outbox.leggTil(
+            UtgåendeLøsning(
+                id = OutboxMeldingId.ny(),
+                meldingJson = melding.toJson(),
+                fødselsnummer = fødselsnummer,
+            ),
+        )
     }
 }
