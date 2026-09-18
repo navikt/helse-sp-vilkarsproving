@@ -1,6 +1,6 @@
 [versions]
 flyway = "13.5.0"
-kotlinx-coroutines = "1.10.2"
+kotlinx-coroutines = "1.11.0"
 # Må følge Kotlin-versjonen som sas-kotlin-pluginen bruker
 kotlin = "2.4.20"
 ktor = "3.5.2"
