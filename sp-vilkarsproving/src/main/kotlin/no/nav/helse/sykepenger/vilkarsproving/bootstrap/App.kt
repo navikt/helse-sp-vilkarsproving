@@ -30,8 +30,7 @@ fun main() {
         konfigurasjon = AppKonfigurasjon.fraEnv("sp-vilkarsproving"),
         brukerroller = TilgangsgrupperTilBrukerroller(emptyMap()),
         transaksjonProvider = ::PostgresTransaksjonProvider,
-        rivere = { dataSource ->
-            val transaksjonProvider = PostgresTransaksjonProvider(dataSource)
+        rivere = { transaksjonProvider ->
             GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(
                 rapidsConnection = this,
                 transaksjonProvider = transaksjonProvider,
