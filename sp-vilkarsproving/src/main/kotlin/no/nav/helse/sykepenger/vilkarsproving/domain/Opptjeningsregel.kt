@@ -62,8 +62,6 @@ internal data class OpptjeningsregelResultat(
     init {
         require(vilkårsutfall.isNotEmpty()) { "En regel må ha prøvd minst ett vilkår" }
     }
-
-    val utfall: Utfall get() = vilkårsutfall.last().utfall
 }
 
 internal data class Vilkårsutfall(

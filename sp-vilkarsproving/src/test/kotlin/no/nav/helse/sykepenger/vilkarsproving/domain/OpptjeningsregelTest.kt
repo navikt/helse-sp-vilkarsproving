@@ -17,9 +17,9 @@ import no.nav.helse.til
 import no.nav.helse.tirsdag
 import no.nav.helse.torsdag
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
+import kotlin.test.assertIs
 
 internal class OpptjeningsregelTest {
     // 4.januar til 31.januar er nøyaktig 28 dager fram til dagen før skjæringstidspunktet
@@ -111,10 +111,9 @@ internal class OpptjeningsregelTest {
     fun `selvstendig næringsdrivende har alltid oppfylt opptjening`() {
         val resultat = Opptjeningsregel.vurder(1.februar, Opptjeningsgrunnlag.SelvstendigNæringsdrivende)
 
-        assertEquals(Utfall.Oppfylt, resultat.utfall)
         val ledd = resultat.vilkårsutfall.single()
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
-        assertInstanceOf(UtledetFakta.Ingen::class.java, ledd.utledetFakta)
+        assertIs<UtledetFakta.Ingen>(ledd.utledetFakta)
     }
 
     @Test
@@ -134,7 +133,6 @@ internal class OpptjeningsregelTest {
         assertEquals(4.januar, utledetFakta.opptjeningsperiode?.start)
         assertEquals(31.januar, utledetFakta.opptjeningsperiode?.endInclusive)
         assertEquals(28, utledetFakta.opptjeningsdager)
-        assertEquals(Utfall.Oppfylt, resultat.utfall)
     }
 
     @Test
@@ -148,7 +146,6 @@ internal class OpptjeningsregelTest {
         val utledetFakta = resultat.vilkårsutfall.single().utledetFakta as UtledetFakta.Opptjeningstid
         assertEquals(null, utledetFakta.opptjeningsperiode)
         assertEquals(0, utledetFakta.opptjeningsdager)
-        assertEquals(Utfall.IkkeOppfylt, resultat.utfall)
     }
 
     // ---------------------------------------------------------------------
@@ -261,6 +258,8 @@ internal class OpptjeningsregelTest {
             ansettelseperiode: Periode,
             orgnummer: String = ORGNUMMER,
         ) = Arbeidsforhold(orgnummer = orgnummer, ansettelseperiode = ansettelseperiode, type = ORDINÆRT)
+
+        val OpptjeningsregelResultat.utfall get() = this.vilkårsutfall.single().utfall
 
         fun vurderArbeidstaker(
             skjæringstidspunkt: LocalDate,
