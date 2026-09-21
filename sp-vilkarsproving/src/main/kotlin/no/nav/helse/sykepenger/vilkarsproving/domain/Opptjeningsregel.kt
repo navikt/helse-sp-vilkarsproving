@@ -39,6 +39,7 @@ internal object Opptjeningsregel {
                     vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                     utfall = if (opptjeningsdager >= ANTALL_OPPTJENINGSDAGER_SOM_KREVES) Utfall.Oppfylt else Utfall.IkkeOppfylt,
                     utledetFakta = UtledetFakta.Opptjeningstid(opptjeningsperiode, opptjeningsdager),
+                    lovreferanse = Lovreferanse.`§ 8-2 første avsnitt, første setning`(),
                 ),
             ),
         )
@@ -51,6 +52,7 @@ internal object Opptjeningsregel {
                     vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                     utfall = Utfall.Oppfylt,
                     utledetFakta = UtledetFakta.Ingen,
+                    lovreferanse = Lovreferanse.`§ 8-2 første avsnitt, første setning`(),
                 ),
             ),
         )
@@ -68,4 +70,5 @@ internal data class Vilkårsutfall(
     val vilkårskode: Vilkårskode,
     val utfall: Utfall,
     val utledetFakta: UtledetFakta,
+    val lovreferanse: Lovreferanse,
 )

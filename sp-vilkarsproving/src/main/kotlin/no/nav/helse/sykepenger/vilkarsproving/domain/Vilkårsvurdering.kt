@@ -8,6 +8,7 @@ internal data class Vilkårsvurdering(
     val utfall: Utfall,
     val vurdertTidspunkt: Instant?,
     val kilde: Vurderingskilde,
+    val lovreferanse: Lovreferanse?,
 ) {
     private fun erOppfylt() = utfall == Utfall.Oppfylt
 
@@ -32,6 +33,7 @@ internal data class Vilkårsvurdering(
             utfall = vilkårsutfall.utfall,
             vurdertTidspunkt = vurdertTidspunkt,
             kilde = Vurderingskilde.Automatisk(opptjeningsprøvingId, grunnlag, vilkårsutfall.utledetFakta, versjonAvKildekode),
+            lovreferanse = vilkårsutfall.lovreferanse,
         )
 
         fun avSaksbehandler(
@@ -45,6 +47,7 @@ internal data class Vilkårsvurdering(
             utfall = utfall,
             vurdertTidspunkt = Instant.now(),
             kilde = Vurderingskilde.Saksbehandler(saksbehandlerIdent, fritekstbegrunnelse),
+            lovreferanse = null,
         )
 
         fun overførtFraSpleis(
@@ -59,6 +62,7 @@ internal data class Vilkårsvurdering(
             utfall = utfall,
             vurdertTidspunkt = vurdertTidspunkt,
             kilde = Vurderingskilde.OverførtFraSpleis(grunnlag, utledetFakta),
+            lovreferanse = null,
         )
 
         fun fraLagring(
@@ -67,6 +71,7 @@ internal data class Vilkårsvurdering(
             utfall: Utfall,
             vurdertTidspunkt: Instant?,
             kilde: Vurderingskilde,
-        ) = Vilkårsvurdering(id, vilkårskode, utfall, vurdertTidspunkt, kilde)
+            lovreferanse: Lovreferanse?,
+        ) = Vilkårsvurdering(id, vilkårskode, utfall, vurdertTidspunkt, kilde, lovreferanse)
     }
 }

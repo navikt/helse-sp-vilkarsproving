@@ -1,7 +1,9 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
+import no.nav.helse.desember
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
+import no.nav.helse.sykepenger.vilkarsproving.domain.Lovreferanse
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
@@ -26,7 +28,7 @@ internal class LagringsjsonTest {
                 """"versjonAvKildekode":"1"}""",
             Vurderingskildejson.tilJson(kilde),
         )
-        assertEquals(kilde, rundtur(kilde))
+        assertEquals(kilde, mapFremOgTilbake(kilde))
     }
 
     @Test
@@ -40,7 +42,7 @@ internal class LagringsjsonTest {
                 """"versjonAvKildekode":"1"}""",
             Vurderingskildejson.tilJson(kilde),
         )
-        assertEquals(kilde, rundtur(kilde))
+        assertEquals(kilde, mapFremOgTilbake(kilde))
     }
 
     @Test
@@ -55,7 +57,7 @@ internal class LagringsjsonTest {
                 """"versjonAvKildekode":"1"}""",
             Vurderingskildejson.tilJson(kilde),
         )
-        assertEquals(kilde, rundtur(kilde))
+        assertEquals(kilde, mapFremOgTilbake(kilde))
     }
 
     @Test
@@ -64,7 +66,7 @@ internal class LagringsjsonTest {
             val grunnlag =
                 arbeidstakergrunnlag(arbeidsforhold(ansattFom = 1.januar, ansattTom = 31.januar, type = type))
             val kilde = automatisk(grunnlag, UtledetFakta.Ingen)
-            assertEquals(kilde, rundtur(kilde))
+            assertEquals(kilde, mapFremOgTilbake(kilde))
         }
     }
 
@@ -77,7 +79,7 @@ internal class LagringsjsonTest {
             )
         val kilde = automatisk(grunnlag, UtledetFakta.Ingen)
 
-        assertEquals(kilde, rundtur(kilde))
+        assertEquals(kilde, mapFremOgTilbake(kilde))
     }
 
     @Test
@@ -85,7 +87,7 @@ internal class LagringsjsonTest {
         val grunnlag = arbeidstakergrunnlag(arbeidsforhold(ansattFom = 4.januar, ansattTom = 31.januar))
         val kilde = automatisk(grunnlag, UtledetFakta.Opptjeningstid(4.januar til 31.januar, 28))
 
-        val etterRundtur = rundtur(kilde) as Vurderingskilde.Automatisk
+        val etterRundtur = mapFremOgTilbake(kilde) as Vurderingskilde.Automatisk
         val utledetFakta = etterRundtur.utledetFakta as UtledetFakta.Opptjeningstid
         assertEquals(4.januar, utledetFakta.opptjeningsperiode?.start)
         assertEquals(31.januar, utledetFakta.opptjeningsperiode?.endInclusive)
@@ -100,7 +102,7 @@ internal class LagringsjsonTest {
             """{"type":"SAKSBEHANDLER","ident":"A123456","fritekstbegrunnelse":"vurdert etter dialog med bruker"}""",
             Vurderingskildejson.tilJson(kilde),
         )
-        assertEquals(kilde, rundtur(kilde))
+        assertEquals(kilde, mapFremOgTilbake(kilde))
     }
 
     @Test
@@ -114,7 +116,7 @@ internal class LagringsjsonTest {
                 """"utledet":{"type":"INGEN_UTLEDNING"}}""",
             Vurderingskildejson.tilJson(kilde),
         )
-        assertEquals(kilde, rundtur(kilde))
+        assertEquals(kilde, mapFremOgTilbake(kilde))
     }
 
     @Test
@@ -138,10 +140,37 @@ internal class LagringsjsonTest {
     fun `ukjent felt i lagret json ignoreres`() {
         val json = """{"type":"SAKSBEHANDLER","ident":"A123456","fritekstbegrunnelse":"","vurdertAv":"noe vi ikke kjenner"}"""
 
+        assertEquals(Vurderingskilde.Saksbehandler(ident = "A123456", fritekstbegrunnelse = ""), Vurderingskildejson.fraJson(json))
+    }
+
+    @Test
+    fun `lovreferanse med alle felt satt lagres på riktig format`() {
+        val lovreferanse = Lovreferanse.`§ 8-2 første avsnitt, første setning`()
+
         assertEquals(
-            Vurderingskilde.Saksbehandler(ident = "A123456", fritekstbegrunnelse = ""),
-            Vurderingskildejson.fraJson(json),
+            """{"lov":"folketrygdloven","paragraf":"8-2","avsnitt":1,"setning":1,"bokstav":null,"iKraftFra":"2025-12-22"}""",
+            Lovreferansejson.tilJson(lovreferanse),
         )
+        assertEquals(lovreferanse, mapFremOgTilbake(lovreferanse))
+    }
+
+    @Test
+    fun `lovreferanse med nullable felt satt til null blir riktig mappet tilbake`() {
+        val lovreferanse =
+            Lovreferanse(
+                lov = "folketrygdloven",
+                paragraf = "8-2",
+                avsnitt = null,
+                setning = null,
+                bokstav = null,
+                iKraftFra = 22.desember(2025),
+            )
+
+        assertEquals(
+            """{"lov":"folketrygdloven","paragraf":"8-2","avsnitt":null,"setning":null,"bokstav":null,"iKraftFra":"2025-12-22"}""",
+            Lovreferansejson.tilJson(lovreferanse),
+        )
+        assertEquals(lovreferanse, mapFremOgTilbake(lovreferanse))
     }
 
     private fun automatisk(
@@ -149,7 +178,9 @@ internal class LagringsjsonTest {
         utledetFakta: UtledetFakta,
     ) = Vurderingskilde.Automatisk(PRØVING_ID, grunnlag, utledetFakta, versjonAvKildekode = "1")
 
-    private fun rundtur(kilde: Vurderingskilde) = Vurderingskildejson.fraJson(Vurderingskildejson.tilJson(kilde))
+    private fun mapFremOgTilbake(kilde: Vurderingskilde) = Vurderingskildejson.fraJson(Vurderingskildejson.tilJson(kilde))
+
+    private fun mapFremOgTilbake(lovreferanse: Lovreferanse) = Lovreferansejson.fraJson(Lovreferansejson.tilJson(lovreferanse))
 
     private companion object {
         val PRØVING_ID = OpptjeningsprøvingId(UUID.fromString("00000000-0000-0000-0000-000000000001"))

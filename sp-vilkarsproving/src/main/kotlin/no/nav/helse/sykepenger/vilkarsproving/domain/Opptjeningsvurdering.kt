@@ -91,8 +91,8 @@ internal sealed interface Opptjeningsvurdering {
             val regel = grunnlag.regel
             val resultat = regel.vurder(skjæringstidspunkt, grunnlag)
             val vilkårsvurderinger =
-                resultat.vilkårsutfall.map { ledd ->
-                    Vilkårsvurdering.automatisk(opptjeningsprøvingId, ledd, grunnlag, regel.versjon, Instant.now())
+                resultat.vilkårsutfall.map { utfall ->
+                    Vilkårsvurdering.automatisk(opptjeningsprøvingId, utfall, grunnlag, regel.versjon, Instant.now())
                 }
             val avgjørendeVilkårsvurdering = vilkårsvurderinger.avgjørendeVilkårsvurdering()
             return VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, vilkårsvurderinger, avgjørendeVilkårsvurdering?.vilkårskode, avgjørendeVilkårsvurdering?.utfall == Utfall.Oppfylt)

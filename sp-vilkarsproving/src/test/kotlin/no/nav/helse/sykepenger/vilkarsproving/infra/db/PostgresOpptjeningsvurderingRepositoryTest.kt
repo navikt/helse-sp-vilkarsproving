@@ -4,6 +4,7 @@ import no.nav.helse.februar
 import no.nav.helse.januar
 import no.nav.helse.mars
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
+import no.nav.helse.sykepenger.vilkarsproving.domain.Lovreferanse
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
@@ -40,15 +41,16 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         assertEquals(vurdering.erOk, lagret.erOk)
         assertEquals(vurdering.avgjørendeVilkårskode, lagret.avgjørendeVilkårskode)
 
-        val ledd = lagret.vilkårsvurderinger.single()
-        val kilde = ledd.kilde as Vurderingskilde.Automatisk
+        val vilkårsvurdering = lagret.vilkårsvurderinger.single()
+        val kilde = vilkårsvurdering.kilde as Vurderingskilde.Automatisk
         assertEquals(grunnlag, kilde.grunnlag)
+        assertEquals(Lovreferanse.`§ 8-2 første avsnitt, første setning`(), vilkårsvurdering.lovreferanse)
         assertEquals(
             vurdering.vilkårsvurderinger
                 .single()
                 .vurdertTidspunkt!!
                 .truncatedTo(ChronoUnit.MILLIS),
-            ledd.vurdertTidspunkt!!.truncatedTo(ChronoUnit.MILLIS),
+            vilkårsvurdering.vurdertTidspunkt!!.truncatedTo(ChronoUnit.MILLIS),
         )
     }
 
@@ -57,10 +59,12 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         val vurdering = lagreVurdering(Opptjeningsgrunnlag.SelvstendigNæringsdrivende)
 
         val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.VurdertISpeil
-        val kilde = lagret.vilkårsvurderinger.single().kilde as Vurderingskilde.Automatisk
+        val vilkårsvurdering = lagret.vilkårsvurderinger.single()
+        val kilde = vilkårsvurdering.kilde as Vurderingskilde.Automatisk
 
         assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, kilde.grunnlag)
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, lagret.avgjørendeVilkårskode)
+        assertEquals(Lovreferanse.`§ 8-2 første avsnitt, første setning`(), vilkårsvurdering.lovreferanse)
     }
 
     @Test
@@ -81,10 +85,13 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         transaksjon { it.opptjeningsvurderinger.lagre(vurdering) }
 
         val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.VurdertISpeil
-        val kilde = lagret.vilkårsvurderinger.single().kilde
+        val lagretVilkårsvurdering = lagret.vilkårsvurderinger.single()
+        val kilde = lagretVilkårsvurdering.kilde
 
         assertInstanceOf(Vurderingskilde.Saksbehandler::class.java, kilde)
         assertEquals("A123456", (kilde as Vurderingskilde.Saksbehandler).ident)
+        assertNull(vilkårsvurdering.lovreferanse)
+        assertNull(lagretVilkårsvurdering.lovreferanse)
         // Hovedregelen alene er ikke oppfylt, og det finnes ingen unntaksvilkår i denne vurderingen, så
         // avgjørendeVilkårskode()-regelen gir null (se Vilkårsvurdering.avgjørendeVilkårskode()).
         assertNull(lagret.avgjørendeVilkårskode)

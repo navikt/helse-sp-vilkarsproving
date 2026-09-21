@@ -82,7 +82,7 @@ internal class OpptjeningsvurderingTest {
 
     @Test
     fun `vurdertTidspunkt kan være null`() {
-        val ledd =
+        val vilkårsvurdering =
             Vilkårsvurdering.overførtFraSpleis(
                 vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                 utfall = Utfall.Oppfylt,
@@ -101,7 +101,7 @@ internal class OpptjeningsvurderingTest {
                     ),
             )
 
-        assertEquals(null, ledd.vurdertTidspunkt)
+        assertEquals(null, vilkårsvurdering.vurdertTidspunkt)
     }
 
     private companion object {

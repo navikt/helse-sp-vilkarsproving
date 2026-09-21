@@ -1,32 +1,16 @@
 package no.nav.helse.sykepenger.vilkarsproving.application
 
-import no.nav.helse.Periode
-import no.nav.helse.februar
-import no.nav.helse.januar
-import no.nav.helse.mars
+import no.nav.helse.*
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService.BehandleGrunnlagResultat
 import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResultat.HarVurdering
 import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResultat.TrengerArbeidsforhold
-import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
+import no.nav.helse.sykepenger.vilkarsproving.domain.*
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT
-import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
-import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
-import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
-import no.nav.helse.til
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertInstanceOf
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.LocalDate
+import kotlin.test.assertIs
 
 internal class OpptjeningServiceTest {
     private val transaksjon = InMemoryTransaksjonProvider()
@@ -57,10 +41,10 @@ internal class OpptjeningServiceTest {
         assertEquals(1.februar, harVurdering.skjæringstidspunkt)
 
         val vurdering = vurderinger.finn(harVurdering.opptjeningsvurderingId) as Opptjeningsvurdering.VurdertISpeil
-        val ledd = vurdering.vilkårsvurderinger.single()
-        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
-        assertEquals(Utfall.Oppfylt, ledd.utfall)
-        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (ledd.kilde as Vurderingskilde.Automatisk).grunnlag)
+        val vilkårsvurdering = vurdering.vilkårsvurderinger.single()
+        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, vilkårsvurdering.vilkårskode)
+        assertEquals(Utfall.Oppfylt, vilkårsvurdering.utfall)
+        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (vilkårsvurdering.kilde as Vurderingskilde.Automatisk).grunnlag)
         assertTrue(prøvinger.allePrøvinger.single().erAvsluttet)
     }
 
@@ -143,11 +127,11 @@ internal class OpptjeningServiceTest {
         assertEquals(Opptjeningsprøving.Tilstand.Fullført(nyVurdering.opptjeningsvurderingId), prøving.tilstand)
 
         val vurdering = vurderinger.finn(nyVurdering.opptjeningsvurderingId) as Opptjeningsvurdering.VurdertISpeil
-        val ledd = vurdering.vilkårsvurderinger.single()
-        val kilde = ledd.kilde as Vurderingskilde.Automatisk
+        val vilkårsvurdering = vurdering.vilkårsvurderinger.single()
+        val kilde = vilkårsvurdering.kilde as Vurderingskilde.Automatisk
         assertEquals(prøving.id, kilde.opptjeningsprøvingId)
-        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
-        assertEquals(Utfall.Oppfylt, ledd.utfall)
+        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, vilkårsvurdering.vilkårskode)
+        assertEquals(Utfall.Oppfylt, vilkårsvurdering.utfall)
         assertEquals(arbeidsforhold, (kilde.grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold)
     }
 
@@ -161,9 +145,9 @@ internal class OpptjeningServiceTest {
             skjæringstidspunkt = 1.februar,
         )
 
-        val ledd = (vurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpeil).vilkårsvurderinger.single()
-        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
-        assertEquals(Utfall.IkkeOppfylt, ledd.utfall)
+        val vilkårsvurdering = (vurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpeil).vilkårsvurderinger.single()
+        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, vilkårsvurdering.vilkårskode)
+        assertEquals(Utfall.IkkeOppfylt, vilkårsvurdering.utfall)
     }
 
     @Test
@@ -177,10 +161,10 @@ internal class OpptjeningServiceTest {
                 skjæringstidspunkt = 1.februar,
             )
 
-        assertInstanceOf(BehandleGrunnlagResultat.NyVurderingForetatt::class.java, resultat)
+        assertIs<BehandleGrunnlagResultat.NyVurderingForetatt>(resultat)
         assertTrue(prøvinger.allePrøvinger.single().erAvsluttet)
-        val ledd = (vurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpeil).vilkårsvurderinger.single()
-        assertEquals(Utfall.IkkeOppfylt, ledd.utfall)
+        val vilkårsvurdering = (vurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpeil).vilkårsvurderinger.single()
+        assertEquals(Utfall.IkkeOppfylt, vilkårsvurdering.utfall)
     }
 
     @Test

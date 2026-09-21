@@ -38,5 +38,6 @@ internal class VilkårsvurderingTest {
                 utledetFakta = UtledetFakta.Opptjeningstid(Periode(1.januar, 31.januar), 30),
                 versjonAvKildekode = "En versjon",
             ),
+        lovreferanse = Lovreferanse.`§ 8-2 første avsnitt, første setning`(),
     )
 }

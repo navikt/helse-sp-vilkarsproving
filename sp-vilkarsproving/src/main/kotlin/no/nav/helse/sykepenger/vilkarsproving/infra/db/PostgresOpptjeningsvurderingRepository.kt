@@ -32,7 +32,7 @@ internal class PostgresOpptjeningsvurderingRepository(
         }
     }
 
-    private fun lagreVurdertISpeil(vurdering: Opptjeningsvurdering.VurdertISpeil) {
+    private fun lagreVurdertISpeil(totalvurdering: Opptjeningsvurdering.VurdertISpeil) {
         @Language("PostgreSQL")
         val opptjeningsvurderingSql = """
             insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok, avgjørende_vilkårskode)
@@ -42,58 +42,59 @@ internal class PostgresOpptjeningsvurderingRepository(
             queryOf(
                 opptjeningsvurderingSql,
                 mapOf(
-                    "id" to vurdering.id.value,
-                    "fodselsnummer" to vurdering.fødselsnummer,
-                    "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
+                    "id" to totalvurdering.id.value,
+                    "fodselsnummer" to totalvurdering.fødselsnummer,
+                    "skjaeringstidspunkt" to totalvurdering.skjæringstidspunkt,
                     "vurderingskilde" to VURDERINGSKILDE_VURDERT_I_SPEIL,
-                    "opptjening_ok" to vurdering.erOk,
-                    "avgjorendeVilkarskode" to vurdering.avgjørendeVilkårskode?.name,
+                    "opptjening_ok" to totalvurdering.erOk,
+                    "avgjorendeVilkarskode" to totalvurdering.avgjørendeVilkårskode?.name,
                 ),
             ).asUpdate,
         )
 
         // En videreført vilkårsvurdering gjenbruker samme id og finnes derfor allerede i tabellen —
-        // ON CONFLICT DO NOTHING gjør innsettingen idempotent uten å måtte skille på om leddet er nytt
+        // ON CONFLICT DO NOTHING gjør innsettingen idempotent uten å måtte skille på om vurderingen er ny
         // eller videreført. Innholdet kan uansett ikke ha endret seg: vilkårsvurderinger er immutable.
         @Language("PostgreSQL")
         val vilkårsvurderingSql = """
-            insert into vilkarsvurdering (id, vilkårskode, utfall, vurdert_tidspunkt, kilde)
-            values (:id, :vilkarskode, :utfall, :vurdertTidspunkt, cast(:kilde as jsonb))
+            insert into vilkarsvurdering (id, vilkårskode, utfall, vurdert_tidspunkt, kilde, lovreferanse)
+            values (:id, :vilkarskode, :utfall, :vurdertTidspunkt, cast(:kilde as jsonb), cast(:lovreferanse as jsonb))
             on conflict (id) do nothing
         """
 
         @Language("PostgreSQL")
-        val kobleTilStiSql = """
+        val lagKoblingSql = """
             insert into opptjeningsvurdering_vilkarsvurdering (opptjeningsvurdering_id, vilkarsvurdering_id)
             values (:opptjeningsvurderingId, :vilkarsvurderingId)
         """
-        vurdering.vilkårsvurderinger.forEach { ledd ->
+        totalvurdering.vilkårsvurderinger.forEach { enkeltvurdering ->
             session.run(
                 queryOf(
                     vilkårsvurderingSql,
                     mapOf(
-                        "id" to ledd.id.value,
-                        "vilkarskode" to ledd.vilkårskode.name,
-                        "utfall" to ledd.utfall.name,
-                        "vurdertTidspunkt" to ledd.vurdertTidspunkt,
-                        "kilde" to Vurderingskildejson.tilJson(ledd.kilde),
+                        "id" to enkeltvurdering.id.value,
+                        "vilkarskode" to enkeltvurdering.vilkårskode.name,
+                        "utfall" to enkeltvurdering.utfall.name,
+                        "vurdertTidspunkt" to enkeltvurdering.vurdertTidspunkt,
+                        "kilde" to Vurderingskildejson.tilJson(enkeltvurdering.kilde),
+                        "lovreferanse" to enkeltvurdering.lovreferanse?.let { Lovreferansejson.tilJson(it) },
                     ),
                 ).asUpdate,
             )
 
             session.run(
                 queryOf(
-                    kobleTilStiSql,
+                    lagKoblingSql,
                     mapOf(
-                        "opptjeningsvurderingId" to vurdering.id.value,
-                        "vilkarsvurderingId" to ledd.id.value,
+                        "opptjeningsvurderingId" to totalvurdering.id.value,
+                        "vilkarsvurderingId" to enkeltvurdering.id.value,
                     ),
                 ).asUpdate,
             )
         }
     }
 
-    private fun lagreInfotrygd(vurdering: Opptjeningsvurdering.OverførtFraInfotrygd) {
+    private fun lagreInfotrygd(totalvurdering: Opptjeningsvurdering.OverførtFraInfotrygd) {
         @Language("PostgreSQL")
         val sql = """
             insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok)
@@ -103,11 +104,11 @@ internal class PostgresOpptjeningsvurderingRepository(
             queryOf(
                 sql,
                 mapOf(
-                    "id" to vurdering.id.value,
-                    "fodselsnummer" to vurdering.fødselsnummer,
-                    "skjaeringstidspunkt" to vurdering.skjæringstidspunkt,
+                    "id" to totalvurdering.id.value,
+                    "fodselsnummer" to totalvurdering.fødselsnummer,
+                    "skjaeringstidspunkt" to totalvurdering.skjæringstidspunkt,
                     "vurderingskilde" to VURDERINGSKILDE_OVERFOERT_FRA_INFOTRYGD,
-                    "opptjening_ok" to vurdering.erOk,
+                    "opptjening_ok" to totalvurdering.erOk,
                 ),
             ).asUpdate,
         )
@@ -172,7 +173,7 @@ internal class PostgresOpptjeningsvurderingRepository(
     private fun finnVilkårsvurderingerFor(opptjeningsvurderingId: OpptjeningsvurderingId): List<Vilkårsvurdering> {
         @Language("PostgreSQL")
         val sql = """
-            select v.id, v.vilkårskode, v.utfall, v.vurdert_tidspunkt, v.kilde
+            select v.id, v.vilkårskode, v.utfall, v.vurdert_tidspunkt, v.kilde, v.lovreferanse
             from opptjeningsvurdering_vilkarsvurdering ov
             join vilkarsvurdering v on v.id = ov.vilkarsvurdering_id
             where ov.opptjeningsvurdering_id = :opptjeningsvurderingId
@@ -190,6 +191,7 @@ internal class PostgresOpptjeningsvurderingRepository(
             utfall = Utfall.valueOf(row.string("utfall")),
             vurdertTidspunkt = row.instantOrNull("vurdert_tidspunkt"),
             kilde = Vurderingskildejson.fraJson(row.string("kilde")),
+            lovreferanse = row.stringOrNull("lovreferanse")?.let { Lovreferansejson.fraJson(it) },
         )
 
     private fun tilOpptjeningsvurderingRad(row: Row) =

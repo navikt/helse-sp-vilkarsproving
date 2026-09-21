@@ -2,6 +2,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
 import no.nav.helse.Periode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
+import no.nav.helse.sykepenger.vilkarsproving.domain.Lovreferanse
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
@@ -21,6 +22,32 @@ internal object Vurderingskildejson {
 
     fun fraJson(json: String): Vurderingskilde = objectMapper.readValue<VurderingskildeDto>(json).tilVurderingskilde()
 }
+
+internal object Lovreferansejson {
+    fun tilJson(lovreferanse: Lovreferanse): String = objectMapper.writeValueAsString(lovreferanse.tilDto())
+
+    fun fraJson(json: String): Lovreferanse = objectMapper.readValue<LovreferanseDto>(json).tilLovreferanse()
+}
+
+private fun LovreferanseDto.tilLovreferanse(): Lovreferanse =
+    Lovreferanse(
+        lov = this.lov,
+        paragraf = this.paragraf,
+        avsnitt = this.avsnitt,
+        setning = this.setning,
+        bokstav = this.bokstav,
+        iKraftFra = this.iKraftFra,
+    )
+
+private fun Lovreferanse.tilDto(): LovreferanseDto =
+    LovreferanseDto(
+        lov = lov,
+        paragraf = paragraf,
+        avsnitt = avsnitt,
+        setning = setning,
+        bokstav = bokstav,
+        iKraftFra = iKraftFra,
+    )
 
 private fun Vurderingskilde.tilDto(): VurderingskildeDto =
     when (this) {

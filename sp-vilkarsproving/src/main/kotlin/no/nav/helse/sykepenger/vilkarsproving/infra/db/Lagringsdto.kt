@@ -71,3 +71,12 @@ internal sealed interface VurderingskildeDto {
         val utledet: UtledetDto,
     ) : VurderingskildeDto
 }
+
+internal data class LovreferanseDto(
+    val lov: String,
+    val paragraf: String,
+    val avsnitt: Int?,
+    val setning: Int?,
+    val bokstav: String?,
+    val iKraftFra: LocalDate,
+)

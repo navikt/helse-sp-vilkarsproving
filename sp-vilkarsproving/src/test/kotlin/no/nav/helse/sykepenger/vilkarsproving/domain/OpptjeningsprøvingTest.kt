@@ -32,8 +32,8 @@ internal class OpptjeningsprøvingTest {
         assertTrue(prøving.erAvsluttet)
         assertNull(prøving.uteståendeBehov)
         assertEquals(Opptjeningsprøving.Tilstand.Fullført(vurdering!!.id), prøving.tilstand)
-        val ledd = vurdering.vilkårsvurderinger.single()
-        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (ledd.kilde as Vurderingskilde.Automatisk).grunnlag)
+        val vilkårsvurdering = vurdering.vilkårsvurderinger.single()
+        assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (vilkårsvurdering.kilde as Vurderingskilde.Automatisk).grunnlag)
     }
 
     // Vurderingen peker tilbake på prøvingen som produserte den
@@ -47,13 +47,13 @@ internal class OpptjeningsprøvingTest {
         assertEquals(FØDSELSNUMMER, vurdering.fødselsnummer)
         assertEquals(1.februar, vurdering.skjæringstidspunkt)
 
-        val ledd = vurdering.vilkårsvurderinger.single()
-        val kilde = ledd.kilde as Vurderingskilde.Automatisk
+        val vilkårsvurdering = vurdering.vilkårsvurderinger.single()
+        val kilde = vilkårsvurdering.kilde as Vurderingskilde.Automatisk
         assertEquals(prøving.id, kilde.opptjeningsprøvingId)
         assertEquals(Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold), kilde.grunnlag)
         assertEquals(Opptjeningsregel.versjon, kilde.versjonAvKildekode)
-        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
-        assertEquals(Utfall.Oppfylt, ledd.utfall)
+        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, vilkårsvurdering.vilkårskode)
+        assertEquals(Utfall.Oppfylt, vilkårsvurdering.utfall)
     }
 
     // Prøvingen går til Fullført samtidig som vurderingen blir til – de to kan ikke komme i utakt

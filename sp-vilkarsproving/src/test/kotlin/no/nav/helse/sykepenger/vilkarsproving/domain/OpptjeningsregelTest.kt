@@ -111,9 +111,9 @@ internal class OpptjeningsregelTest {
     fun `selvstendig næringsdrivende har alltid oppfylt opptjening`() {
         val resultat = Opptjeningsregel.vurder(1.februar, Opptjeningsgrunnlag.SelvstendigNæringsdrivende)
 
-        val ledd = resultat.vilkårsutfall.single()
-        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ledd.vilkårskode)
-        assertIs<UtledetFakta.Ingen>(ledd.utledetFakta)
+        val vilkårsutfall = resultat.vilkårsutfall.single()
+        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, vilkårsutfall.vilkårskode)
+        assertIs<UtledetFakta.Ingen>(vilkårsutfall.utledetFakta)
     }
 
     @Test
