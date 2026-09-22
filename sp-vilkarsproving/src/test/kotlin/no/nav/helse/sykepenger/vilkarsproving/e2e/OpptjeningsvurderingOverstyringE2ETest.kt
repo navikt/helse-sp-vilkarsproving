@@ -40,7 +40,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRe
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OutboxPubliseringsjobb
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.OverstyrVilkårsvurderingBehandler
+import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostOverstyrVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import org.intellij.lang.annotations.Language
@@ -132,7 +132,7 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
                 ),
                 restAdapter,
             )
-            post(OverstyrVilkårsvurderingBehandler(), restAdapter)
+            post(PostOverstyrVilkårsvurderingBehandler(), restAdapter)
         }
     }
 

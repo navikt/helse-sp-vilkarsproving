@@ -13,7 +13,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingOverstyrtMelding
 
-internal class OverstyrVilkårsvurderingBehandler :
+internal class PostOverstyrVilkårsvurderingBehandler :
     PostBehandler<
         ApiOverstyrVilkårsvurderingResource,
         ApiOverstyrVilkårsvurderingRequest,
