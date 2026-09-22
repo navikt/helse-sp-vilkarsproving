@@ -5,13 +5,14 @@ import no.nav.helse.speil.backend.app.person.PersonPseudoId
 import no.nav.helse.speil.backend.app.rest.KallKontekst
 import no.nav.helse.speil.backend.app.rest.PostBehandler
 import no.nav.helse.speil.backend.app.rest.RestResponse
+import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvolutt
+import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingOverstyrtMelding
 
 internal class PostOverstyrVilkårsvurderingBehandler :
     PostBehandler<
@@ -68,11 +69,16 @@ internal class PostOverstyrVilkårsvurderingBehandler :
 
             kallKontekst.transaksjon.opptjeningsvurderinger.lagre(kravvurdering)
 
-            OpptjeningsvurderingOverstyrtMelding.publiser(
-                kontekst = kallKontekst.transaksjon,
-                fødselsnummer = identitetsnummer.value,
-                skjæringstidspunkt = kravvurdering.skjæringstidspunkt,
-                opptjeningsvurderingId = kravvurdering.id,
+            kallKontekst.transaksjon.outbox.leggTil(
+                OutboxKonvolutt.ny(
+                    melding =
+                        OutboxMelding.OpptjeningsvurderingOverstyrt(
+                            skjæringstidspunkt = request.skjæringstidspunkt,
+                            opptjeningsvurderingId = kravvurdering.id.value,
+                            manuellVurdering = true,
+                        ),
+                    identitetsnummer = identitetsnummer,
+                ),
             )
 
             RestResponse.ok(ApiOverstyrVilkårsvurderingResponse(opptjeningsvurderingId = kravvurdering.id.value))

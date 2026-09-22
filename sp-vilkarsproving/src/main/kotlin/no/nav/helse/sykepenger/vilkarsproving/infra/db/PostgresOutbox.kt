@@ -1,17 +1,60 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import kotliquery.Row
 import kotliquery.Session
 import kotliquery.queryOf
+import no.nav.helse.speil.backend.app.person.Identitetsnummer
 import no.nav.helse.sykepenger.vilkarsproving.application.Outbox
-import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMeldingId
-import no.nav.helse.sykepenger.vilkarsproving.application.UtgåendeLøsning
+import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvolutt
+import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvoluttId
+import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
 import org.intellij.lang.annotations.Language
+import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.readValue
+import java.time.Instant
+import java.time.LocalDate
+import java.util.UUID
+
+private val objectMapper = jacksonObjectMapper()
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes(
+    JsonSubTypes.Type(value = OutboxMeldingDto.OpptjeningsvurderingOverstyrt::class, name = "OPPTJENINGSVURDERING_OVERSTYRT"),
+)
+private sealed interface OutboxMeldingDto {
+    data class OpptjeningsvurderingOverstyrt(
+        val skjæringstidspunkt: LocalDate,
+        val opptjeningsvurderingId: UUID,
+        val manuellVurdering: Boolean,
+    ) : OutboxMeldingDto
+}
+
+private fun OutboxMelding.tilDto(): OutboxMeldingDto =
+    when (this) {
+        is OutboxMelding.OpptjeningsvurderingOverstyrt ->
+            OutboxMeldingDto.OpptjeningsvurderingOverstyrt(
+                skjæringstidspunkt = skjæringstidspunkt,
+                opptjeningsvurderingId = opptjeningsvurderingId,
+                manuellVurdering = manuellVurdering,
+            )
+    }
+
+private fun OutboxMeldingDto.tilOutboxMelding(): OutboxMelding =
+    when (this) {
+        is OutboxMeldingDto.OpptjeningsvurderingOverstyrt ->
+            OutboxMelding.OpptjeningsvurderingOverstyrt(
+                skjæringstidspunkt = skjæringstidspunkt,
+                opptjeningsvurderingId = opptjeningsvurderingId,
+                manuellVurdering = manuellVurdering,
+            )
+    }
 
 internal class PostgresOutbox(
     private val session: Session,
 ) : Outbox {
-    override fun leggTil(melding: UtgåendeLøsning) {
+    override fun leggTil(konvolutt: OutboxKonvolutt) {
         @Language("PostgreSQL")
         val sql = """
             insert into outbox (id, melding, fodselsnummer)
@@ -21,15 +64,15 @@ internal class PostgresOutbox(
             queryOf(
                 sql,
                 mapOf(
-                    "id" to melding.id.value,
-                    "melding" to melding.meldingJson,
-                    "fodselsnummer" to melding.fødselsnummer,
+                    "id" to konvolutt.id.value,
+                    "melding" to objectMapper.writeValueAsString(konvolutt.melding.tilDto()),
+                    "fodselsnummer" to konvolutt.identitetsnummer.value,
                 ),
             ).asUpdate,
         )
     }
 
-    override fun hentUpubliserte(maksAntall: Int): List<UtgåendeLøsning> {
+    override fun hentUpubliserte(maksAntall: Int): List<OutboxKonvolutt> {
         @Language("PostgreSQL")
         val sql = """
             select id, melding, fodselsnummer
@@ -44,18 +87,18 @@ internal class PostgresOutbox(
         )
     }
 
-    override fun markerSomPublisert(id: OutboxMeldingId) {
+    override fun markerSomSendt(id: OutboxKonvoluttId) {
         @Language("PostgreSQL")
         val sql = """
-            update outbox set publisert_tidspunkt = now() where id = :id
+            update outbox set publisert_tidspunkt = :now where id = :id
         """
-        session.run(queryOf(sql, mapOf("id" to id.value)).asUpdate)
+        session.run(queryOf(sql, mapOf("id" to id.value, "now" to Instant.now())).asUpdate)
     }
 
     private fun tilUtgåendeLøsning(row: Row) =
-        UtgåendeLøsning(
-            id = OutboxMeldingId(row.uuid("id")),
-            meldingJson = row.string("melding"),
-            fødselsnummer = row.string("fodselsnummer"),
+        OutboxKonvolutt(
+            id = OutboxKonvoluttId(row.uuid("id")),
+            melding = objectMapper.readValue<OutboxMeldingDto>(row.string("melding")).tilOutboxMelding(),
+            identitetsnummer = Identitetsnummer(row.string("fodselsnummer")),
         )
 }

@@ -1,27 +1,35 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
-import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMeldingId
-import no.nav.helse.sykepenger.vilkarsproving.application.UtgåendeLøsning
+import no.nav.helse.speil.backend.app.person.Identitetsnummer
+import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvolutt
+import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvoluttId
+import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import tools.jackson.module.kotlin.jacksonObjectMapper
+import java.time.LocalDate
+import java.util.UUID
 
 internal class PostgresOutboxTest : DatabaseTest() {
-    private val objectMapper = jacksonObjectMapper()
+    private fun nyMelding(manuellVurdering: Boolean = true) =
+        OutboxMelding.OpptjeningsvurderingOverstyrt(
+            skjæringstidspunkt = LocalDate.of(2024, 1, 1),
+            opptjeningsvurderingId = UUID.randomUUID(),
+            manuellVurdering = manuellVurdering,
+        )
 
     private fun assertSammeInnhold(
-        forventet: UtgåendeLøsning,
-        faktisk: UtgåendeLøsning,
+        forventet: OutboxKonvolutt,
+        faktisk: OutboxKonvolutt,
     ) {
         assertEquals(forventet.id, faktisk.id)
-        assertEquals(forventet.fødselsnummer, faktisk.fødselsnummer)
-        assertEquals(objectMapper.readTree(forventet.meldingJson), objectMapper.readTree(faktisk.meldingJson))
+        assertEquals(forventet.identitetsnummer, faktisk.identitetsnummer)
+        assertEquals(forventet.melding, faktisk.melding)
     }
 
     @Test
     fun `lagt til melding kommer tilbake som upublisert`() {
-        val melding = UtgåendeLøsning(id = OutboxMeldingId.ny(), meldingJson = """{"foo":"bar"}""", fødselsnummer = "12029240045")
+        val melding = OutboxKonvolutt(id = OutboxKonvoluttId.ny(), melding = nyMelding(), identitetsnummer = Identitetsnummer("12029240045"))
 
         transaksjon { it.outbox.leggTil(melding) }
 
@@ -31,17 +39,17 @@ internal class PostgresOutboxTest : DatabaseTest() {
 
     @Test
     fun `publiserte meldinger dukker ikke opp igjen`() {
-        val melding = UtgåendeLøsning(id = OutboxMeldingId.ny(), meldingJson = """{"foo":"bar"}""", fødselsnummer = "12029240045")
+        val melding = OutboxKonvolutt(id = OutboxKonvoluttId.ny(), melding = nyMelding(), identitetsnummer = Identitetsnummer("12029240045"))
         transaksjon { it.outbox.leggTil(melding) }
 
-        transaksjon { it.outbox.markerSomPublisert(melding.id) }
+        transaksjon { it.outbox.markerSomSendt(melding.id) }
 
         assertTrue(transaksjon { it.outbox.hentUpubliserte() }.isEmpty())
     }
 
     @Test
     fun `henter kun de eldste meldingene når maksAntall er satt`() {
-        val meldinger = (1..3).map { UtgåendeLøsning(id = OutboxMeldingId.ny(), meldingJson = """{"i":$it}""", fødselsnummer = "12029240045") }
+        val meldinger = (1..3).map { OutboxKonvolutt(id = OutboxKonvoluttId.ny(), melding = nyMelding(manuellVurdering = it % 2 == 0), identitetsnummer = Identitetsnummer("12029240045")) }
         transaksjon { kontekst -> meldinger.forEach { kontekst.outbox.leggTil(it) } }
 
         val upubliserte = transaksjon { it.outbox.hentUpubliserte(maksAntall = 2) }

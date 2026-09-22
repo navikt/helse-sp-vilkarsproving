@@ -5,28 +5,42 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.FailedMessage
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.OutgoingMessage
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.SentMessage
+import no.nav.helse.speil.backend.app.person.Identitetsnummer
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
-import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMeldingId
-import no.nav.helse.sykepenger.vilkarsproving.application.UtgåendeLøsning
+import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvolutt
+import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvoluttId
+import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
+import java.util.UUID
 
 internal class OutboxPubliseringsjobbTest {
     private val transaksjon = InMemoryTransaksjonProvider()
+
+    private fun nyMelding(id: UUID = UUID.randomUUID()) =
+        OutboxMelding.OpptjeningsvurderingOverstyrt(
+            skjæringstidspunkt = LocalDate.of(2024, 1, 1),
+            opptjeningsvurderingId = id,
+            manuellVurdering = true,
+        )
 
     @Test
     fun `plukker opp upubliserte meldinger, publiserer dem og markerer dem som publisert`() {
         val rapid = TestRapid()
         val jobb = OutboxPubliseringsjobb(rapid, transaksjon)
-        val melding = UtgåendeLøsning(id = OutboxMeldingId.ny(), meldingJson = """{"foo":"bar"}""", fødselsnummer = "12029240045")
+        val opptjeningsvurderingId = UUID.randomUUID()
+        val melding = OutboxKonvolutt(id = OutboxKonvoluttId.ny(), melding = nyMelding(opptjeningsvurderingId), identitetsnummer = Identitetsnummer("12029240045"))
         transaksjon.outbox.leggTil(melding)
 
         jobb.kjørEnRunde()
 
         assertEquals(1, rapid.inspektør.size)
-        assertEquals("""{"foo":"bar"}""", rapid.inspektør.message(0).toString())
-        assertEquals(melding.fødselsnummer, rapid.inspektør.key(0))
+        val publisert = rapid.inspektør.message(0)
+        assertEquals("endret_opptjeningsvurdering", publisert.path("@event_name").asString())
+        assertEquals(opptjeningsvurderingId.toString(), publisert.path("opptjeningsvurderingId").asString())
+        assertEquals(melding.identitetsnummer.value, rapid.inspektør.key(0))
         assertTrue(transaksjon.outbox.hentUpubliserte().isEmpty())
     }
 
@@ -34,7 +48,7 @@ internal class OutboxPubliseringsjobbTest {
     fun `flere meldinger publiseres i rekkefølge`() {
         val rapid = TestRapid()
         val jobb = OutboxPubliseringsjobb(rapid, transaksjon)
-        val meldinger = (1..3).map { UtgåendeLøsning(id = OutboxMeldingId.ny(), meldingJson = """{"i":$it}""", fødselsnummer = "12029240045") }
+        val meldinger = (1..3).map { OutboxKonvolutt(id = OutboxKonvoluttId.ny(), melding = nyMelding(), identitetsnummer = Identitetsnummer("12029240045")) }
         meldinger.forEach { transaksjon.outbox.leggTil(it) }
 
         jobb.kjørEnRunde()
@@ -57,7 +71,7 @@ internal class OutboxPubliseringsjobbTest {
     fun `feil under publisering markerer ikke meldingen som publisert, og jobben kastes ikke videre`() {
         val sviktendeRapid = SvikterVedPubliseringRapid()
         val jobb = OutboxPubliseringsjobb(sviktendeRapid, transaksjon)
-        val melding = UtgåendeLøsning(id = OutboxMeldingId.ny(), meldingJson = """{"foo":"bar"}""", fødselsnummer = "12029240045")
+        val melding = OutboxKonvolutt(id = OutboxKonvoluttId.ny(), melding = nyMelding(), identitetsnummer = Identitetsnummer("12029240045"))
         transaksjon.outbox.leggTil(melding)
 
         jobb.kjørEnRunde()
