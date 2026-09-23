@@ -96,13 +96,29 @@ internal class LagringsjsonTest {
 
     @Test
     fun `saksbehandlerkilde lagres på avtalt format`() {
-        val kilde = Vurderingskilde.Saksbehandler(ident = "A123456", fritekstbegrunnelse = "vurdert etter dialog med bruker")
+        val kilde =
+            Vurderingskilde.Saksbehandler(
+                ident = "A123456",
+                fritekstbegrunnelse = "vurdert etter dialog med bruker",
+                journalpostId = listOf("journalpost-1"),
+            )
 
         assertEquals(
-            """{"type":"SAKSBEHANDLER","ident":"A123456","fritekstbegrunnelse":"vurdert etter dialog med bruker"}""",
+            """{"type":"SAKSBEHANDLER","ident":"A123456","fritekstbegrunnelse":"vurdert etter dialog med bruker",""" +
+                """"journalpostId":["journalpost-1"]}""",
             Vurderingskildejson.tilJson(kilde),
         )
         assertEquals(kilde, mapFremOgTilbake(kilde))
+    }
+
+    @Test
+    fun `saksbehandlerkilde uten journalpostId i lagret json faller tilbake til tomt array`() {
+        val kilde =
+            Vurderingskildejson.fraJson(
+                """{"type":"SAKSBEHANDLER","ident":"A123456","fritekstbegrunnelse":"vurdert etter dialog med bruker"}""",
+            ) as Vurderingskilde.Saksbehandler
+
+        assertEquals(emptyList<String>(), kilde.journalpostId)
     }
 
     @Test
@@ -140,7 +156,10 @@ internal class LagringsjsonTest {
     fun `ukjent felt i lagret json ignoreres`() {
         val json = """{"type":"SAKSBEHANDLER","ident":"A123456","fritekstbegrunnelse":"","vurdertAv":"noe vi ikke kjenner"}"""
 
-        assertEquals(Vurderingskilde.Saksbehandler(ident = "A123456", fritekstbegrunnelse = ""), Vurderingskildejson.fraJson(json))
+        assertEquals(
+            Vurderingskilde.Saksbehandler(ident = "A123456", fritekstbegrunnelse = "", journalpostId = emptyList()),
+            Vurderingskildejson.fraJson(json),
+        )
     }
 
     @Test

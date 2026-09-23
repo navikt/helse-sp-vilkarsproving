@@ -227,7 +227,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                 listOf("journalpost-1", "journalpost-2"),
                 nyOpptjeningsvurdering["vurderinger"]
                     .toList()
-                    .single()["journalpostId"]
+                    .single()["kilde"]["journalpostId"]
                     .toList()
                     .map { it.asString() },
             )

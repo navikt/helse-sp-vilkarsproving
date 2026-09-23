@@ -45,7 +45,6 @@ private fun Vilkårsvurdering.tilApi() =
         utfall = utfall.tilApi(),
         vurdertTidspunkt = vurdertTidspunkt,
         kilde = kilde.tilApi(),
-        journalpostId = journalpostId,
     )
 
 private fun Utfall.tilApi(): ApiUtfall =
@@ -68,7 +67,7 @@ private fun Vurderingskilde.tilApi(): ApiVurderingskilde =
             )
 
         is Vurderingskilde.Saksbehandler ->
-            ApiVurderingskilde.Saksbehandler(ident = ident, fritekstbegrunnelse = fritekstbegrunnelse)
+            ApiVurderingskilde.Saksbehandler(ident = ident, fritekstbegrunnelse = fritekstbegrunnelse, journalpostId = journalpostId)
 
         is Vurderingskilde.OverførtFraSpleis ->
             ApiVurderingskilde.OverførtFraSpleis(grunnlag = grunnlag.tilApi(utledetFakta))

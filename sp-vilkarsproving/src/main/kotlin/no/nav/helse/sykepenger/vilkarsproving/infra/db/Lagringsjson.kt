@@ -12,12 +12,6 @@ import tools.jackson.module.kotlin.readValue
 
 private val objectMapper = jacksonObjectMapper()
 
-internal object JournalpostIdjson {
-    fun tilJson(journalpostId: List<String>): String = objectMapper.writeValueAsString(journalpostId)
-
-    fun fraJson(json: String): List<String> = objectMapper.readValue<List<String>>(json)
-}
-
 /**
  * Kilden — inkludert grunnlaget og det som ble utledet, for vurderinger som har det — lagres som json i
  * én kolonne. Selve json-en er selvbeskrivende: hvilken dto den skal leses som følger av
@@ -65,7 +59,8 @@ private fun Vurderingskilde.tilDto(): VurderingskildeDto =
                 versjonAvKildekode = versjonAvKildekode,
             )
 
-        is Vurderingskilde.Saksbehandler -> VurderingskildeDto.Saksbehandler(ident = ident, fritekstbegrunnelse = fritekstbegrunnelse)
+        is Vurderingskilde.Saksbehandler ->
+            VurderingskildeDto.Saksbehandler(ident = ident, fritekstbegrunnelse = fritekstbegrunnelse, journalpostId = journalpostId)
 
         is Vurderingskilde.OverførtFraSpleis ->
             VurderingskildeDto.OverførtFraSpleis(grunnlag = grunnlag.tilDto(), utledet = utledetFakta.tilDto())
@@ -81,7 +76,8 @@ private fun VurderingskildeDto.tilVurderingskilde(): Vurderingskilde =
                 versjonAvKildekode = versjonAvKildekode,
             )
 
-        is VurderingskildeDto.Saksbehandler -> Vurderingskilde.Saksbehandler(ident = ident, fritekstbegrunnelse = fritekstbegrunnelse)
+        is VurderingskildeDto.Saksbehandler ->
+            Vurderingskilde.Saksbehandler(ident = ident, fritekstbegrunnelse = fritekstbegrunnelse, journalpostId = journalpostId)
 
         is VurderingskildeDto.OverførtFraSpleis ->
             Vurderingskilde.OverførtFraSpleis(grunnlag = grunnlag.tilOpptjeningsgrunnlag(), utledetFakta = utledet.tilUtledet())
