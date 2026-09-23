@@ -53,6 +53,7 @@ internal class PostManuellVilkårsvurderingBehandler :
                     utfall = request.utfall.fraApi(),
                     saksbehandlerIdent = kallKontekst.saksbehandler.navIdent.value,
                     fritekstbegrunnelse = request.fritekstbegrunnelse,
+                    journalpostId = request.journalpostId,
                 )
 
             val kravvurdering =

@@ -63,6 +63,7 @@ internal data class ApiVilkårsvurdering(
     val utfall: ApiUtfall,
     val vurdertTidspunkt: Instant?,
     val kilde: ApiVurderingskilde,
+    val journalpostId: List<String> = emptyList(),
 )
 
 @Serializable

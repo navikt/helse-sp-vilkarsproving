@@ -57,8 +57,8 @@ internal class PostgresOpptjeningsvurderingRepository(
         // eller videreført. Innholdet kan uansett ikke ha endret seg: vilkårsvurderinger er immutable.
         @Language("PostgreSQL")
         val vilkårsvurderingSql = """
-            insert into vilkarsvurdering (id, vilkårskode, utfall, vurdert_tidspunkt, kilde, lovreferanse)
-            values (:id, :vilkarskode, :utfall, :vurdertTidspunkt, cast(:kilde as jsonb), cast(:lovreferanse as jsonb))
+            insert into vilkarsvurdering (id, vilkårskode, utfall, vurdert_tidspunkt, kilde, lovreferanse, journalpost_id)
+            values (:id, :vilkarskode, :utfall, :vurdertTidspunkt, cast(:kilde as jsonb), cast(:lovreferanse as jsonb), cast(:journalpostId as jsonb))
             on conflict (id) do nothing
         """
 
@@ -78,6 +78,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                         "vurdertTidspunkt" to enkeltvurdering.vurdertTidspunkt,
                         "kilde" to Vurderingskildejson.tilJson(enkeltvurdering.kilde),
                         "lovreferanse" to enkeltvurdering.lovreferanse?.let { Lovreferansejson.tilJson(it) },
+                        "journalpostId" to JournalpostIdjson.tilJson(enkeltvurdering.journalpostId),
                     ),
                 ).asUpdate,
             )
@@ -173,7 +174,7 @@ internal class PostgresOpptjeningsvurderingRepository(
     private fun finnVilkårsvurderingerFor(opptjeningsvurderingId: OpptjeningsvurderingId): List<Vilkårsvurdering> {
         @Language("PostgreSQL")
         val sql = """
-            select v.id, v.vilkårskode, v.utfall, v.vurdert_tidspunkt, v.kilde, v.lovreferanse
+            select v.id, v.vilkårskode, v.utfall, v.vurdert_tidspunkt, v.kilde, v.lovreferanse, v.journalpost_id
             from opptjeningsvurdering_vilkarsvurdering ov
             join vilkarsvurdering v on v.id = ov.vilkarsvurdering_id
             where ov.opptjeningsvurdering_id = :opptjeningsvurderingId
@@ -191,6 +192,7 @@ internal class PostgresOpptjeningsvurderingRepository(
             vurdertTidspunkt = row.instantOrNull("vurdert_tidspunkt"),
             kilde = Vurderingskildejson.fraJson(row.string("kilde")),
             lovreferanse = row.stringOrNull("lovreferanse")?.let { Lovreferansejson.fraJson(it) },
+            journalpostId = JournalpostIdjson.fraJson(row.string("journalpost_id")),
         )
 
     private fun tilOpptjeningsvurderingRad(row: Row) =

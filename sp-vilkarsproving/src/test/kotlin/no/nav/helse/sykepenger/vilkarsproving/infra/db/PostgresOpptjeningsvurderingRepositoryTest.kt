@@ -75,6 +75,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
                 utfall = Utfall.IkkeOppfylt,
                 saksbehandlerIdent = "A123456",
                 fritekstbegrunnelse = "Ikke nok opptjening",
+                journalpostId = listOf("journalpost-1", "journalpost-2"),
             )
         val vurdering =
             Opptjeningsvurdering.avSaksbehandler(
@@ -90,6 +91,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
 
         assertInstanceOf(Vurderingskilde.Saksbehandler::class.java, kilde)
         assertEquals("A123456", (kilde as Vurderingskilde.Saksbehandler).ident)
+        assertEquals(listOf("journalpost-1", "journalpost-2"), lagretVilkårsvurdering.journalpostId)
         assertNull(vilkårsvurdering.lovreferanse)
         assertNull(lagretVilkårsvurdering.lovreferanse)
         // Hovedregelen alene er ikke oppfylt, og det finnes ingen unntaksvilkår i denne vurderingen, så
