@@ -45,6 +45,7 @@ private fun Vilkårsvurdering.tilApi() =
         utfall = utfall.tilApi(),
         vurdertTidspunkt = vurdertTidspunkt,
         kilde = kilde.tilApi(),
+        journalpostId = journalpostId,
     )
 
 private fun Utfall.tilApi(): ApiUtfall =

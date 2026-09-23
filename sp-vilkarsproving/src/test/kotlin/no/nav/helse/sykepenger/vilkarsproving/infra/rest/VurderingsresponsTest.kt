@@ -39,6 +39,7 @@ internal class VurderingsresponsTest {
         assertTrue(krav.opptjeningOk)
         assertEquals(ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, krav.avgjørendeVilkårskode)
         assertEquals(listOf(krav.avgjørendeVilkårskode), krav.vurderinger.map { it.vilkårskode })
+        assertEquals(emptyList<String>(), krav.vurderinger.single().journalpostId)
     }
 
     @Test
@@ -59,6 +60,7 @@ internal class VurderingsresponsTest {
                 utfall = Utfall.Oppfylt,
                 saksbehandlerIdent = "Z999999",
                 fritekstbegrunnelse = "Mottok foreldrepenger fram til skjæringstidspunktet.",
+                journalpostId = listOf("journalpost-1", "journalpost-2"),
             )
         val vurdering =
             Opptjeningsvurdering.avSaksbehandler(
@@ -72,6 +74,7 @@ internal class VurderingsresponsTest {
 
         assertEquals(ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, api.vilkårskode)
         assertEquals("Z999999", kilde.ident)
+        assertEquals(listOf("journalpost-1", "journalpost-2"), api.journalpostId)
     }
 
     @Test

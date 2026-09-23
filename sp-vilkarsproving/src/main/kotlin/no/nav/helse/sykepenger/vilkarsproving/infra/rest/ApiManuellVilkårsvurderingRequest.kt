@@ -12,5 +12,5 @@ internal data class ApiManuellVilkårsvurderingRequest(
     val vilkårskode: ApiVilkårskode,
     val utfall: ApiUtfall,
     val fritekstbegrunnelse: String,
-    val dokumentId: List<String>,
+    val journalpostId: List<String>,
 )
