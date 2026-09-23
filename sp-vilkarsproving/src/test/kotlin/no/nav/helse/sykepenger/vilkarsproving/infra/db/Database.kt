@@ -41,7 +41,7 @@ internal object Database {
             for (tabell in tabeller) {
                 println("--- $tabell ---")
                 connection.createStatement().use { statement ->
-                    statement.executeQuery("SELECT * FROM $tabell ORDER BY løpenummer").use { rs ->
+                    statement.executeQuery("SELECT * FROM $tabell").use { rs ->
                         println(rs.tilTekst())
                     }
                 }
