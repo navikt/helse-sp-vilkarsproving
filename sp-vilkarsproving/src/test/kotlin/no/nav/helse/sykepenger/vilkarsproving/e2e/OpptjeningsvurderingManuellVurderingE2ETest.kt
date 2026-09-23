@@ -195,7 +195,8 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
               "skjæringstidspunkt": "2018-02-01",
               "vilkårskode": "OPPTJENING_ARBEID_MINST_4_UKER",
               "utfall": "OPPFYLT",
-              "fritekstbegrunnelse": "Mangelfulle opplysninger i registeret, har likevel tilstrekkelig opptjening"
+              "fritekstbegrunnelse": "Mangelfulle opplysninger i registeret, har likevel tilstrekkelig opptjening",
+              "dokumentId": []
             }
             """
             val postRespons =
