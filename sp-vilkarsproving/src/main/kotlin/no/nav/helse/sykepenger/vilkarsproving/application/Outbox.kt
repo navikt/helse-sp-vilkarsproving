@@ -33,7 +33,7 @@ internal data class OutboxKonvolutt(
 }
 
 internal sealed interface OutboxMelding {
-    data class OpptjeningsvurderingOverstyrt(
+    data class OpptjeningsvurderingEndret(
         val skjæringstidspunkt: LocalDate,
         val opptjeningsvurderingId: UUID,
         val manuellVurdering: Boolean,

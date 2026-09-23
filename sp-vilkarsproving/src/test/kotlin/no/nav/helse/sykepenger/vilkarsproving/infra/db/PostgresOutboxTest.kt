@@ -12,7 +12,7 @@ import java.util.UUID
 
 internal class PostgresOutboxTest : DatabaseTest() {
     private fun nyMelding(manuellVurdering: Boolean = true) =
-        OutboxMelding.OpptjeningsvurderingOverstyrt(
+        OutboxMelding.OpptjeningsvurderingEndret(
             skjæringstidspunkt = LocalDate.of(2024, 1, 1),
             opptjeningsvurderingId = UUID.randomUUID(),
             manuellVurdering = manuellVurdering,
@@ -61,5 +61,14 @@ internal class PostgresOutboxTest : DatabaseTest() {
     @Test
     fun `hentUpubliserte gir tom liste når outboxen er tom`() {
         assertTrue(transaksjon { it.outbox.hentUpubliserte() }.isEmpty())
+    }
+
+    @Test
+    fun `meldingen lagres med typediskriminatoren OPPTJENINGSVURDERING_ENDRET`() {
+        val melding = OutboxKonvolutt(id = OutboxKonvoluttId.ny(), melding = nyMelding(), identitetsnummer = Identitetsnummer("12029240045"))
+
+        transaksjon { it.outbox.leggTil(melding) }
+
+        assertEquals(listOf("OPPTJENINGSVURDERING_ENDRET"), Database.meldingstyperIOutbox())
     }
 }

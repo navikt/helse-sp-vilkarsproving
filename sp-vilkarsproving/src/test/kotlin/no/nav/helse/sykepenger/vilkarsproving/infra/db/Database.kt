@@ -19,6 +19,15 @@ internal object Database {
 
     fun antallRader(tabell: String) = database.antallRader(tabell)
 
+    fun meldingstyperIOutbox(): List<String> =
+        database.dataSource.connection.use { connection ->
+            connection.createStatement().use { statement ->
+                statement.executeQuery("SELECT melding ->> 'type' AS type FROM outbox ORDER BY opprettet").use { rs ->
+                    generateSequence { if (rs.next()) rs.getString("type") else null }.toList()
+                }
+            }
+        }
+
     /**
      * Dumper innholdet i de gitte tabellene til stdout, som enkle tabeller — nyttig for å følge med på
      * hvordan datastrukturene endrer seg gjennom en test, f.eks. mellom hvert steg i en e2e-test.

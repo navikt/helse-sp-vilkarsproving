@@ -7,7 +7,7 @@ import kotlinx.serialization.UseContextualSerialization
 import java.time.LocalDate
 
 @Serializable
-internal data class ApiOverstyrVilkårsvurderingRequest(
+internal data class ApiManuellVilkårsvurderingRequest(
     val skjæringstidspunkt: LocalDate,
     val vilkårskode: ApiVilkårskode,
     val utfall: ApiUtfall,

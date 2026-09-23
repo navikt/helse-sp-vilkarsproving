@@ -2,7 +2,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import no.nav.helse.speil.backend.app.rest.ApiErrorCode
 
-internal enum class ApiOverstyrVilkårsvurderingFeil(
+internal enum class ApiManuellVilkårsvurderingFeil(
     override val httpStatus: Int,
     override val tittel: String,
 ) : ApiErrorCode {
