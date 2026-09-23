@@ -9,6 +9,7 @@ internal data class Vilkårsvurdering(
     val vurdertTidspunkt: Instant?,
     val kilde: Vurderingskilde,
     val lovreferanse: Lovreferanse?,
+    val journalpostId: List<String> = emptyList(),
 ) {
     private fun erOppfylt() = utfall == Utfall.Oppfylt
 
@@ -41,6 +42,7 @@ internal data class Vilkårsvurdering(
             utfall: Utfall,
             saksbehandlerIdent: String,
             fritekstbegrunnelse: String,
+            journalpostId: List<String> = emptyList(),
         ) = Vilkårsvurdering(
             id = VilkårsvurderingId.ny(),
             vilkårskode = vilkårskode,
@@ -48,6 +50,7 @@ internal data class Vilkårsvurdering(
             vurdertTidspunkt = Instant.now(),
             kilde = Vurderingskilde.Saksbehandler(saksbehandlerIdent, fritekstbegrunnelse),
             lovreferanse = null,
+            journalpostId = journalpostId,
         )
 
         fun overførtFraSpleis(
@@ -72,6 +75,7 @@ internal data class Vilkårsvurdering(
             vurdertTidspunkt: Instant?,
             kilde: Vurderingskilde,
             lovreferanse: Lovreferanse?,
-        ) = Vilkårsvurdering(id, vilkårskode, utfall, vurdertTidspunkt, kilde, lovreferanse)
+            journalpostId: List<String> = emptyList(),
+        ) = Vilkårsvurdering(id, vilkårskode, utfall, vurdertTidspunkt, kilde, lovreferanse, journalpostId)
     }
 }

@@ -196,7 +196,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
               "vilkårskode": "OPPTJENING_ARBEID_MINST_4_UKER",
               "utfall": "OPPFYLT",
               "fritekstbegrunnelse": "Mangelfulle opplysninger i registeret, har likevel tilstrekkelig opptjening",
-              "dokumentId": []
+              "journalpostId": ["journalpost-1", "journalpost-2"]
             }
             """
             val postRespons =
@@ -223,6 +223,14 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                 nyOpptjeningsvurdering["vurderinger"].toList().map { it["vilkårskode"].asString() },
             )
             assertEquals("OPPFYLT", nyOpptjeningsvurdering["vurderinger"][0]["utfall"].asString())
+            assertEquals(
+                listOf("journalpost-1", "journalpost-2"),
+                nyOpptjeningsvurdering["vurderinger"]
+                    .toList()
+                    .single()["journalpostId"]
+                    .toList()
+                    .map { it.asString() },
+            )
 
             // Den manuelle vurderingen skal ha publisert et event til utregningsappen om den nye opptjeningsvurderingen
             assertEquals(4, rapid.inspektør.size)
