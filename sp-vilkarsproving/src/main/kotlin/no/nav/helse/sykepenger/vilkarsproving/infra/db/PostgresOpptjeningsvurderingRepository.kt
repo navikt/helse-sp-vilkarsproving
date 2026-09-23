@@ -177,7 +177,6 @@ internal class PostgresOpptjeningsvurderingRepository(
             from opptjeningsvurdering_vilkarsvurdering ov
             join vilkarsvurdering v on v.id = ov.vilkarsvurdering_id
             where ov.opptjeningsvurdering_id = :opptjeningsvurderingId
-            order by ov.løpenummer
         """
         return session.run(
             queryOf(sql, mapOf("opptjeningsvurderingId" to opptjeningsvurderingId.value)).map(::tilVilkårsvurdering).asList,
