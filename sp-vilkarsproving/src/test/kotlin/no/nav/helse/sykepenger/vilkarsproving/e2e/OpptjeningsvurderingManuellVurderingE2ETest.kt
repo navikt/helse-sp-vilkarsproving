@@ -40,7 +40,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRe
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OutboxPubliseringsjobb
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostOverstyrVilkårsvurderingBehandler
+import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import org.intellij.lang.annotations.Language
@@ -52,7 +52,7 @@ import org.junit.jupiter.api.Test
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.util.UUID
 
-internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
+internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
     /** Sett til `true` for å dumpe innholdet i databasetabellene mellom hvert steg, se [dump]. */
     private val dump = true
 
@@ -132,12 +132,12 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
                 ),
                 restAdapter,
             )
-            post(PostOverstyrVilkårsvurderingBehandler(), restAdapter)
+            post(PostManuellVilkårsvurderingBehandler(), restAdapter)
         }
     }
 
     @Test
-    fun `overstyrer en ikke-oppfylt automatisk vurdering til oppfylt, og resultatriveren følger etter`() =
+    fun `vurderer en ikke-oppfylt automatisk vurdering manuelt til oppfylt, og resultatriveren følger etter`() =
         testApplication {
             val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
             val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
@@ -188,9 +188,9 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
                     .asBoolean(),
             )
 
-            // Steg 4: saksbehandler overstyrer — opptjening er OK likevel, pga. likestilt ytelse
+            // Steg 4: saksbehandler vurderer manuelt — opptjening er OK likevel, pga. likestilt ytelse
             @Language("JSON")
-            val overstyringsrequest = """
+            val manuellVurderingRequest = """
             {
               "skjæringstidspunkt": "2018-02-01",
               "vilkårskode": "OPPTJENING_ARBEID_MINST_4_UKER",
@@ -199,22 +199,22 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
             }
             """
             val postRespons =
-                client.post("/api/personer/$pseudoId/vilkarsvurderinger/overstyring") {
+                client.post("/api/personer/$pseudoId/vilkarsvurderinger/manuell") {
                     contentType(ContentType.Application.Json)
-                    setBody(overstyringsrequest)
+                    setBody(manuellVurderingRequest)
                 }
             assertEquals(HttpStatusCode.OK, postRespons.status)
             val nyId = objectMapper.readTree(postRespons.bodyAsText())["opptjeningsvurderingId"].asString()
-            assertNotEquals(automatiskId, nyId) { "Overstyringen skal lage en ny opptjeningsvurdering, ikke skrive over den gamle" }
+            assertNotEquals(automatiskId, nyId) { "Den manuelle vurderingen skal lage en ny opptjeningsvurdering, ikke skrive over den gamle" }
 
             outboxJobb.kjørEnRunde()
 
             dump("etter 4")
 
-            // Den nye vurderingen skal vise helheten: den automatiske 4-ukers-vurderingen er med, overstyringen er avgjørende
-            val getEtterOverstyring = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$nyId")
-            assertEquals(HttpStatusCode.OK, getEtterOverstyring.status)
-            val nyOpptjeningsvurdering = objectMapper.readTree(getEtterOverstyring.bodyAsText())["krav"].single()
+            // Den nye vurderingen skal vise helheten: den automatiske 4-ukers-vurderingen er med, den manuelle vurderingen er avgjørende
+            val getEtterManuellVurdering = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$nyId")
+            assertEquals(HttpStatusCode.OK, getEtterManuellVurdering.status)
+            val nyOpptjeningsvurdering = objectMapper.readTree(getEtterManuellVurdering.bodyAsText())["krav"].single()
             assertTrue(nyOpptjeningsvurdering["opptjeningOk"].asBoolean())
             assertEquals("OPPTJENING_ARBEID_MINST_4_UKER", nyOpptjeningsvurdering["avgjørendeVilkårskode"].asString())
             assertEquals(
@@ -223,14 +223,14 @@ internal class OpptjeningsvurderingOverstyringE2ETest : DatabaseTest() {
             )
             assertEquals("OPPFYLT", nyOpptjeningsvurdering["vurderinger"][0]["utfall"].asString())
 
-            // Overstyringen skal ha publisert et event til utregningsappen om den nye opptjeningsvurderingen
+            // Den manuelle vurderingen skal ha publisert et event til utregningsappen om den nye opptjeningsvurderingen
             assertEquals(4, rapid.inspektør.size)
-            val overstyringsevent = rapid.inspektør.message(3)
-            assertEquals("endret_opptjeningsvurdering", overstyringsevent.path("@event_name").asString())
-            assertEquals(nyId, overstyringsevent.path("opptjeningsvurderingId").asString())
-            assertEquals(FØDSELSNUMMER, overstyringsevent.path("fødselsnummer").asString())
-            assertEquals("2018-02-01", overstyringsevent.path("skjæringstidspunkt").asString())
-            assertTrue(overstyringsevent.path("manuellVurdering").asBoolean())
+            val manuellVurderingEvent = rapid.inspektør.message(3)
+            assertEquals("endret_opptjeningsvurdering", manuellVurderingEvent.path("@event_name").asString())
+            assertEquals(nyId, manuellVurderingEvent.path("opptjeningsvurderingId").asString())
+            assertEquals(FØDSELSNUMMER, manuellVurderingEvent.path("fødselsnummer").asString())
+            assertEquals("2018-02-01", manuellVurderingEvent.path("skjæringstidspunkt").asString())
+            assertTrue(manuellVurderingEvent.path("manuellVurdering").asBoolean())
 
             // Steg 5: kjør OpptjeningsvurderingResultat-riveren på nytt, nå med den nye id-en — ok=true
             rapid.sendTestMessage(opptjeningsvurderingResultatBehov(UUID.fromString(nyId)), FØDSELSNUMMER)

@@ -51,7 +51,7 @@ internal class OutboxPubliseringsjobb(
                 kontekst.outbox.hentUpubliserte().forEach { konvolutt ->
                     val json =
                         when (val melding = konvolutt.melding) {
-                            is OutboxMelding.OpptjeningsvurderingOverstyrt -> melding.tilJsonMessage(konvolutt.identitetsnummer)
+                            is OutboxMelding.OpptjeningsvurderingEndret -> melding.tilJsonMessage(konvolutt.identitetsnummer)
                         }
                     rapidsConnection.publish(konvolutt.identitetsnummer.value, json.toJson())
                     kontekst.outbox.markerSomSendt(konvolutt.id)
@@ -62,7 +62,7 @@ internal class OutboxPubliseringsjobb(
         }
     }
 
-    private fun OutboxMelding.OpptjeningsvurderingOverstyrt.tilJsonMessage(identitetsnummer: Identitetsnummer) =
+    private fun OutboxMelding.OpptjeningsvurderingEndret.tilJsonMessage(identitetsnummer: Identitetsnummer) =
         JsonMessage.newMessage(
             eventName = "endret_opptjeningsvurdering",
             map =

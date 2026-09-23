@@ -14,12 +14,12 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 
-internal class PostOverstyrVilkårsvurderingBehandler :
+internal class PostManuellVilkårsvurderingBehandler :
     PostBehandler<
-        ApiOverstyrVilkårsvurderingResource,
-        ApiOverstyrVilkårsvurderingRequest,
-        ApiOverstyrVilkårsvurderingResponse,
-        ApiOverstyrVilkårsvurderingFeil,
+        ApiManuellVilkårsvurderingResource,
+        ApiManuellVilkårsvurderingRequest,
+        ApiManuellVilkårsvurderingResponse,
+        ApiManuellVilkårsvurderingFeil,
         AppRolle,
         Transaksjonskontekst,
     > {
@@ -29,22 +29,22 @@ internal class PostOverstyrVilkårsvurderingBehandler :
     private fun erProdGcp(): Boolean = System.getenv()["NAIS_CLUSTER_NAME"] == "prod-gcp"
 
     override fun behandle(
-        resource: ApiOverstyrVilkårsvurderingResource,
-        request: ApiOverstyrVilkårsvurderingRequest,
+        resource: ApiManuellVilkårsvurderingResource,
+        request: ApiManuellVilkårsvurderingRequest,
         kallKontekst: KallKontekst<Transaksjonskontekst, AppRolle>,
-    ): RestResponse<ApiOverstyrVilkårsvurderingResponse, ApiOverstyrVilkårsvurderingFeil> {
+    ): RestResponse<ApiManuellVilkårsvurderingResponse, ApiManuellVilkårsvurderingFeil> {
         val personPseudoId =
             PersonPseudoId.fraString(resource.personId)
-                ?: return RestResponse.feil(ApiOverstyrVilkårsvurderingFeil.PersonIkkeFunnet)
+                ?: return RestResponse.feil(ApiManuellVilkårsvurderingFeil.PersonIkkeFunnet)
 
         return kallKontekst.medPerson(
             personPseudoId = personPseudoId,
-            personIkkeFunnet = { ApiOverstyrVilkårsvurderingFeil.PersonIkkeFunnet },
-            manglerTilgang = { ApiOverstyrVilkårsvurderingFeil.ManglerTilgang },
+            personIkkeFunnet = { ApiManuellVilkårsvurderingFeil.PersonIkkeFunnet },
+            manglerTilgang = { ApiManuellVilkårsvurderingFeil.ManglerTilgang },
         ) { identitetsnummer ->
             val vilkårskode = request.vilkårskode.fraApi()
             if (erProdGcp()) {
-                throw IllegalStateException("Overstyring av vilkårsvurdering er ikke påskrudd i prod-gcp")
+                throw IllegalStateException("Manuell vilkårsvurdering er ikke påskrudd i prod-gcp")
             }
 
             val vilkårsvurdering =
@@ -72,7 +72,7 @@ internal class PostOverstyrVilkårsvurderingBehandler :
             kallKontekst.transaksjon.outbox.leggTil(
                 OutboxKonvolutt.ny(
                     melding =
-                        OutboxMelding.OpptjeningsvurderingOverstyrt(
+                        OutboxMelding.OpptjeningsvurderingEndret(
                             skjæringstidspunkt = request.skjæringstidspunkt,
                             opptjeningsvurderingId = kravvurdering.id.value,
                             manuellVurdering = true,
@@ -81,7 +81,7 @@ internal class PostOverstyrVilkårsvurderingBehandler :
                 ),
             )
 
-            RestResponse.ok(ApiOverstyrVilkårsvurderingResponse(opptjeningsvurderingId = kravvurdering.id.value))
+            RestResponse.ok(ApiManuellVilkårsvurderingResponse(opptjeningsvurderingId = kravvurdering.id.value))
         }
     }
 }

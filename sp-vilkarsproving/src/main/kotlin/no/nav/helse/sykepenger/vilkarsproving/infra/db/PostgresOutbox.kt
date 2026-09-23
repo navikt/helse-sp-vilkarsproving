@@ -21,10 +21,10 @@ private val objectMapper = jacksonObjectMapper()
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
-    JsonSubTypes.Type(value = OutboxMeldingDto.OpptjeningsvurderingOverstyrt::class, name = "OPPTJENINGSVURDERING_OVERSTYRT"),
+    JsonSubTypes.Type(value = OutboxMeldingDto.OpptjeningsvurderingEndret::class, name = "OPPTJENINGSVURDERING_ENDRET"),
 )
 private sealed interface OutboxMeldingDto {
-    data class OpptjeningsvurderingOverstyrt(
+    data class OpptjeningsvurderingEndret(
         val skjæringstidspunkt: LocalDate,
         val opptjeningsvurderingId: UUID,
         val manuellVurdering: Boolean,
@@ -33,8 +33,8 @@ private sealed interface OutboxMeldingDto {
 
 private fun OutboxMelding.tilDto(): OutboxMeldingDto =
     when (this) {
-        is OutboxMelding.OpptjeningsvurderingOverstyrt ->
-            OutboxMeldingDto.OpptjeningsvurderingOverstyrt(
+        is OutboxMelding.OpptjeningsvurderingEndret ->
+            OutboxMeldingDto.OpptjeningsvurderingEndret(
                 skjæringstidspunkt = skjæringstidspunkt,
                 opptjeningsvurderingId = opptjeningsvurderingId,
                 manuellVurdering = manuellVurdering,
@@ -43,8 +43,8 @@ private fun OutboxMelding.tilDto(): OutboxMeldingDto =
 
 private fun OutboxMeldingDto.tilOutboxMelding(): OutboxMelding =
     when (this) {
-        is OutboxMeldingDto.OpptjeningsvurderingOverstyrt ->
-            OutboxMelding.OpptjeningsvurderingOverstyrt(
+        is OutboxMeldingDto.OpptjeningsvurderingEndret ->
+            OutboxMelding.OpptjeningsvurderingEndret(
                 skjæringstidspunkt = skjæringstidspunkt,
                 opptjeningsvurderingId = opptjeningsvurderingId,
                 manuellVurdering = manuellVurdering,

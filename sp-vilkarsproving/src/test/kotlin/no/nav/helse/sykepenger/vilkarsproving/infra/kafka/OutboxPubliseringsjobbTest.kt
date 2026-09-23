@@ -20,7 +20,7 @@ internal class OutboxPubliseringsjobbTest {
     private val transaksjon = InMemoryTransaksjonProvider()
 
     private fun nyMelding(id: UUID = UUID.randomUUID()) =
-        OutboxMelding.OpptjeningsvurderingOverstyrt(
+        OutboxMelding.OpptjeningsvurderingEndret(
             skjæringstidspunkt = LocalDate.of(2024, 1, 1),
             opptjeningsvurderingId = id,
             manuellVurdering = true,
