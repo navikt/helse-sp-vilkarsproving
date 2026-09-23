@@ -9,8 +9,12 @@ internal data class Vilkårsvurdering(
     val vurdertTidspunkt: Instant?,
     val kilde: Vurderingskilde,
     val lovreferanse: Lovreferanse?,
-    val journalpostId: List<String> = emptyList(),
 ) {
+    // journalpostId er kun relevant for saksbehandlervurderinger, og hører sammen med resten av
+    // kilden — derfor ligger den i Vurderingskilde.Saksbehandler i stedet for som et eget felt her.
+    val journalpostId: List<String>
+        get() = (kilde as? Vurderingskilde.Saksbehandler)?.journalpostId ?: emptyList()
+
     private fun erOppfylt() = utfall == Utfall.Oppfylt
 
     companion object {
@@ -48,9 +52,8 @@ internal data class Vilkårsvurdering(
             vilkårskode = vilkårskode,
             utfall = utfall,
             vurdertTidspunkt = Instant.now(),
-            kilde = Vurderingskilde.Saksbehandler(saksbehandlerIdent, fritekstbegrunnelse),
+            kilde = Vurderingskilde.Saksbehandler(saksbehandlerIdent, fritekstbegrunnelse, journalpostId),
             lovreferanse = null,
-            journalpostId = journalpostId,
         )
 
         fun overførtFraSpleis(
@@ -75,7 +78,6 @@ internal data class Vilkårsvurdering(
             vurdertTidspunkt: Instant?,
             kilde: Vurderingskilde,
             lovreferanse: Lovreferanse?,
-            journalpostId: List<String> = emptyList(),
-        ) = Vilkårsvurdering(id, vilkårskode, utfall, vurdertTidspunkt, kilde, lovreferanse, journalpostId)
+        ) = Vilkårsvurdering(id, vilkårskode, utfall, vurdertTidspunkt, kilde, lovreferanse)
     }
 }

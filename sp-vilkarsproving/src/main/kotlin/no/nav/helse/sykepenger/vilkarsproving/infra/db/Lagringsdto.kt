@@ -64,6 +64,7 @@ internal sealed interface VurderingskildeDto {
     data class Saksbehandler(
         val ident: String,
         val fritekstbegrunnelse: String,
+        val journalpostId: List<String> = emptyList(),
     ) : VurderingskildeDto
 
     data class OverførtFraSpleis(

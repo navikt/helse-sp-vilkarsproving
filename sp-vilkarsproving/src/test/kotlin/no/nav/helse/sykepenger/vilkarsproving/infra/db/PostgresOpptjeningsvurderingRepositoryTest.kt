@@ -183,7 +183,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
                     vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                     utfall = Utfall.Oppfylt,
                     vurdertTidspunkt = vurdertTidspunkt,
-                    kilde = Vurderingskilde.Saksbehandler("A123456", "Vurdert manuelt"),
+                    kilde = Vurderingskilde.Saksbehandler("A123456", "Vurdert manuelt", journalpostId = emptyList()),
                     lovreferanse = null,
                 )
             }
