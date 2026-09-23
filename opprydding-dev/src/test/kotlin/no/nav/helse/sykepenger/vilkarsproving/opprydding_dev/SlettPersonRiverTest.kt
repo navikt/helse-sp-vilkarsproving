@@ -122,13 +122,14 @@ internal class SlettPersonRiverTest {
                 .prepareStatement(
                     """
                 INSERT INTO opptjeningsvurdering
-                    (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok)
-                VALUES (?, ?, ?, 'VURDERT_I_SPEIL', true)
+                    (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok, vurdert_tidspunkt)
+                VALUES (?, ?, ?, 'VURDERT_I_SPEIL', true, ?)
                 """,
                 ).use { stmt ->
                     stmt.setObject(1, id)
                     stmt.setString(2, fødselsnummer)
                     stmt.setObject(3, LocalDate.of(2026, 1, 1))
+                    stmt.setObject(4, java.sql.Timestamp.from(Instant.now()))
                     stmt.executeUpdate()
                 }
         }

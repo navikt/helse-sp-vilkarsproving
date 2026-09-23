@@ -65,6 +65,7 @@ internal sealed interface Opptjeningsvurdering {
         override val fødselsnummer: String,
         override val skjæringstidspunkt: LocalDate,
         override val erOk: Boolean,
+        val vurdertTidspunkt: Instant,
     ) : Opptjeningsvurdering {
         override fun prøvPåNyttMed(vilkårsvurdering: Vilkårsvurdering): VurdertISpeil {
             val vilkårsvurderinger = listOf(vilkårsvurdering)
@@ -113,7 +114,8 @@ internal sealed interface Opptjeningsvurdering {
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
             erOk: Boolean,
-        ) = OverførtFraInfotrygd(id, fødselsnummer, skjæringstidspunkt, erOk)
+            vurdertTidspunkt: Instant = Instant.now(),
+        ) = OverførtFraInfotrygd(id, fødselsnummer, skjæringstidspunkt, erOk, vurdertTidspunkt)
 
         fun fraLagring(
             id: OpptjeningsvurderingId,
@@ -136,6 +138,7 @@ internal sealed interface Opptjeningsvurdering {
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
             erOk: Boolean,
-        ) = OverførtFraInfotrygd(id, fødselsnummer, skjæringstidspunkt, erOk)
+            vurdertTidspunkt: Instant,
+        ) = OverførtFraInfotrygd(id, fødselsnummer, skjæringstidspunkt, erOk, vurdertTidspunkt)
     }
 }

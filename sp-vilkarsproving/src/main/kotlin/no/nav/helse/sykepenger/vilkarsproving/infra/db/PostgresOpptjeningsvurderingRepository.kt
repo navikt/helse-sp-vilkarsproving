@@ -33,10 +33,17 @@ internal class PostgresOpptjeningsvurderingRepository(
     }
 
     private fun lagreVurdertISpeil(totalvurdering: Opptjeningsvurdering.VurdertISpeil) {
+        val vurdertTidspunkt = totalvurdering.vilkårsvurderinger.mapNotNull { it.vurdertTidspunkt }.maxOrNull()
+
         @Language("PostgreSQL")
         val opptjeningsvurderingSql = """
-            insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok, avgjørende_vilkårskode)
-            values (:id, :fodselsnummer, :skjaeringstidspunkt, :vurderingskilde, :opptjening_ok, :avgjorendeVilkarskode)
+            insert into opptjeningsvurdering (
+                id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok, avgjørende_vilkårskode, vurdert_tidspunkt
+            )
+            values (
+                :id, :fodselsnummer, :skjaeringstidspunkt, :vurderingskilde, :opptjening_ok, :avgjorendeVilkarskode,
+                coalesce(:vurdertTidspunkt, now())
+            )
         """
         session.run(
             queryOf(
@@ -48,6 +55,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                     "vurderingskilde" to VURDERINGSKILDE_VURDERT_I_SPEIL,
                     "opptjening_ok" to totalvurdering.erOk,
                     "avgjorendeVilkarskode" to totalvurdering.avgjørendeVilkårskode?.name,
+                    "vurdertTidspunkt" to vurdertTidspunkt,
                 ),
             ).asUpdate,
         )
@@ -98,8 +106,12 @@ internal class PostgresOpptjeningsvurderingRepository(
     private fun lagreInfotrygd(totalvurdering: Opptjeningsvurdering.OverførtFraInfotrygd) {
         @Language("PostgreSQL")
         val sql = """
-            insert into opptjeningsvurdering (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok)
-            values (:id, :fodselsnummer, :skjaeringstidspunkt, :vurderingskilde, :opptjening_ok)
+            insert into opptjeningsvurdering (
+                id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok, vurdert_tidspunkt
+            )
+            values (
+                :id, :fodselsnummer, :skjaeringstidspunkt, :vurderingskilde, :opptjening_ok, :vurdertTidspunkt
+            )
         """
         session.run(
             queryOf(
@@ -110,6 +122,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                     "skjaeringstidspunkt" to totalvurdering.skjæringstidspunkt,
                     "vurderingskilde" to VURDERINGSKILDE_OVERFOERT_FRA_INFOTRYGD,
                     "opptjening_ok" to totalvurdering.erOk,
+                    "vurdertTidspunkt" to totalvurdering.vurdertTidspunkt,
                 ),
             ).asUpdate,
         )
@@ -123,7 +136,7 @@ internal class PostgresOpptjeningsvurderingRepository(
         val sql = """
             $SELECT_OPPTJENINGSVURDERING
             where fødselsnummer = :fodselsnummer and skjæringstidspunkt = :skjaeringstidspunkt
-            order by løpenummer desc
+            order by vurdert_tidspunkt desc, opprettet desc
             limit 1
         """
         return session
@@ -158,6 +171,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                     fødselsnummer = rad.fødselsnummer,
                     skjæringstidspunkt = rad.skjæringstidspunkt,
                     erOk = rad.erOk,
+                    vurdertTidspunkt = rad.vurdertTidspunkt,
                 )
 
             else ->
@@ -203,6 +217,7 @@ internal class PostgresOpptjeningsvurderingRepository(
             vurderingskilde = row.string("vurderingskilde"),
             erOk = row.boolean("opptjening_ok"),
             avgjørendeVilkårskode = row.stringOrNull("avgjørende_vilkårskode")?.let(Vilkårskode::valueOf),
+            vurdertTidspunkt = row.instant("vurdert_tidspunkt"),
         )
 
     private data class OpptjeningsvurderingRad(
@@ -212,6 +227,7 @@ internal class PostgresOpptjeningsvurderingRepository(
         val vurderingskilde: String,
         val erOk: Boolean,
         val avgjørendeVilkårskode: Vilkårskode?,
+        val vurdertTidspunkt: java.time.Instant,
     )
 
     private companion object {
@@ -219,7 +235,7 @@ internal class PostgresOpptjeningsvurderingRepository(
 
         @Language("PostgreSQL")
         const val SELECT_OPPTJENINGSVURDERING = """
-            select id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok, avgjørende_vilkårskode
+            select id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok, avgjørende_vilkårskode, vurdert_tidspunkt
             from opptjeningsvurdering
         """
     }
