@@ -12,12 +12,14 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.VilkårsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.test.assertFalse
@@ -102,30 +104,47 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
 
     @Test
     fun `infotrygdvurdering lagres uten enkeltvurderinger`() {
+        val vurdertTidspunkt = Instant.parse("2020-01-01T00:00:00Z")
         val vurdering =
             Opptjeningsvurdering.fraInfotrygd(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
                 erOk = true,
+                vurdertTidspunkt = vurdertTidspunkt,
             )
         transaksjon { it.opptjeningsvurderinger.lagre(vurdering) }
 
-        val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) }
+        val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.OverførtFraInfotrygd
 
-        assertInstanceOf(Opptjeningsvurdering.OverførtFraInfotrygd::class.java, lagret)
-        assertTrue(lagret!!.erOk)
+        assertTrue(lagret.erOk)
+        assertEquals(vurdertTidspunkt, lagret.vurdertTidspunkt)
+        assertEquals(vurdering.id, transaksjon { it.opptjeningsvurderinger.gjeldende(FØDSELSNUMMER, 1.februar) }!!.id)
     }
 
     @Test
-    fun `gjeldende er den sist lagrede vurderingen`() {
-        val første = lagreVurdering(arbeidstakergrunnlag())
-        val andre = lagreVurdering(Opptjeningsgrunnlag.SelvstendigNæringsdrivende)
+    fun `gjeldende er vurderingen med senest vurdert tidspunkt`() {
+        val første = vurderingMedVurdertTidspunkt(Instant.parse("2026-01-02T00:00:00Z"))
+        val andre = vurderingMedVurdertTidspunkt(Instant.parse("2026-01-01T00:00:00Z"))
+        transaksjon { it.opptjeningsvurderinger.lagre(første) }
+        transaksjon { it.opptjeningsvurderinger.lagre(andre) }
 
         val gjeldende = transaksjon { it.opptjeningsvurderinger.gjeldende(FØDSELSNUMMER, 1.februar) }!!
 
-        assertEquals(andre.id, gjeldende.id)
+        assertEquals(første.id, gjeldende.id)
         assertEquals(2, Database.antallRader("opptjeningsvurdering"))
         assertEquals(første.id, transaksjon { it.opptjeningsvurderinger.finn(første.id) }!!.id)
+    }
+
+    @Test
+    fun `vurderingens tidspunkt er hentet fra seneste relaterte vilkårsvurdering`() {
+        val første = vurderingMedVurderteTidspunkter(Instant.parse("2026-01-01T00:00:00Z"), Instant.parse("2026-01-03T00:00:00Z"))
+        val andre = vurderingMedVurdertTidspunkt(Instant.parse("2026-01-02T00:00:00Z"))
+        transaksjon { it.opptjeningsvurderinger.lagre(første) }
+        transaksjon { it.opptjeningsvurderinger.lagre(andre) }
+
+        val gjeldende = transaksjon { it.opptjeningsvurderinger.gjeldende(FØDSELSNUMMER, 1.februar) }!!
+
+        assertEquals(første.id, gjeldende.id)
     }
 
     @Test
@@ -152,6 +171,30 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
     @Test
     fun `finn gir null for en ukjent vurdering`() {
         assertNull(transaksjon { it.opptjeningsvurderinger.finn(OpptjeningsvurderingId.ny()) })
+    }
+
+    private fun vurderingMedVurdertTidspunkt(vurdertTidspunkt: Instant) = vurderingMedVurderteTidspunkter(vurdertTidspunkt)
+
+    private fun vurderingMedVurderteTidspunkter(vararg vurderteTidspunkter: Instant): Opptjeningsvurdering.VurdertISpeil {
+        val vilkårsvurderinger =
+            vurderteTidspunkter.map { vurdertTidspunkt ->
+                Vilkårsvurdering.fraLagring(
+                    id = VilkårsvurderingId.ny(),
+                    vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+                    utfall = Utfall.Oppfylt,
+                    vurdertTidspunkt = vurdertTidspunkt,
+                    kilde = Vurderingskilde.Saksbehandler("A123456", "Vurdert manuelt"),
+                    lovreferanse = null,
+                )
+            }
+        return Opptjeningsvurdering.fraLagring(
+            id = OpptjeningsvurderingId.ny(),
+            fødselsnummer = FØDSELSNUMMER,
+            skjæringstidspunkt = 1.februar,
+            vilkårsvurderinger = vilkårsvurderinger,
+            avgjørendeVilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+            erOk = true,
+        )
     }
 
     private fun lagreVurdering(
