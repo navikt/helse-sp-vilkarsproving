@@ -11,6 +11,7 @@ internal sealed interface Vurderingskilde {
     data class Saksbehandler(
         val ident: String,
         val fritekstbegrunnelse: String,
+        val journalpostId: List<String>,
     ) : Vurderingskilde
 
     data class OverførtFraSpleis(

@@ -63,7 +63,6 @@ internal data class ApiVilkårsvurdering(
     val utfall: ApiUtfall,
     val vurdertTidspunkt: Instant?,
     val kilde: ApiVurderingskilde,
-    val journalpostId: List<String> = emptyList(),
 )
 
 @Serializable
@@ -104,6 +103,7 @@ internal sealed interface ApiVurderingskilde {
     data class Saksbehandler(
         val ident: String,
         val fritekstbegrunnelse: String,
+        val journalpostId: List<String> = emptyList(),
     ) : ApiVurderingskilde {
         override val kildetype: ApiKildetype = ApiKildetype.SAKSBEHANDLER
     }

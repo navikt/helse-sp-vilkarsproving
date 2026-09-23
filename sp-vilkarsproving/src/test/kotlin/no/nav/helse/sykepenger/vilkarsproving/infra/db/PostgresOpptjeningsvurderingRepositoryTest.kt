@@ -93,7 +93,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
 
         assertInstanceOf(Vurderingskilde.Saksbehandler::class.java, kilde)
         assertEquals("A123456", (kilde as Vurderingskilde.Saksbehandler).ident)
-        assertEquals(listOf("journalpost-1", "journalpost-2"), lagretVilkårsvurdering.journalpostId)
+        assertEquals(listOf("journalpost-1", "journalpost-2"), kilde.journalpostId)
         assertNull(vilkårsvurdering.lovreferanse)
         assertNull(lagretVilkårsvurdering.lovreferanse)
         // Hovedregelen alene er ikke oppfylt, og det finnes ingen unntaksvilkår i denne vurderingen, så
@@ -183,7 +183,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
                     vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                     utfall = Utfall.Oppfylt,
                     vurdertTidspunkt = vurdertTidspunkt,
-                    kilde = Vurderingskilde.Saksbehandler("A123456", "Vurdert manuelt"),
+                    kilde = Vurderingskilde.Saksbehandler("A123456", "Vurdert manuelt", journalpostId = emptyList()),
                     lovreferanse = null,
                 )
             }
