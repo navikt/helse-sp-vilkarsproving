@@ -175,15 +175,6 @@ Tiltak: ny Flyway-migrering (`V16`) som innfører `vurderingskilde = 'OVERFOERT_
 en egen domenevariant eller et felt som gjør at repositoryet skriver og hydrerer denne kilden.
 Behold `VURDERT_I_SPEIL` for alt annet.
 
-### Loggstorm fra arbeidsforholdtype
-
-`tilDomene` i `SpleisOpptjeningsvurderingTilOpptjeningsvurdering` logger en warning per
-arbeidsforhold fordi spleis ikke oppgir type. Under en full backfill blir det titalls millioner
-linjer.
-
-Tiltak: gjør denne loggingen betinget, eller flytt den til en teller. Vurder samtidig om spleis-api
-bør utvides til å oppgi reell arbeidsforholdtype, slik at importerte data blir like gode som nye.
-
 ### Utgående meldinger
 
 Importen skal ikke publisere løsninger eller andre hendelser på rapid-en. Kontroller at skrivestien

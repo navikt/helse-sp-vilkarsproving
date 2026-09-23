@@ -1,6 +1,5 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.spleis
 
-import no.nav.helse.speil.backend.app.logging.loggWarn
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
@@ -55,14 +54,8 @@ internal fun SpleisOpptjeningsvurdering.tilOpptjeningsvurdering(fødselsnummer: 
             )
     }
 
-private fun SpleisOpptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold.tilDomene(): List<Arbeidsforhold> {
-    // Spleis oppgir ikke arbeidsforholdtype (ordinært, frilanser, maritimt o.l.), kun
-    // ansettelsesperioder per orgnummer. Vi setter UKJENT inntil spleis-api eventuelt utvides
-    // til å oppgi reell type.
-    loggWarn(
-        "Mangler arbeidsforholdtype fra spleis-api for orgnummer $organisasjonsnummer — setter UKJENT",
-    )
-    return ansettelsesperioder.map { periode ->
+private fun SpleisOpptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold.tilDomene(): List<Arbeidsforhold> =
+    ansettelsesperioder.map { periode ->
         Arbeidsforhold(
             orgnummer = organisasjonsnummer,
             ansattFom = periode.fom,
@@ -70,4 +63,3 @@ private fun SpleisOpptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold.tilDome
             type = Arbeidsforhold.Arbeidsforholdtype.UKJENT,
         )
     }
-}
