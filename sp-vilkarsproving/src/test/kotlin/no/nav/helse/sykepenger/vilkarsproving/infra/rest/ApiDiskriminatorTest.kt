@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import java.time.LocalDate
 import java.util.*
 
 class ApiDiskriminatorTest {
@@ -24,6 +25,7 @@ class ApiDiskriminatorTest {
                             vilkårskode = ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                             utfall = ApiUtfall.OPPFYLT,
                             vurdertTidspunkt = Instant.now(),
+                            lovreferanse = ApiLovreferanse("folketrygdloven", "8-2", 1, 1, null, LocalDate.of(2025, 12, 22)),
                             kilde =
                                 ApiVurderingskilde.Automatisk(
                                     versjonAvKildekode = "1",

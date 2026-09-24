@@ -87,7 +87,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                         "utfall" to enkeltvurdering.utfall.name,
                         "vurdertTidspunkt" to enkeltvurdering.vurdertTidspunkt,
                         "kilde" to Vurderingskildejson.tilJson(enkeltvurdering.kilde),
-                        "lovreferanse" to enkeltvurdering.lovreferanse?.let { Lovreferansejson.tilJson(it) },
+                        "lovreferanse" to Lovreferansejson.tilJson(enkeltvurdering.lovreferanse),
                     ),
                 ).asUpdate,
             )
@@ -208,7 +208,7 @@ internal class PostgresOpptjeningsvurderingRepository(
             utfall = Utfall.valueOf(row.string("utfall")),
             vurdertTidspunkt = row.instantOrNull("vurdert_tidspunkt"),
             kilde = Vurderingskildejson.fraJson(row.string("kilde")),
-            lovreferanse = row.stringOrNull("lovreferanse")?.let { Lovreferansejson.fraJson(it) },
+            lovreferanse = Lovreferansejson.fraJson(row.string("lovreferanse")),
         )
 
     private fun tilOpptjeningsvurderingRad(row: Row) =

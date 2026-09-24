@@ -80,8 +80,8 @@ internal class SlettPersonRiverTest {
 
         assertEquals(1, rapid.inspektør.size)
         val kvittering = rapid.inspektør.message(0)
-        assertEquals("person_slettet", kvittering["@event_name"].asText())
-        assertEquals(fødselsnummer, kvittering["fødselsnummer"].asText())
+        assertEquals("person_slettet", kvittering["@event_name"].asString())
+        assertEquals(fødselsnummer, kvittering["fødselsnummer"].asString())
     }
 
     @Test
@@ -145,8 +145,8 @@ internal class SlettPersonRiverTest {
                 .prepareStatement(
                     """
                 INSERT INTO vilkarsvurdering
-                    (id, vilkårskode, utfall, kilde)
-                VALUES (?, 'FIREUKERSVILKAARET', 'OPPFYLT', '{}'::jsonb)
+                    (id, vilkårskode, utfall, kilde, lovreferanse)
+                VALUES (?, 'OPPTJENING_ARBEID_MINST_4_UKER', 'OPPFYLT', '{}'::jsonb, '{}'::jsonb)
                 """,
                 ).use { stmt ->
                     stmt.setObject(1, id)

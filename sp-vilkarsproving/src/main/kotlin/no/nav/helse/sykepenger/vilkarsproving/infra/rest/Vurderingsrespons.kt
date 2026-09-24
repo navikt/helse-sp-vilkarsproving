@@ -44,7 +44,18 @@ private fun Vilkårsvurdering.tilApi() =
         vilkårskode = vilkårskode.tilApi(),
         utfall = utfall.tilApi(),
         vurdertTidspunkt = vurdertTidspunkt,
+        lovreferanse = lovreferanse.tilApi(),
         kilde = kilde.tilApi(),
+    )
+
+private fun no.nav.helse.sykepenger.vilkarsproving.domain.Lovreferanse.tilApi() =
+    ApiLovreferanse(
+        lov = lov,
+        paragraf = paragraf,
+        avsnitt = avsnitt,
+        setning = setning,
+        bokstav = bokstav,
+        iKraftFra = iKraftFra,
     )
 
 private fun Utfall.tilApi(): ApiUtfall =
