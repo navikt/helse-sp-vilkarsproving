@@ -62,7 +62,18 @@ internal data class ApiVilkårsvurdering(
     val vilkårskode: ApiVilkårskode,
     val utfall: ApiUtfall,
     val vurdertTidspunkt: Instant?,
+    val lovreferanse: ApiLovreferanse,
     val kilde: ApiVurderingskilde,
+)
+
+@Serializable
+internal data class ApiLovreferanse(
+    val lov: String,
+    val paragraf: String,
+    val avsnitt: Int?,
+    val setning: Int?,
+    val bokstav: String?,
+    val iKraftFra: LocalDate,
 )
 
 @Serializable

@@ -97,8 +97,8 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         assertInstanceOf(Vurderingskilde.Saksbehandler::class.java, kilde)
         assertEquals("A123456", (kilde as Vurderingskilde.Saksbehandler).ident)
         assertEquals(listOf("journalpost-1", "journalpost-2"), kilde.journalpostId)
-        assertNull(vilkårsvurdering.lovreferanse)
-        assertNull(lagretVilkårsvurdering.lovreferanse)
+        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER.lovreferanse, vilkårsvurdering.lovreferanse)
+        assertEquals(vilkårsvurdering.lovreferanse, lagretVilkårsvurdering.lovreferanse)
         // Hovedregelen alene er ikke oppfylt, og det finnes ingen unntaksvilkår i denne vurderingen, så
         // avgjørendeVilkårskode()-regelen gir null (se Vilkårsvurdering.avgjørendeVilkårskode()).
         assertNull(lagret.avgjørendeVilkårskode)
@@ -188,7 +188,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
                     utfall = Utfall.Oppfylt,
                     vurdertTidspunkt = vurdertTidspunkt,
                     kilde = Vurderingskilde.Saksbehandler("A123456", "Vurdert manuelt", journalpostId = emptyList()),
-                    lovreferanse = null,
+                    lovreferanse = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER.lovreferanse,
                 )
             }
         return Opptjeningsvurdering.fraLagring(

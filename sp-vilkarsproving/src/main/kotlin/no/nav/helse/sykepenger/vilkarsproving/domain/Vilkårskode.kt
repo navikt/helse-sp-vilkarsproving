@@ -5,6 +5,8 @@ internal enum class Utfall {
     IkkeOppfylt,
 }
 
-internal enum class Vilkårskode {
-    OPPTJENING_ARBEID_MINST_4_UKER,
+internal enum class Vilkårskode(
+    val lovreferanse: Lovreferanse,
+) {
+    OPPTJENING_ARBEID_MINST_4_UKER(Lovreferanse.`§ 8-2 første avsnitt, første setning`()),
 }
