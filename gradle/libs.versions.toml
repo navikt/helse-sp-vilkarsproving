@@ -6,7 +6,7 @@ kotlin = "2.4.20"
 ktor = "3.5.2"
 tbd-libs = "20260917.2152"
 rapidsAndRivers = "2026071513121784113927"
-sasGradlePlugins = "20260918.1635"
+sasGradlePlugins = "20260923.0907"
 testcontainers = "2.0.5"
 
 [libraries]
