@@ -28,9 +28,7 @@ internal class OpptjeningsvurderingResultatRiverTest {
                 this,
                 transaksjon,
                 object : ISpleisClient {
-                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> {
-                        TODO("Not yet implemented")
-                    }
+                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> = throw NotImplementedError("Trengs ikke for denne testen")
                 },
             )
         }
