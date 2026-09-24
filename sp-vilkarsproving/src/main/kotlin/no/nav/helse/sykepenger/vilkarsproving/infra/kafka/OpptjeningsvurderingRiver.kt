@@ -93,7 +93,7 @@ internal class OpptjeningsvurderingRiver(
                                 mapOf(
                                     "skjæringstidspunkt" to skjæringstidspunkt.toString(),
                                     "fødselsnummer" to fødselsnummer,
-                                    "opprinneligBehov" to jacksonObjectMapper().readTree(packet.toJson()), // TODO vi må være sikker på json eller string her?
+                                    "opprinneligBehov" to jacksonObjectMapper().readTree(packet.toJson()),
                                 ),
                         )
                     loggInfo(
