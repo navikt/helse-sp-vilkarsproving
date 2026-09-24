@@ -15,6 +15,7 @@ internal class Opptjeningsprøving private constructor(
     val id: OpptjeningsprøvingId,
     val fødselsnummer: String,
     val skjæringstidspunkt: LocalDate,
+    val kategori: Kategori,
     val startet: Instant,
     tilstand: Tilstand,
 ) {
@@ -91,6 +92,7 @@ internal class Opptjeningsprøving private constructor(
                     id = OpptjeningsprøvingId.ny(),
                     fødselsnummer = fødselsnummer,
                     skjæringstidspunkt = skjæringstidspunkt,
+                    kategori = arbeidssituasjon.kategori,
                     startet = Instant.now(),
                     tilstand = Tilstand.Startet,
                 )
@@ -110,8 +112,16 @@ internal class Opptjeningsprøving private constructor(
             id: OpptjeningsprøvingId,
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
+            kategori: Kategori,
             startet: Instant,
             tilstand: Tilstand,
-        ) = Opptjeningsprøving(id, fødselsnummer, skjæringstidspunkt, startet, tilstand)
+        ) = Opptjeningsprøving(id, fødselsnummer, skjæringstidspunkt, kategori, startet, tilstand)
     }
 }
+
+private val Arbeidssituasjon.kategori: Kategori
+    get() =
+        when (this) {
+            Arbeidssituasjon.Arbeidstaker -> Kategori.Arbeidstaker
+            Arbeidssituasjon.SelvstendigNæringsdrivende -> Kategori.SelvstendigNæringsdrivende
+        }

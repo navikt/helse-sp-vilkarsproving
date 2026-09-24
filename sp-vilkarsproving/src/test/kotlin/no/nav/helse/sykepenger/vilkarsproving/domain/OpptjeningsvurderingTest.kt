@@ -81,6 +81,35 @@ internal class OpptjeningsvurderingTest {
     }
 
     @Test
+    fun `manuell vurdering viderefører kategori fra forrige vurdering`() {
+        val forrige =
+            checkNotNull(
+                Opptjeningsprøving
+                    .start(
+                        fødselsnummer = FØDSELSNUMMER,
+                        skjæringstidspunkt = 1.februar,
+                        arbeidssituasjon = Arbeidssituasjon.SelvstendigNæringsdrivende,
+                    ).vurdering,
+            )
+
+        val vurdering =
+            Opptjeningsvurdering.avSaksbehandler(
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                vilkårsvurdering =
+                    Vilkårsvurdering.avSaksbehandler(
+                        vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+                        utfall = Utfall.IkkeOppfylt,
+                        saksbehandlerIdent = "Z999999",
+                        fritekstbegrunnelse = "ny vurdering",
+                    ),
+                forrigeVurdering = forrige,
+            )
+
+        assertEquals(Kategori.SelvstendigNæringsdrivende, vurdering.kategori)
+    }
+
+    @Test
     fun `vurdertTidspunkt kan være null`() {
         val vilkårsvurdering =
             Vilkårsvurdering.overførtFraSpleis(

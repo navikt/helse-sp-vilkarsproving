@@ -2,6 +2,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
 import no.nav.helse.februar
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kategori
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -55,7 +56,7 @@ internal class PostgresTransaksjonProviderTest : DatabaseTest() {
 
         assertEquals(0, Database.antallRader("opptjeningsvurdering"))
         assertEquals(0, Database.antallRader("vilkarsvurdering"))
-        val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar) }
+        val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar, Kategori.Arbeidstaker) }
         assertNotNull(lagret)
         assertEquals(false, lagret!!.erAvsluttet) { "Prøvingen skal fortsatt vente på grunnlag" }
     }
@@ -67,7 +68,7 @@ internal class PostgresTransaksjonProviderTest : DatabaseTest() {
             kontekst.opptjeningsprøvinger.lagre(påbegynt.prøving)
 
             // Innenfor transaksjonen ser vi vår egen skriving ...
-            assertNotNull(kontekst.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar))
+            assertNotNull(kontekst.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar, Kategori.SelvstendigNæringsdrivende))
             // ... men en annen forbindelse gjør det ikke.
             assertEquals(0, Database.antallRader("opptjeningsproving"))
         }

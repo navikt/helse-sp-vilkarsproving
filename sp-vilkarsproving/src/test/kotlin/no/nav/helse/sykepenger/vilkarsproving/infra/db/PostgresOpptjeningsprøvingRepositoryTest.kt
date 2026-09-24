@@ -4,6 +4,7 @@ import no.nav.helse.februar
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
 import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kategori
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -25,11 +26,12 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
         val prøving = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving
         transaksjon { it.opptjeningsprøvinger.lagre(prøving) }
 
-        val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar) }!!
+        val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar, Kategori.Arbeidstaker) }!!
 
         assertEquals(prøving.id, lagret.id)
         assertEquals(FØDSELSNUMMER, lagret.fødselsnummer)
         assertEquals(1.februar, lagret.skjæringstidspunkt)
+        assertEquals(Kategori.Arbeidstaker, lagret.kategori)
         assertEquals(prøving.startet.truncatedTo(ChronoUnit.MILLIS), lagret.startet.truncatedTo(ChronoUnit.MILLIS))
         assertEquals(Grunnlagsbehov.Arbeidsforhold, lagret.uteståendeBehov)
         assertFalse(lagret.erAvsluttet)
@@ -40,7 +42,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
         val prøving = prøvingFraLagring(Opptjeningsprøving.Tilstand.Startet)
         transaksjon { it.opptjeningsprøvinger.lagre(prøving) }
 
-        val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar) }!!
+        val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar, Kategori.Arbeidstaker) }!!
 
         assertEquals(Opptjeningsprøving.Tilstand.Startet, lagret.tilstand)
         assertNull(lagret.uteståendeBehov)
@@ -56,7 +58,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
             it.opptjeningsvurderinger.lagre(påbegynt.vurdering!!)
         }
 
-        val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar) }!!
+        val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar, Kategori.SelvstendigNæringsdrivende) }!!
 
         assertTrue(lagret.erAvsluttet)
         assertEquals(Opptjeningsprøving.Tilstand.Fullført(påbegynt.vurdering!!.id), lagret.tilstand)
@@ -76,7 +78,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
                 vurdering
             }
 
-        val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar) }!!
+        val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar, Kategori.Arbeidstaker) }!!
         assertEquals(1, Database.antallRader("opptjeningsproving"))
         assertEquals(Opptjeningsprøving.Tilstand.Fullført(vurdering.id), lagret.tilstand)
         assertNull(lagret.uteståendeBehov)
@@ -89,7 +91,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
         transaksjon { it.opptjeningsprøvinger.lagre(prøving) }
         transaksjon { it.opptjeningsprøvinger.lagre(prøving) }
 
-        val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar) }!!
+        val lagret = transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar, Kategori.Arbeidstaker) }!!
         assertEquals(1, Database.antallRader("opptjeningsproving"))
         assertEquals(prøving.startet.truncatedTo(ChronoUnit.MILLIS), lagret.startet.truncatedTo(ChronoUnit.MILLIS))
     }
@@ -119,7 +121,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
         transaksjon { it.opptjeningsprøvinger.lagre(andre) }
 
         assertEquals(2, Database.antallRader("opptjeningsproving"))
-        assertEquals(andre.id, transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar) }!!.id)
+        assertEquals(andre.id, transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar, Kategori.Arbeidstaker) }!!.id)
     }
 
     @Test
@@ -135,7 +137,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
 
     @Test
     fun `finnSiste gir null når det ikke finnes noen prøving`() {
-        assertNull(transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar) })
+        assertNull(transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar, Kategori.Arbeidstaker) })
     }
 
     private fun nyPrøving(
@@ -148,6 +150,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
             id = OpptjeningsprøvingId.ny(),
             fødselsnummer = FØDSELSNUMMER,
             skjæringstidspunkt = 1.februar,
+            kategori = Kategori.Arbeidstaker,
             startet = Instant.now(),
             tilstand = tilstand,
         )

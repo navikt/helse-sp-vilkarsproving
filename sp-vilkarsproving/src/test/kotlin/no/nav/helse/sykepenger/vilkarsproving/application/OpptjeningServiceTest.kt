@@ -60,12 +60,26 @@ internal class OpptjeningServiceTest {
     }
 
     @Test
-    fun `eksisterende vurdering gjenbrukes også for selvstendig næringsdrivende`() {
+    fun `eksisterende vurdering med annen kategori erstattes ikke`() {
         val eksisterende = fullførtPrøving(1.februar)
 
         val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
 
-        assertEquals(HarVurdering(FØDSELSNUMMER, 1.februar, eksisterende), resultat)
+        val nyVurdering = assertInstanceOf(HarVurdering::class.java, resultat)
+        assertNotEquals(eksisterende, nyVurdering.opptjeningsvurderingId)
+        assertEquals(2, vurderinger.antallLagringer)
+        assertEquals(2, prøvinger.allePrøvinger.size)
+        assertEquals(Kategori.SelvstendigNæringsdrivende, vurderinger.finn(nyVurdering.opptjeningsvurderingId)!!.kategori)
+    }
+
+    @Test
+    fun `eksisterende vurdering med samme kategori gjenbrukes`() {
+        val eksisterende = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
+        val eksisterendeId = (eksisterende as HarVurdering).opptjeningsvurderingId
+
+        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
+
+        assertEquals(HarVurdering(FØDSELSNUMMER, 1.februar, eksisterendeId), resultat)
         assertEquals(1, prøvinger.allePrøvinger.size)
     }
 
@@ -77,6 +91,17 @@ internal class OpptjeningServiceTest {
 
         assertEquals(TrengerArbeidsforhold(FØDSELSNUMMER, 1.februar), resultat)
         assertEquals(1, prøvinger.allePrøvinger.size)
+    }
+
+    @Test
+    fun `pågående arbeidstakerprøving blokkerer ikke selvstendig næringsdrivende`() {
+        service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
+
+        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
+
+        val harVurdering = assertIs<HarVurdering>(resultat)
+        assertEquals(2, prøvinger.allePrøvinger.size)
+        assertEquals(Kategori.SelvstendigNæringsdrivende, vurderinger.finn(harVurdering.opptjeningsvurderingId)!!.kategori)
     }
 
     @Test

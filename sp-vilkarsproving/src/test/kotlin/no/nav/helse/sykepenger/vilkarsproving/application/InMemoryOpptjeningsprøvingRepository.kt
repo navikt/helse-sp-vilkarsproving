@@ -1,5 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.application
 
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kategori
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import java.time.LocalDate
 
@@ -23,7 +24,11 @@ internal class InMemoryOpptjeningsprøvingRepository : OpptjeningsprøvingReposi
     override fun finnSiste(
         fødselsnummer: String,
         skjæringstidspunkt: LocalDate,
-    ) = prøvinger.lastOrNull { it.fødselsnummer == fødselsnummer && it.skjæringstidspunkt == skjæringstidspunkt }
+        kategori: Kategori,
+    ) = prøvinger.lastOrNull { it.fødselsnummer == fødselsnummer && it.skjæringstidspunkt == skjæringstidspunkt && it.kategori == kategori }
 
-    private fun Opptjeningsprøving.gjelderSammeSom(annen: Opptjeningsprøving) = fødselsnummer == annen.fødselsnummer && skjæringstidspunkt == annen.skjæringstidspunkt
+    private fun Opptjeningsprøving.gjelderSammeSom(annen: Opptjeningsprøving) =
+        fødselsnummer == annen.fødselsnummer &&
+            skjæringstidspunkt == annen.skjæringstidspunkt &&
+            kategori == annen.kategori
 }

@@ -1,5 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.application
 
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kategori
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import java.time.LocalDate
 
@@ -9,5 +10,6 @@ internal interface OpptjeningsprøvingRepository {
     fun finnSiste(
         fødselsnummer: String,
         skjæringstidspunkt: LocalDate,
+        kategori: Kategori,
     ): Opptjeningsprøving?
 }
