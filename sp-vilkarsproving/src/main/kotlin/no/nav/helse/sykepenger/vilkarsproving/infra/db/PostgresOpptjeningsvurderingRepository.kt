@@ -4,6 +4,7 @@ import kotliquery.Row
 import kotliquery.Session
 import kotliquery.queryOf
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningsvurderingRepository
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kategori
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
@@ -38,10 +39,10 @@ internal class PostgresOpptjeningsvurderingRepository(
         @Language("PostgreSQL")
         val opptjeningsvurderingSql = """
             insert into opptjeningsvurdering (
-                id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok, avgjørende_vilkårskode, vurdert_tidspunkt
+                id, fødselsnummer, skjæringstidspunkt, kategori, vurderingskilde, opptjening_ok, avgjørende_vilkårskode, vurdert_tidspunkt
             )
             values (
-                :id, :fodselsnummer, :skjaeringstidspunkt, :vurderingskilde, :opptjening_ok, :avgjorendeVilkarskode,
+                :id, :fodselsnummer, :skjaeringstidspunkt, :kategori, :vurderingskilde, :opptjening_ok, :avgjorendeVilkarskode,
                 coalesce(:vurdertTidspunkt, now())
             )
         """
@@ -52,6 +53,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                     "id" to totalvurdering.id.value,
                     "fodselsnummer" to totalvurdering.fødselsnummer,
                     "skjaeringstidspunkt" to totalvurdering.skjæringstidspunkt,
+                    "kategori" to totalvurdering.kategori.tilDbVerdi(),
                     "vurderingskilde" to VURDERINGSKILDE_VURDERT_I_SPEIL,
                     "opptjening_ok" to totalvurdering.erOk,
                     "avgjorendeVilkarskode" to totalvurdering.avgjørendeVilkårskode?.name,
@@ -106,10 +108,10 @@ internal class PostgresOpptjeningsvurderingRepository(
         @Language("PostgreSQL")
         val sql = """
             insert into opptjeningsvurdering (
-                id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok, vurdert_tidspunkt
+                id, fødselsnummer, skjæringstidspunkt, kategori, vurderingskilde, opptjening_ok, vurdert_tidspunkt
             )
             values (
-                :id, :fodselsnummer, :skjaeringstidspunkt, :vurderingskilde, :opptjening_ok, :vurdertTidspunkt
+                :id, :fodselsnummer, :skjaeringstidspunkt, :kategori, :vurderingskilde, :opptjening_ok, :vurdertTidspunkt
             )
         """
         session.run(
@@ -119,6 +121,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                     "id" to totalvurdering.id.value,
                     "fodselsnummer" to totalvurdering.fødselsnummer,
                     "skjaeringstidspunkt" to totalvurdering.skjæringstidspunkt,
+                    "kategori" to totalvurdering.kategori.tilDbVerdi(),
                     "vurderingskilde" to VURDERINGSKILDE_OVERFOERT_FRA_INFOTRYGD,
                     "opptjening_ok" to totalvurdering.erOk,
                     "vurdertTidspunkt" to totalvurdering.vurdertTidspunkt,
@@ -181,6 +184,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                     vilkårsvurderinger = finnVilkårsvurderingerFor(rad.id),
                     avgjørendeVilkårskode = rad.avgjørendeVilkårskode,
                     erOk = rad.erOk,
+                    kategori = rad.kategori,
                 )
         }
 
@@ -212,6 +216,7 @@ internal class PostgresOpptjeningsvurderingRepository(
             id = OpptjeningsvurderingId(row.uuid("id")),
             fødselsnummer = row.string("fødselsnummer"),
             skjæringstidspunkt = row.localDate("skjæringstidspunkt"),
+            kategori = row.string("kategori").fraDbVerdi(),
             vurderingskilde = row.string("vurderingskilde"),
             erOk = row.boolean("opptjening_ok"),
             avgjørendeVilkårskode = row.stringOrNull("avgjørende_vilkårskode")?.let(Vilkårskode::valueOf),
@@ -222,6 +227,7 @@ internal class PostgresOpptjeningsvurderingRepository(
         val id: OpptjeningsvurderingId,
         val fødselsnummer: String,
         val skjæringstidspunkt: LocalDate,
+        val kategori: Kategori,
         val vurderingskilde: String,
         val erOk: Boolean,
         val avgjørendeVilkårskode: Vilkårskode?,
@@ -233,8 +239,21 @@ internal class PostgresOpptjeningsvurderingRepository(
 
         @Language("PostgreSQL")
         const val SELECT_OPPTJENINGSVURDERING = """
-            select id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok, avgjørende_vilkårskode, vurdert_tidspunkt
+            select id, fødselsnummer, skjæringstidspunkt, kategori, vurderingskilde, opptjening_ok, avgjørende_vilkårskode, vurdert_tidspunkt
             from opptjeningsvurdering
         """
     }
+
+    private fun Kategori.tilDbVerdi(): String =
+        when (this) {
+            Kategori.Arbeidstaker -> "ARBEIDSTAKER"
+            Kategori.SelvstendigNæringsdrivende -> "SELVSTENDIG_NÆRINGSDRIVENDE"
+        }
+
+    private fun String.fraDbVerdi(): Kategori =
+        when (this) {
+            "ARBEIDSTAKER" -> Kategori.Arbeidstaker
+            "SELVSTENDIG_NÆRINGSDRIVENDE" -> Kategori.SelvstendigNæringsdrivende
+            else -> error("Ukjent kategori i databasen: $this")
+        }
 }

@@ -4,6 +4,7 @@ import no.nav.helse.februar
 import no.nav.helse.januar
 import no.nav.helse.mars
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kategori
 import no.nav.helse.sykepenger.vilkarsproving.domain.Lovreferanse
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
@@ -40,6 +41,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         assertEquals(vurdering.id, lagret.id)
         assertEquals(FØDSELSNUMMER, lagret.fødselsnummer)
         assertEquals(1.februar, lagret.skjæringstidspunkt)
+        assertEquals(Kategori.Arbeidstaker, lagret.kategori)
         assertEquals(vurdering.erOk, lagret.erOk)
         assertEquals(vurdering.avgjørendeVilkårskode, lagret.avgjørendeVilkårskode)
 
@@ -61,6 +63,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         val vurdering = lagreVurdering(Opptjeningsgrunnlag.SelvstendigNæringsdrivende)
 
         val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.VurdertISpeil
+        assertEquals(Kategori.SelvstendigNæringsdrivende, lagret.kategori)
         val vilkårsvurdering = lagret.vilkårsvurderinger.single()
         val kilde = vilkårsvurdering.kilde as Vurderingskilde.Automatisk
 
@@ -117,6 +120,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.OverførtFraInfotrygd
 
         assertTrue(lagret.erOk)
+        assertEquals(Kategori.Arbeidstaker, lagret.kategori)
         assertEquals(vurdertTidspunkt, lagret.vurdertTidspunkt)
         assertEquals(vurdering.id, transaksjon { it.opptjeningsvurderinger.gjeldende(FØDSELSNUMMER, 1.februar) }!!.id)
     }

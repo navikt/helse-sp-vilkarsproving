@@ -7,6 +7,7 @@ import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResult
 import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResultat.TrengerArbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kategori
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
@@ -28,17 +29,18 @@ internal class OpptjeningService(
             OpptjeningMdcKeys.FØDSELSNUMMER to fødselsnummer,
             OpptjeningMdcKeys.SKJÆRINGSTIDSPUNKT to skjæringstidspunkt.toString(),
         ) {
-            // TODO: I fremtiden bør vi sjekke at eksisterende vurdering ble gjort på samme arbeidssituasjon,
-            //  dersom situasjonen på et skjæringstidspunkt kan endre seg.
-            opptjeningsvurderingRepository.gjeldende(fødselsnummer, skjæringstidspunkt)?.let { vurdering ->
-                loggInfo(
-                    "Har allerede opptjeningsvurdering",
-                    "opptjeningsvurderingId" to vurdering.id,
-                )
-                return@medMdc HarVurdering(fødselsnummer, skjæringstidspunkt, vurdering.id)
-            }
+            opptjeningsvurderingRepository
+                .gjeldende(fødselsnummer, skjæringstidspunkt)
+                ?.takeIf { it.kategori == arbeidssituasjon.kategori }
+                ?.let { vurdering ->
+                    loggInfo(
+                        "Har allerede opptjeningsvurdering",
+                        "opptjeningsvurderingId" to vurdering.id,
+                    )
+                    return@medMdc HarVurdering(fødselsnummer, skjæringstidspunkt, vurdering.id)
+                }
 
-            opptjeningsprøvingRepository.finnSiste(fødselsnummer, skjæringstidspunkt)?.takeUnless { it.erAvsluttet }?.let {
+            opptjeningsprøvingRepository.finnSiste(fødselsnummer, skjæringstidspunkt, arbeidssituasjon.kategori)?.takeUnless { it.erAvsluttet }?.let {
                 loggInfo(
                     "Opptjeningsprøving pågår allerede. Etterspør grunnlaget på nytt",
                     "opptjeningsprøvingId" to it.id,
@@ -67,6 +69,13 @@ internal class OpptjeningService(
             HarVurdering(fødselsnummer, skjæringstidspunkt, vurdering.id)
         }
 
+    private val Arbeidssituasjon.kategori: Kategori
+        get() =
+            when (this) {
+                Arbeidssituasjon.Arbeidstaker -> Kategori.Arbeidstaker
+                Arbeidssituasjon.SelvstendigNæringsdrivende -> Kategori.SelvstendigNæringsdrivende
+            }
+
     fun behandleGrunnlagForAutomatiskArbeidstakerOpptjeningsvurdering(
         arbeidsforhold: List<Arbeidsforhold>,
         fødselsnummer: String,
@@ -76,7 +85,7 @@ internal class OpptjeningService(
             OpptjeningMdcKeys.FØDSELSNUMMER to fødselsnummer,
             OpptjeningMdcKeys.SKJÆRINGSTIDSPUNKT to skjæringstidspunkt.toString(),
         ) {
-            val prøving = opptjeningsprøvingRepository.finnSiste(fødselsnummer, skjæringstidspunkt)
+            val prøving = opptjeningsprøvingRepository.finnSiste(fødselsnummer, skjæringstidspunkt, Kategori.Arbeidstaker)
 
             if (prøving == null) {
                 loggError("Mottatt grunnlag for opptjening, men fant ingen prøving")

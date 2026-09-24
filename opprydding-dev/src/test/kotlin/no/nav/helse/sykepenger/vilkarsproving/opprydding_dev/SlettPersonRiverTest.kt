@@ -100,8 +100,8 @@ internal class SlettPersonRiverTest {
                 .prepareStatement(
                     """
                 INSERT INTO opptjeningsproving
-                    (id, fødselsnummer, skjæringstidspunkt, startet, tilstand)
-                VALUES (?, ?, ?, ?, 'STARTET')
+                    (id, fødselsnummer, skjæringstidspunkt, kategori, startet, tilstand)
+                VALUES (?, ?, ?, 'ARBEIDSTAKER', ?, 'STARTET')
                 """,
                 ).use { stmt ->
                     stmt.setObject(1, id)
@@ -122,8 +122,8 @@ internal class SlettPersonRiverTest {
                 .prepareStatement(
                     """
                 INSERT INTO opptjeningsvurdering
-                    (id, fødselsnummer, skjæringstidspunkt, vurderingskilde, opptjening_ok, vurdert_tidspunkt)
-                VALUES (?, ?, ?, 'VURDERT_I_SPEIL', true, ?)
+                    (id, fødselsnummer, skjæringstidspunkt, kategori, vurderingskilde, opptjening_ok, vurdert_tidspunkt)
+                VALUES (?, ?, ?, 'ARBEIDSTAKER', 'VURDERT_I_SPEIL', true, ?)
                 """,
                 ).use { stmt ->
                     stmt.setObject(1, id)

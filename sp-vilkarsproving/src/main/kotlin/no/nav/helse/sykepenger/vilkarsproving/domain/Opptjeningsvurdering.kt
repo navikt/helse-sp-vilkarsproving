@@ -8,6 +8,7 @@ internal sealed interface Opptjeningsvurdering {
     val id: OpptjeningsvurderingId
     val fødselsnummer: String
     val skjæringstidspunkt: LocalDate
+    val kategori: Kategori
     val erOk: Boolean
 
     fun prøvPåNyttMed(vilkårsvurdering: Vilkårsvurdering): VurdertISpeil
@@ -16,6 +17,7 @@ internal sealed interface Opptjeningsvurdering {
         override val id: OpptjeningsvurderingId,
         override val fødselsnummer: String,
         override val skjæringstidspunkt: LocalDate,
+        override val kategori: Kategori,
         val vilkårsvurderinger: List<Vilkårsvurdering>,
         val avgjørendeVilkårskode: Vilkårskode?,
         override val erOk: Boolean,
@@ -34,6 +36,7 @@ internal sealed interface Opptjeningsvurdering {
                 id = OpptjeningsvurderingId.ny(),
                 fødselsnummer = fødselsnummer,
                 skjæringstidspunkt = skjæringstidspunkt,
+                kategori = kategori,
                 vilkårsvurderinger = vilkårsvurderinger,
                 avgjørendeVilkårskode = avgjørendeVilkårsvurdering?.vilkårskode,
                 erOk = avgjørendeVilkårsvurdering?.utfall == Utfall.Oppfylt,
@@ -52,6 +55,7 @@ internal sealed interface Opptjeningsvurdering {
                     id = OpptjeningsvurderingId.ny(),
                     fødselsnummer = fødselsnummer,
                     skjæringstidspunkt = skjæringstidspunkt,
+                    kategori = Kategori.Arbeidstaker,
                     vilkårsvurderinger = vilkårsvurderinger,
                     avgjørendeVilkårskode = avgjørendeVilkårsvurdering?.vilkårskode,
                     erOk = avgjørendeVilkårsvurdering?.utfall == Utfall.Oppfylt,
@@ -64,6 +68,7 @@ internal sealed interface Opptjeningsvurdering {
         override val id: OpptjeningsvurderingId,
         override val fødselsnummer: String,
         override val skjæringstidspunkt: LocalDate,
+        override val kategori: Kategori,
         override val erOk: Boolean,
         val vurdertTidspunkt: Instant,
     ) : Opptjeningsvurdering {
@@ -74,6 +79,7 @@ internal sealed interface Opptjeningsvurdering {
                 id = OpptjeningsvurderingId.ny(),
                 fødselsnummer = fødselsnummer,
                 skjæringstidspunkt = skjæringstidspunkt,
+                kategori = kategori,
                 vilkårsvurderinger = vilkårsvurderinger,
                 avgjørendeVilkårskode = avgjørendeVilkårsvurdering?.vilkårskode,
                 erOk = avgjørendeVilkårsvurdering?.utfall == Utfall.Oppfylt,
@@ -96,7 +102,7 @@ internal sealed interface Opptjeningsvurdering {
                     Vilkårsvurdering.automatisk(opptjeningsprøvingId, utfall, grunnlag, regel.versjon, Instant.now())
                 }
             val avgjørendeVilkårsvurdering = vilkårsvurderinger.avgjørendeVilkårsvurdering()
-            return VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, vilkårsvurderinger, avgjørendeVilkårsvurdering?.vilkårskode, avgjørendeVilkårsvurdering?.utfall == Utfall.Oppfylt)
+            return VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, grunnlag.kategori, vilkårsvurderinger, avgjørendeVilkårsvurdering?.vilkårskode, avgjørendeVilkårsvurdering?.utfall == Utfall.Oppfylt)
         }
 
         fun avSaksbehandler(
@@ -115,7 +121,7 @@ internal sealed interface Opptjeningsvurdering {
             skjæringstidspunkt: LocalDate,
             erOk: Boolean,
             vurdertTidspunkt: Instant = Instant.now(),
-        ) = OverførtFraInfotrygd(id, fødselsnummer, skjæringstidspunkt, erOk, vurdertTidspunkt)
+        ) = OverførtFraInfotrygd(id, fødselsnummer, skjæringstidspunkt, Kategori.Arbeidstaker, erOk, vurdertTidspunkt)
 
         fun fraLagring(
             id: OpptjeningsvurderingId,
@@ -124,14 +130,15 @@ internal sealed interface Opptjeningsvurdering {
             vilkårsvurderinger: List<Vilkårsvurdering>,
             avgjørendeVilkårskode: Vilkårskode?,
             erOk: Boolean,
-        ) = VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, vilkårsvurderinger, avgjørendeVilkårskode, erOk)
+            kategori: Kategori = vilkårsvurderinger.kategori(),
+        ) = VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, kategori, vilkårsvurderinger, avgjørendeVilkårskode, erOk)
 
         fun overførtFraSpleis(
             id: OpptjeningsvurderingId,
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
             vilkårsvurderinger: List<Vilkårsvurdering>,
-        ) = VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, vilkårsvurderinger, vilkårsvurderinger.avgjørendeVilkårsvurdering()?.vilkårskode, vilkårsvurderinger.avgjørendeVilkårsvurdering()?.utfall == Utfall.Oppfylt)
+        ) = VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, vilkårsvurderinger.kategori(), vilkårsvurderinger, vilkårsvurderinger.avgjørendeVilkårsvurdering()?.vilkårskode, vilkårsvurderinger.avgjørendeVilkårsvurdering()?.utfall == Utfall.Oppfylt)
 
         fun infotrygdFraLagring(
             id: OpptjeningsvurderingId,
@@ -139,6 +146,15 @@ internal sealed interface Opptjeningsvurdering {
             skjæringstidspunkt: LocalDate,
             erOk: Boolean,
             vurdertTidspunkt: Instant,
-        ) = OverførtFraInfotrygd(id, fødselsnummer, skjæringstidspunkt, erOk, vurdertTidspunkt)
+        ) = OverførtFraInfotrygd(id, fødselsnummer, skjæringstidspunkt, Kategori.Arbeidstaker, erOk, vurdertTidspunkt)
     }
 }
+
+private fun List<Vilkårsvurdering>.kategori(): Kategori =
+    firstNotNullOfOrNull { vurdering ->
+        when (val kilde = vurdering.kilde) {
+            is Vurderingskilde.Automatisk -> kilde.grunnlag.kategori
+            is Vurderingskilde.OverførtFraSpleis -> kilde.grunnlag.kategori
+            is Vurderingskilde.Saksbehandler -> null
+        }
+    } ?: Kategori.Arbeidstaker
