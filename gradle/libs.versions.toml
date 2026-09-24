@@ -3,7 +3,7 @@ flyway = "13.6.0"
 kotlinx-coroutines = "1.11.0"
 # Må følge Kotlin-versjonen som sas-kotlin-pluginen bruker
 kotlin = "2.4.20"
-ktor = "3.5.2"
+ktor = "3.6.0"
 tbd-libs = "20260917.2152"
 rapidsAndRivers = "2026071513121784113927"
 sasGradlePlugins = "20260918.1635"
