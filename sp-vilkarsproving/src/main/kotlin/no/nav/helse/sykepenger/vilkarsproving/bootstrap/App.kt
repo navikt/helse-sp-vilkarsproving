@@ -24,6 +24,8 @@ enum class AppRolle(
 }
 
 fun main() {
+    val env = System.getenv()
+    val versjonAvKode = env.getValue("NAIS_APP_IMAGE")
     val spleisClient = SpleisClient.fromEnv()
 
     startApp(
@@ -34,10 +36,12 @@ fun main() {
             GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(
                 rapidsConnection = this,
                 transaksjonProvider = transaksjonProvider,
+                versjonAvKode = versjonAvKode,
             )
             OpptjeningsvurderingRiver(
                 rapidsConnection = this,
                 transaksjonProvider = transaksjonProvider,
+                versjonAvKode = versjonAvKode,
             )
             OpptjeningsvurderingResultatRiver(
                 rapidsConnection = this,

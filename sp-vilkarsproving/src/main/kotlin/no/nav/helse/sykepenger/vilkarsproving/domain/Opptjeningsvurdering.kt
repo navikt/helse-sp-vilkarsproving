@@ -94,12 +94,13 @@ internal sealed interface Opptjeningsvurdering {
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
             grunnlag: Opptjeningsgrunnlag,
+            versjonAvKode: String = "test",
         ): VurdertISpeil {
             val regel = grunnlag.regel
             val resultat = regel.vurder(skjæringstidspunkt, grunnlag)
             val vilkårsvurderinger =
                 resultat.vilkårsutfall.map { utfall ->
-                    Vilkårsvurdering.automatisk(opptjeningsprøvingId, utfall, grunnlag, regel.versjon, Instant.now())
+                    Vilkårsvurdering.automatisk(opptjeningsprøvingId, utfall, grunnlag, versjonAvKode, Instant.now())
                 }
             val avgjørendeVilkårsvurdering = vilkårsvurderinger.avgjørendeVilkårsvurdering()
             return VurdertISpeil(id, fødselsnummer, skjæringstidspunkt, grunnlag.kategori, vilkårsvurderinger, avgjørendeVilkårsvurdering?.vilkårskode, avgjørendeVilkårsvurdering?.utfall == Utfall.Oppfylt)

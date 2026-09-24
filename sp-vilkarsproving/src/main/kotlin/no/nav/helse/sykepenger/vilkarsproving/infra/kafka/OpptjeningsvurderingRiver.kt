@@ -21,6 +21,7 @@ import tools.jackson.module.kotlin.jacksonObjectMapper
 internal class OpptjeningsvurderingRiver(
     rapidsConnection: RapidsConnection,
     private val transaksjonProvider: TransaksjonProvider<Transaksjonskontekst>,
+    private val versjonAvKode: String = "test",
 ) : River.PacketListener {
     private val behovKey = "Opptjeningsvurdering"
 
@@ -59,7 +60,7 @@ internal class OpptjeningsvurderingRiver(
 
             val vurderOpptjeningResultat =
                 transaksjonProvider.transaksjon { kontekst ->
-                    OpptjeningService(kontekst).vurderOpptjening(
+                    OpptjeningService(kontekst, versjonAvKode).vurderOpptjening(
                         fødselsnummer = fødselsnummer,
                         skjæringstidspunkt = skjæringstidspunkt,
                         arbeidssituasjon = arbeidssituasjon,

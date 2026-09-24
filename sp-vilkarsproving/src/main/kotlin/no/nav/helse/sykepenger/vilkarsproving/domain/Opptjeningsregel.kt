@@ -6,8 +6,6 @@ import no.nav.helse.til
 import java.time.LocalDate
 
 internal object Opptjeningsregel {
-    val versjon = "1"
-
     private const val ANTALL_OPPTJENINGSDAGER_SOM_KREVES = 28
 
     fun vurder(

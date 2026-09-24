@@ -13,10 +13,11 @@ import java.time.LocalDate
 import kotlin.test.assertIs
 
 internal class OpptjeningServiceTest {
+    private val versjonAvKode = "nais-app-image"
     private val transaksjon = InMemoryTransaksjonProvider()
     private val vurderinger = transaksjon.opptjeningsvurderinger
     private val prøvinger = transaksjon.opptjeningsprøvinger
-    private val service = OpptjeningService(transaksjon)
+    private val service = OpptjeningService(transaksjon, versjonAvKode)
 
     @Test
     fun `arbeidstaker uten eksisterende vurdering starter en prøving som venter på arbeidsforhold`() {
@@ -45,6 +46,7 @@ internal class OpptjeningServiceTest {
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, vilkårsvurdering.vilkårskode)
         assertEquals(Utfall.Oppfylt, vilkårsvurdering.utfall)
         assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, (vilkårsvurdering.kilde as Vurderingskilde.Automatisk).grunnlag)
+        assertEquals(versjonAvKode, vilkårsvurdering.kilde.versjonAvKildekode)
         assertTrue(prøvinger.allePrøvinger.single().erAvsluttet)
     }
 

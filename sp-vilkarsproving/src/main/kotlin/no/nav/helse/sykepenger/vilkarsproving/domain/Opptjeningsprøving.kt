@@ -42,23 +42,30 @@ internal class Opptjeningsprøving private constructor(
      * Tar imot grunnlaget prøvingen venter på og produserer opptjeningsvurderingen.
      * Vurderingen og den oppdaterte prøvingen må lagres i samme transaksjon.
      */
-    fun motta(grunnlag: Opptjeningsgrunnlag): Opptjeningsvurdering.VurdertISpeil {
+    fun motta(
+        grunnlag: Opptjeningsgrunnlag,
+        versjonAvKode: String = "test",
+    ): Opptjeningsvurdering.VurdertISpeil {
         val venter =
             tilstand as? Tilstand.VenterPåGrunnlag
                 ?: error("Prøving $id venter ikke på grunnlag, men er i tilstand $tilstand")
         check(grunnlag.besvarer == venter.behov) {
             "Prøving $id venter på ${venter.behov}, men fikk grunnlag som besvarer ${grunnlag.besvarer}"
         }
-        return fullfør(grunnlag)
+        return fullfør(grunnlag, versjonAvKode)
     }
 
-    private fun fullfør(grunnlag: Opptjeningsgrunnlag): Opptjeningsvurdering.VurdertISpeil {
+    private fun fullfør(
+        grunnlag: Opptjeningsgrunnlag,
+        versjonAvKode: String,
+    ): Opptjeningsvurdering.VurdertISpeil {
         val vurdering =
             Opptjeningsvurdering.automatisk(
                 opptjeningsprøvingId = id,
                 fødselsnummer = fødselsnummer,
                 skjæringstidspunkt = skjæringstidspunkt,
                 grunnlag = grunnlag,
+                versjonAvKode = versjonAvKode,
             )
         tilstand = Tilstand.Fullført(vurdering.id)
         return vurdering
@@ -81,6 +88,7 @@ internal class Opptjeningsprøving private constructor(
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
             arbeidssituasjon: Arbeidssituasjon,
+            versjonAvKode: String = "test",
         ): Påbegynt {
             val umiddelbartGrunnlag =
                 when (arbeidssituasjon) {
@@ -103,7 +111,7 @@ internal class Opptjeningsprøving private constructor(
                         null
                     }
 
-                    else -> prøving.fullfør(umiddelbartGrunnlag)
+                    else -> prøving.fullfør(umiddelbartGrunnlag, versjonAvKode)
                 }
             return Påbegynt(prøving, vurdering)
         }

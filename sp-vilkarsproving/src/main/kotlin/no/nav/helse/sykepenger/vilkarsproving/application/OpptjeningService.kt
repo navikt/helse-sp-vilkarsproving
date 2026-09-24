@@ -16,6 +16,7 @@ import java.time.LocalDate
 
 internal class OpptjeningService(
     kontekst: Transaksjonskontekst,
+    private val versjonAvKode: String = "test",
 ) {
     private val opptjeningsvurderingRepository = kontekst.opptjeningsvurderinger
     private val opptjeningsprøvingRepository = kontekst.opptjeningsprøvinger
@@ -48,7 +49,13 @@ internal class OpptjeningService(
                 return@medMdc TrengerArbeidsforhold(fødselsnummer, skjæringstidspunkt)
             }
 
-            val (prøving, vurdering) = Opptjeningsprøving.start(fødselsnummer, skjæringstidspunkt, arbeidssituasjon)
+            val (prøving, vurdering) =
+                Opptjeningsprøving.start(
+                    fødselsnummer,
+                    skjæringstidspunkt,
+                    arbeidssituasjon,
+                    versjonAvKode,
+                )
             opptjeningsprøvingRepository.lagre(prøving)
 
             if (vurdering == null) {
@@ -100,7 +107,7 @@ internal class OpptjeningService(
                 return@medMdc BehandleGrunnlagResultat.AlleredeVurdert
             }
 
-            val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold))
+            val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold), versjonAvKode)
             opptjeningsvurderingRepository.lagre(vurdering)
             opptjeningsprøvingRepository.lagre(prøving)
             loggInfo(

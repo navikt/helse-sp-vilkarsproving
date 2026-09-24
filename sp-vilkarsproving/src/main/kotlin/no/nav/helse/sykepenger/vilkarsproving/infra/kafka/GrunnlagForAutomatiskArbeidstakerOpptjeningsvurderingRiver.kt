@@ -22,6 +22,7 @@ import tools.jackson.databind.node.ObjectNode
 internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(
     rapidsConnection: RapidsConnection,
     private val transaksjonProvider: TransaksjonProvider<Transaksjonskontekst>,
+    private val versjonAvKode: String = "test",
 ) : River.PacketListener {
     private val behovKey = "ArbeidsforholdV2"
 
@@ -70,7 +71,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(
             )
             val resultat =
                 transaksjonProvider.transaksjon { kontekst ->
-                    OpptjeningService(kontekst).behandleGrunnlagForAutomatiskArbeidstakerOpptjeningsvurdering(
+                    OpptjeningService(kontekst, versjonAvKode).behandleGrunnlagForAutomatiskArbeidstakerOpptjeningsvurdering(
                         fødselsnummer = fødselsnummer,
                         skjæringstidspunkt = skjæringstidspunkt,
                         arbeidsforhold = arbeidsforhold,

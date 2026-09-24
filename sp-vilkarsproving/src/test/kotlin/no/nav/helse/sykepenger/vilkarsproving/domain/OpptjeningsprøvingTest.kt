@@ -51,7 +51,7 @@ internal class OpptjeningsprøvingTest {
         val kilde = vilkårsvurdering.kilde as Vurderingskilde.Automatisk
         assertEquals(prøving.id, kilde.opptjeningsprøvingId)
         assertEquals(Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold), kilde.grunnlag)
-        assertEquals(Opptjeningsregel.versjon, kilde.versjonAvKildekode)
+        assertEquals("test", kilde.versjonAvKildekode)
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, vilkårsvurdering.vilkårskode)
         assertEquals(Utfall.Oppfylt, vilkårsvurdering.utfall)
     }
