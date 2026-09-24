@@ -36,7 +36,7 @@ internal class OpptjeningsvurderingRiver(
                 validate {
                     it.requireKey("fødselsnummer")
                     it.require("Opptjeningsvurdering.skjæringstidspunkt", JsonNode::asLocalDate)
-                    it.requireKey("Opptjeningsvurdering.arbeidssituasjon") // TODO strengere validering
+                    it.requireKey("Opptjeningsvurdering.arbeidssituasjon")
                 }
             }.register(this)
     }

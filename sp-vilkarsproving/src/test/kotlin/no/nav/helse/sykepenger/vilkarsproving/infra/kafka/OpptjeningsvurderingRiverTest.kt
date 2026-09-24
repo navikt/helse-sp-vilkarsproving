@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import tools.jackson.databind.node.ObjectNode
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.util.UUID
@@ -180,6 +181,16 @@ internal class OpptjeningsvurderingRiverTest {
         rapid.sendTestMessage(melding)
 
         assertEquals(0, rapid.inspektør.size)
+    }
+
+    @Test
+    fun `behov med ukjent arbeidssituasjon feiler`() {
+        assertThrows<IllegalArgumentException> {
+            rapid.sendTestMessage(opptjeningsvurderingBehov(arbeidssituasjon = "Ukjent"))
+        }
+
+        assertEquals(0, rapid.inspektør.size)
+        assertEquals(0, prøvinger.allePrøvinger.size)
     }
 
     private fun fullførtPrøving(): OpptjeningsvurderingId {
