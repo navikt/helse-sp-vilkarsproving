@@ -25,6 +25,64 @@ Alternativet er at spleis-jobben gjenoppretter `Person` selv og publiserer ferdi
 vurderinger. Det sparer HTTP-kall mot spleis-api, men dupliserer JSON-tolkingen. Vi velger bare
 den løsningen hvis lasttesten viser at spleis-api ikke tåler volumet.
 
+## Flyt
+
+```mermaid
+flowchart TD
+    klar["Sp-vilkarsproving er klar<br/>skrivesti, migreringskilde og metrikker"] --> toggle["Skru på<br/>OPPTJENINGSVURDERINGBEHOV"]
+    toggle --> normal["Nye vurderinger går<br/>direkte til sp-vilkarsproving"]
+    toggle --> jobb["Start migreringsjobben<br/>for personer i spleis"]
+
+    jobb --> person["Les fødselsnummer<br/>fra person-tabellen"]
+    person --> melding["Send én Kafka-melding<br/>per person"]
+    melding --> river["ImporterHistoriskOpptjeningRiver"]
+    river --> api["Hent alle vurderinger<br/>fra spleis-api"]
+    api --> map["Map vurderingene"]
+    map --> lagre["Lagre i samme transaksjon<br/>med idempotens på vurderings-ID"]
+    lagre --> resultat["Tell lagret, allerede importert<br/>og feilet"]
+
+    behov["OpptjeningsvurderingResultat"] --> lokalt{"Finnes vurderingen<br/>lokalt?"}
+    lokalt -->|Ja| svar["Svar fra databasen"]
+    lokalt -->|Nei under import| fallback["Fallback til spleis-api"]
+    fallback --> svar
+    lagre --> lokalt
+
+    resultat --> verifiser["Verifiser utvalg og<br/>full kjøring"]
+    verifiser --> ferdig{"Er importen komplett?"}
+    ferdig -->|Nei| jobb
+    ferdig -->|Ja| rydd["Fjern fallback,<br/>importriver og importservice"]
+```
+
+## Runtime-arkitektur
+
+```mermaid
+flowchart LR
+    subgraph spleis["spleis"]
+        person[(person-tabell)]
+        job["naisjob<br/>importer historisk opptjening"]
+        person -->|leser fødselsnummer| job
+    end
+
+    rapid[("Kafka<br/>tbd.rapid.v1")]
+
+    subgraph sp["sp-vilkarsproving"]
+        river["ImporterHistoriskOpptjeningRiver"]
+        service["ImporterOpptjeningsvurderingerService"]
+        repo["PostgresOpptjeningsvurderingRepository"]
+        db[(Postgres)]
+        river --> service
+        service --> repo
+        repo --> db
+    end
+
+    api["spleis-api<br/>POST /api/opptjeningsvurderinger"]
+
+    job -->|importer_historisk_opptjening<br/>fødselsnummer som Kafka-nøkkel| rapid
+    rapid -->|Kafka-melding| river
+    service -->|HTTP-kall med fødselsnummer| api
+    api -->|historiske opptjeningsvurderinger| service
+```
+
 ## Dagens situasjon
 
 ### sp-vilkarsproving
