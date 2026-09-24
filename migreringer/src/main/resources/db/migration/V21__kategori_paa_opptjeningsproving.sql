@@ -12,3 +12,9 @@ WHERE kategori IS NULL;
 
 ALTER TABLE opptjeningsproving
     ALTER COLUMN kategori SET NOT NULL;
+
+DROP INDEX uix_opptjeningsproving_aktiv;
+
+CREATE UNIQUE INDEX uix_opptjeningsproving_aktiv
+    ON opptjeningsproving (fødselsnummer, skjæringstidspunkt, kategori)
+    WHERE tilstand <> 'FULLFØRT';
