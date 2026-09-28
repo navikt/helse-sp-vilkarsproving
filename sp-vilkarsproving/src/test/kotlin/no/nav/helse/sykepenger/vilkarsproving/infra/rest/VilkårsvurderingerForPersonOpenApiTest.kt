@@ -101,7 +101,8 @@ class VilkårsvurderingerForPersonOpenApiTest {
                     .readTree(client.get("/api/openapi.json").bodyAsText())["components"]["schemas"]
 
             listOf(
-                "ApiOpptjeningsvurdering.VurdertISpeil" to "kravkilde",
+                "ApiOpptjeningsvurdering.VurdertISpVilkarproving" to "kravkilde",
+                "ApiOpptjeningsvurdering.OverførtFraSpleis" to "kravkilde",
                 "ApiOpptjeningsvurdering.OverførtFraInfotrygd" to "kravkilde",
                 "ApiVurderingskilde.Automatisk" to "kildetype",
                 "ApiVurderingskilde.Saksbehandler" to "kildetype",

@@ -18,7 +18,8 @@ internal data class ApiVilkårsvurderingerForPersonResponse(
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "kravkilde", visible = true)
 @JsonSubTypes(
-    JsonSubTypes.Type(value = ApiOpptjeningsvurdering.VurdertISpeil::class, name = "VURDERT_I_SPEIL"),
+    JsonSubTypes.Type(value = ApiOpptjeningsvurdering.VurdertISpVilkarproving::class, name = "VURDERT_I_SP_VILKARSPROVING"),
+    JsonSubTypes.Type(value = ApiOpptjeningsvurdering.OverførtFraSpleis::class, name = "OVERFORT_FRA_SPLEIS"),
     JsonSubTypes.Type(value = ApiOpptjeningsvurdering.OverførtFraInfotrygd::class, name = "OVERFOERT_FRA_INFOTRYGD"),
 )
 @Serializable
@@ -30,14 +31,25 @@ internal sealed interface ApiOpptjeningsvurdering {
     val kravkilde: ApiKravkilde
 
     @Serializable
-    data class VurdertISpeil(
+    data class VurdertISpVilkarproving(
         override val id: UUID,
         override val kravkode: ApiKravkode,
         override val opptjeningOk: Boolean,
         val avgjørendeVilkårskode: ApiVilkårskode?,
         val vurderinger: List<ApiVilkårsvurdering>,
     ) : ApiOpptjeningsvurdering {
-        override val kravkilde: ApiKravkilde = ApiKravkilde.VURDERT_I_SPEIL
+        override val kravkilde: ApiKravkilde = ApiKravkilde.VURDERT_I_SP_VILKARSPROVING
+    }
+
+    @Serializable
+    data class OverførtFraSpleis(
+        override val id: UUID,
+        override val kravkode: ApiKravkode,
+        override val opptjeningOk: Boolean,
+        val avgjørendeVilkårskode: ApiVilkårskode?,
+        val vurderinger: List<ApiVilkårsvurdering>,
+    ) : ApiOpptjeningsvurdering {
+        override val kravkilde: ApiKravkilde = ApiKravkilde.OVERFORT_FRA_SPLEIS
     }
 
     @Serializable
@@ -52,7 +64,8 @@ internal sealed interface ApiOpptjeningsvurdering {
 
 @Serializable
 internal enum class ApiKravkilde {
-    VURDERT_I_SPEIL,
+    VURDERT_I_SP_VILKARSPROVING,
+    OVERFORT_FRA_SPLEIS,
     OVERFOERT_FRA_INFOTRYGD,
 }
 
