@@ -131,6 +131,7 @@ internal class OpptjeningsvurderingTest {
             )
 
         assertEquals(null, vilkårsvurdering.vurdertTidspunkt)
+        assertEquals(Opptjeningsvurderingskilde.OVERFORT_FRA_SPLEIS, vilkårsvurdering.vurderingskilde)
     }
 
     private companion object {

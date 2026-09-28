@@ -8,6 +8,7 @@ internal data class Vilkårsvurdering(
     val utfall: Utfall,
     val vurdertTidspunkt: Instant?,
     val kilde: Vurderingskilde,
+    val vurderingskilde: Opptjeningsvurderingskilde,
     val lovreferanse: Lovreferanse,
 ) {
     private fun erOppfylt() = utfall == Utfall.Oppfylt
@@ -33,6 +34,7 @@ internal data class Vilkårsvurdering(
             utfall = vilkårsutfall.utfall,
             vurdertTidspunkt = vurdertTidspunkt,
             kilde = Vurderingskilde.Automatisk(opptjeningsprøvingId, grunnlag, vilkårsutfall.utledetFakta, versjonAvKildekode),
+            vurderingskilde = Opptjeningsvurderingskilde.VURDERT_I_SP_VILKARSPROVING,
             lovreferanse = vilkårsutfall.lovreferanse,
         )
 
@@ -48,6 +50,7 @@ internal data class Vilkårsvurdering(
             utfall = utfall,
             vurdertTidspunkt = Instant.now(),
             kilde = Vurderingskilde.Saksbehandler(saksbehandlerIdent, fritekstbegrunnelse, journalpostId),
+            vurderingskilde = Opptjeningsvurderingskilde.VURDERT_I_SP_VILKARSPROVING,
             lovreferanse = vilkårskode.lovreferanse,
         )
 
@@ -63,6 +66,7 @@ internal data class Vilkårsvurdering(
             utfall = utfall,
             vurdertTidspunkt = vurdertTidspunkt,
             kilde = Vurderingskilde.OverførtFraSpleis(grunnlag, utledetFakta),
+            vurderingskilde = Opptjeningsvurderingskilde.OVERFORT_FRA_SPLEIS,
             lovreferanse = vilkårskode.lovreferanse,
         )
 
@@ -72,7 +76,8 @@ internal data class Vilkårsvurdering(
             utfall: Utfall,
             vurdertTidspunkt: Instant?,
             kilde: Vurderingskilde,
+            vurderingskilde: Opptjeningsvurderingskilde,
             lovreferanse: Lovreferanse,
-        ) = Vilkårsvurdering(id, vilkårskode, utfall, vurdertTidspunkt, kilde, lovreferanse)
+        ) = Vilkårsvurdering(id, vilkårskode, utfall, vurdertTidspunkt, kilde, vurderingskilde, lovreferanse)
     }
 }

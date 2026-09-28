@@ -145,8 +145,8 @@ internal class SlettPersonRiverTest {
                 .prepareStatement(
                     """
                 INSERT INTO vilkarsvurdering
-                    (id, vilkårskode, utfall, kilde, lovreferanse)
-                VALUES (?, 'OPPTJENING_ARBEID_MINST_4_UKER', 'OPPFYLT', '{}'::jsonb, '{}'::jsonb)
+                    (id, vilkårskode, utfall, vurderingskilde, kilde, lovreferanse)
+                VALUES (?, 'OPPTJENING_ARBEID_MINST_4_UKER', 'OPPFYLT', 'VURDERT_I_SP_VILKARSPROVING', '{}'::jsonb, '{}'::jsonb)
                 """,
                 ).use { stmt ->
                     stmt.setObject(1, id)

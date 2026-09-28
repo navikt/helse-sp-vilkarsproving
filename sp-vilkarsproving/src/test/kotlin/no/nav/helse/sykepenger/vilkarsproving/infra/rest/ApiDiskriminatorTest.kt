@@ -13,7 +13,7 @@ class ApiDiskriminatorTest {
     fun `ApiOpptjeningsvurdering - navn i JsonSubTypes stemmer med faktisk kravkilde`() {
         verifiserDiskriminator(
             ApiOpptjeningsvurdering::class.java,
-            ApiOpptjeningsvurdering.VurdertISpeil(
+            ApiOpptjeningsvurdering.VurdertISpVilkarproving(
                 id = UUID.randomUUID(),
                 kravkode = ApiKravkode.OPPTJENING,
                 opptjeningOk = true,
@@ -33,6 +33,13 @@ class ApiDiskriminatorTest {
                                 ),
                         ),
                     ),
+            ),
+            ApiOpptjeningsvurdering.OverførtFraSpleis(
+                id = UUID.randomUUID(),
+                kravkode = ApiKravkode.OPPTJENING,
+                opptjeningOk = true,
+                avgjørendeVilkårskode = ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+                vurderinger = emptyList(),
             ),
             ApiOpptjeningsvurdering.OverførtFraInfotrygd(
                 id = UUID.randomUUID(),

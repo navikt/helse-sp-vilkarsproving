@@ -10,6 +10,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurderingskilde
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
@@ -48,6 +49,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         val vilkårsvurdering = lagret.vilkårsvurderinger.single()
         val kilde = vilkårsvurdering.kilde as Vurderingskilde.Automatisk
         assertEquals(grunnlag, kilde.grunnlag)
+        assertEquals(Opptjeningsvurderingskilde.VURDERT_I_SP_VILKARSPROVING, vilkårsvurdering.vurderingskilde)
         assertEquals(Lovreferanse.`§ 8-2 første avsnitt, første setning`(), vilkårsvurdering.lovreferanse)
         assertEquals(
             vurdering.vilkårsvurderinger
@@ -97,6 +99,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         assertInstanceOf(Vurderingskilde.Saksbehandler::class.java, kilde)
         assertEquals("A123456", (kilde as Vurderingskilde.Saksbehandler).ident)
         assertEquals(listOf("journalpost-1", "journalpost-2"), kilde.journalpostId)
+        assertEquals(Opptjeningsvurderingskilde.VURDERT_I_SP_VILKARSPROVING, lagretVilkårsvurdering.vurderingskilde)
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER.lovreferanse, vilkårsvurdering.lovreferanse)
         assertEquals(vilkårsvurdering.lovreferanse, lagretVilkårsvurdering.lovreferanse)
         // Hovedregelen alene er ikke oppfylt, og det finnes ingen unntaksvilkår i denne vurderingen, så
@@ -188,6 +191,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
                     utfall = Utfall.Oppfylt,
                     vurdertTidspunkt = vurdertTidspunkt,
                     kilde = Vurderingskilde.Saksbehandler("A123456", "Vurdert manuelt", journalpostId = emptyList()),
+                    vurderingskilde = Opptjeningsvurderingskilde.VURDERT_I_SP_VILKARSPROVING,
                     lovreferanse = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER.lovreferanse,
                 )
             }

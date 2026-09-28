@@ -7,6 +7,7 @@ import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningsvurderingRe
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kategori
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurderingskilde
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
@@ -67,8 +68,8 @@ internal class PostgresOpptjeningsvurderingRepository(
         // eller videreført. Innholdet kan uansett ikke ha endret seg: vilkårsvurderinger er immutable.
         @Language("PostgreSQL")
         val vilkårsvurderingSql = """
-            insert into vilkarsvurdering (id, vilkårskode, utfall, vurdert_tidspunkt, kilde, lovreferanse)
-            values (:id, :vilkarskode, :utfall, :vurdertTidspunkt, cast(:kilde as jsonb), cast(:lovreferanse as jsonb))
+            insert into vilkarsvurdering (id, vilkårskode, utfall, vurdert_tidspunkt, kilde, vurderingskilde, lovreferanse)
+            values (:id, :vilkarskode, :utfall, :vurdertTidspunkt, cast(:kilde as jsonb), :vurderingskilde, cast(:lovreferanse as jsonb))
             on conflict (id) do nothing
         """
 
@@ -87,6 +88,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                         "utfall" to enkeltvurdering.utfall.name,
                         "vurdertTidspunkt" to enkeltvurdering.vurdertTidspunkt,
                         "kilde" to Vurderingskildejson.tilJson(enkeltvurdering.kilde),
+                        "vurderingskilde" to enkeltvurdering.vurderingskilde.name,
                         "lovreferanse" to Lovreferansejson.tilJson(enkeltvurdering.lovreferanse),
                     ),
                 ).asUpdate,
@@ -191,7 +193,7 @@ internal class PostgresOpptjeningsvurderingRepository(
     private fun finnVilkårsvurderingerFor(opptjeningsvurderingId: OpptjeningsvurderingId): List<Vilkårsvurdering> {
         @Language("PostgreSQL")
         val sql = """
-            select v.id, v.vilkårskode, v.utfall, v.vurdert_tidspunkt, v.kilde, v.lovreferanse
+            select v.id, v.vilkårskode, v.utfall, v.vurdert_tidspunkt, v.kilde, v.vurderingskilde, v.lovreferanse
             from opptjeningsvurdering_vilkarsvurdering ov
             join vilkarsvurdering v on v.id = ov.vilkarsvurdering_id
             where ov.opptjeningsvurdering_id = :opptjeningsvurderingId
@@ -208,6 +210,7 @@ internal class PostgresOpptjeningsvurderingRepository(
             utfall = Utfall.valueOf(row.string("utfall")),
             vurdertTidspunkt = row.instantOrNull("vurdert_tidspunkt"),
             kilde = Vurderingskildejson.fraJson(row.string("kilde")),
+            vurderingskilde = Opptjeningsvurderingskilde.valueOf(row.string("vurderingskilde")),
             lovreferanse = Lovreferansejson.fraJson(row.string("lovreferanse")),
         )
 

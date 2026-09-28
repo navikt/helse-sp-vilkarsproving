@@ -34,7 +34,7 @@ internal class VurderingsresponsTest {
     @Test
     fun `opptjeningsvurderingen peker på vilkaaret som avgjorde det`() {
         val respons = Vurderingsrespons.fra(automatiskArbeidstakervurdering(4.januar til 31.januar))
-        val krav = respons.krav.single() as ApiOpptjeningsvurdering.VurdertISpeil
+        val krav = respons.krav.single() as ApiOpptjeningsvurdering.VurdertISpVilkarproving
 
         assertEquals(ApiKravkode.OPPTJENING, krav.kravkode)
         assertTrue(krav.opptjeningOk)
@@ -118,6 +118,30 @@ internal class VurderingsresponsTest {
     }
 
     @Test
+    fun `spleisvurdering blir en opptjeningsvurdering med spleis som kilde`() {
+        val vurdering =
+            Opptjeningsvurdering.overførtFraSpleis(
+                id = OpptjeningsvurderingId.ny(),
+                fødselsnummer = "12345678901",
+                skjæringstidspunkt = 1.februar,
+                vilkårsvurderinger =
+                    listOf(
+                        Vilkårsvurdering.overførtFraSpleis(
+                            vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+                            utfall = Utfall.Oppfylt,
+                            grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,
+                            utledetFakta = UtledetFakta.Ingen,
+                        ),
+                    ),
+            )
+
+        val krav = Vurderingsrespons.fra(vurdering).krav.single()
+
+        assertInstanceOf(ApiOpptjeningsvurdering.OverførtFraSpleis::class.java, krav)
+        assertEquals(ApiKravkilde.OVERFORT_FRA_SPLEIS, krav.kravkilde)
+    }
+
+    @Test
     fun `selvstendig naeringsdrivende gir grunnlag uten arbeidsforhold`() {
         val vurdering =
             Opptjeningsvurdering.automatisk(
@@ -144,6 +168,6 @@ internal class VurderingsresponsTest {
         )
 }
 
-private fun ApiVilkårsvurderingerForPersonResponse.enesteVurdering() = (krav.single() as ApiOpptjeningsvurdering.VurdertISpeil).vurderinger.single()
+private fun ApiVilkårsvurderingerForPersonResponse.enesteVurdering() = (krav.single() as ApiOpptjeningsvurdering.VurdertISpVilkarproving).vurderinger.single()
 
 private fun ApiVilkårsvurdering.automatiskGrunnlag() = (kilde as ApiVurderingskilde.Automatisk).grunnlag as ApiVurderingsgrunnlag.Arbeidsforhold
