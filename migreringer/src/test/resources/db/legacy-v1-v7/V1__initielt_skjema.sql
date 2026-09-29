@@ -26,6 +26,22 @@ CREATE UNIQUE INDEX uix_opptjeningsproving_aktiv
 CREATE INDEX idx_opptjeningsproving_noekkel
     ON opptjeningsproving (fødselsnummer, skjæringstidspunkt, løpenummer DESC);
 
+CREATE TABLE opptjeningsvurdering
+(
+    id                     UUID        NOT NULL UNIQUE,
+    fødselsnummer          VARCHAR(11) NOT NULL,
+    skjæringstidspunkt     DATE        NOT NULL,
+    vurderingskilde        TEXT        NOT NULL,
+    opprettet              TIMESTAMPTZ NOT NULL DEFAULT now(),
+    opptjening_ok          BOOLEAN     NOT NULL DEFAULT false,
+    avgjørende_vilkårskode TEXT,
+    vurdert_tidspunkt      TIMESTAMPTZ NOT NULL,
+    kategori               TEXT        NOT NULL
+);
+
+CREATE INDEX idx_opptjeningsvurdering_noekkel
+    ON opptjeningsvurdering (fødselsnummer, skjæringstidspunkt, vurdert_tidspunkt DESC, opprettet DESC);
+
 CREATE TABLE vilkarsvurdering
 (
     id                UUID        NOT NULL UNIQUE,
@@ -34,28 +50,8 @@ CREATE TABLE vilkarsvurdering
     vurdert_tidspunkt TIMESTAMPTZ,
     kilde             JSONB       NOT NULL,
     opprettet         TIMESTAMPTZ NOT NULL DEFAULT now(),
-    lovreferanse      JSONB       NOT NULL,
-    vurderingskilde   TEXT        NOT NULL
+    lovreferanse      JSONB
 );
-
-CREATE TABLE opptjeningsvurdering
-(
-    id                          UUID        NOT NULL UNIQUE,
-    fødselsnummer               VARCHAR(11) NOT NULL,
-    skjæringstidspunkt          DATE        NOT NULL,
-    vurderingskilde             TEXT        NOT NULL,
-    opprettet                   TIMESTAMPTZ NOT NULL DEFAULT now(),
-    opptjening_ok               BOOLEAN     NOT NULL DEFAULT false,
-    vurdert_tidspunkt           TIMESTAMPTZ NOT NULL,
-    kategori                    TEXT        NOT NULL,
-    avgjørende_vilkårsvurdering UUID,
-
-    CONSTRAINT fk_opptjeningsvurdering_avgjorende_vilkarsvurdering
-        FOREIGN KEY (avgjørende_vilkårsvurdering) REFERENCES vilkarsvurdering (id)
-);
-
-CREATE INDEX idx_opptjeningsvurdering_noekkel
-    ON opptjeningsvurdering (fødselsnummer, skjæringstidspunkt, vurdert_tidspunkt DESC, opprettet DESC);
 
 CREATE TABLE opptjeningsvurdering_vilkarsvurdering
 (
