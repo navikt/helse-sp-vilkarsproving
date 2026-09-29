@@ -41,7 +41,7 @@ internal class OpptjeningServiceTest {
         assertEquals(FØDSELSNUMMER, harVurdering.fødselsnummer)
         assertEquals(1.februar, harVurdering.skjæringstidspunkt)
 
-        val vurdering = vurderinger.finn(harVurdering.opptjeningsvurderingId) as Opptjeningsvurdering.VurdertISpeil
+        val vurdering = vurderinger.finn(harVurdering.opptjeningsvurderingId) as Opptjeningsvurdering.VurdertISpVilkårsprøving
         val vilkårsvurdering = vurdering.vilkårsvurderinger.single()
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, vilkårsvurdering.vilkårskode)
         assertEquals(Utfall.Oppfylt, vilkårsvurdering.utfall)
@@ -153,7 +153,7 @@ internal class OpptjeningServiceTest {
         val prøving = prøvinger.allePrøvinger.single()
         assertEquals(Opptjeningsprøving.Tilstand.Fullført(nyVurdering.opptjeningsvurderingId), prøving.tilstand)
 
-        val vurdering = vurderinger.finn(nyVurdering.opptjeningsvurderingId) as Opptjeningsvurdering.VurdertISpeil
+        val vurdering = vurderinger.finn(nyVurdering.opptjeningsvurderingId) as Opptjeningsvurdering.VurdertISpVilkårsprøving
         val vilkårsvurdering = vurdering.vilkårsvurderinger.single()
         val kilde = vilkårsvurdering.kilde as Vurderingskilde.Automatisk
         assertEquals(prøving.id, kilde.opptjeningsprøvingId)
@@ -172,7 +172,7 @@ internal class OpptjeningServiceTest {
             skjæringstidspunkt = 1.februar,
         )
 
-        val vilkårsvurdering = (vurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpeil).vilkårsvurderinger.single()
+        val vilkårsvurdering = (vurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpVilkårsprøving).vilkårsvurderinger.single()
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, vilkårsvurdering.vilkårskode)
         assertEquals(Utfall.IkkeOppfylt, vilkårsvurdering.utfall)
     }
@@ -190,7 +190,7 @@ internal class OpptjeningServiceTest {
 
         assertIs<BehandleGrunnlagResultat.NyVurderingForetatt>(resultat)
         assertTrue(prøvinger.allePrøvinger.single().erAvsluttet)
-        val vilkårsvurdering = (vurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpeil).vilkårsvurderinger.single()
+        val vilkårsvurdering = (vurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpVilkårsprøving).vilkårsvurderinger.single()
         assertEquals(Utfall.IkkeOppfylt, vilkårsvurdering.utfall)
     }
 

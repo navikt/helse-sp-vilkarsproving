@@ -4,7 +4,6 @@ import no.nav.helse.Periode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurderingskilde
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
@@ -29,24 +28,23 @@ private fun Opptjeningsvurdering.tilApi(): ApiOpptjeningsvurdering =
                 opptjeningOk = erOk,
             )
 
-        is Opptjeningsvurdering.VurdertISpeil ->
-            if (vilkårsvurderinger.all { it.vurderingskilde == Opptjeningsvurderingskilde.OVERFORT_FRA_SPLEIS }) {
-                ApiOpptjeningsvurdering.OverførtFraSpleis(
-                    id = id.value,
-                    kravkode = ApiKravkode.OPPTJENING,
-                    opptjeningOk = erOk,
-                    avgjørendeVilkårskode = avgjørendeVilkårskode?.tilApi(),
-                    vurderinger = vilkårsvurderinger.map { it.tilApi() },
-                )
-            } else {
-                ApiOpptjeningsvurdering.VurdertISpVilkarproving(
-                    id = id.value,
-                    kravkode = ApiKravkode.OPPTJENING,
-                    opptjeningOk = erOk,
-                    avgjørendeVilkårskode = avgjørendeVilkårskode?.tilApi(),
-                    vurderinger = vilkårsvurderinger.map { it.tilApi() },
-                )
-            }
+        is Opptjeningsvurdering.OverførtFraSpleis ->
+            ApiOpptjeningsvurdering.OverførtFraSpleis(
+                id = id.value,
+                kravkode = ApiKravkode.OPPTJENING,
+                opptjeningOk = erOk,
+                avgjørendeVilkårskode = avgjørendeVilkårskode?.tilApi(),
+                vurderinger = vilkårsvurderinger.map { it.tilApi() },
+            )
+
+        is Opptjeningsvurdering.VurdertISpVilkårsprøving ->
+            ApiOpptjeningsvurdering.VurdertISpVilkarproving(
+                id = id.value,
+                kravkode = ApiKravkode.OPPTJENING,
+                opptjeningOk = erOk,
+                avgjørendeVilkårskode = avgjørendeVilkårskode?.tilApi(),
+                vurderinger = vilkårsvurderinger.map { it.tilApi() },
+            )
     }
 
 private fun Vilkårsvurdering.tilApi() =

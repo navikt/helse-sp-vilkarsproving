@@ -146,7 +146,7 @@ internal class SlettPersonRiverTest {
                     """
                 INSERT INTO opptjeningsvurdering
                     (id, fødselsnummer, skjæringstidspunkt, kategori, vurderingskilde, opptjening_ok, vurdert_tidspunkt)
-                VALUES (?, ?, ?, 'ARBEIDSTAKER', 'VURDERT_I_SPEIL', true, ?)
+                VALUES (?, ?, ?, 'ARBEIDSTAKER', 'VURDERT_I_SP_VILKARSPROVING', true, ?)
                 """,
                 ).use { stmt ->
                     stmt.setObject(1, id)

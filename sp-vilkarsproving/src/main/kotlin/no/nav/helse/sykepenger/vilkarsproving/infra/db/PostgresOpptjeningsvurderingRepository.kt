@@ -16,7 +16,8 @@ import org.intellij.lang.annotations.Language
 import org.postgresql.util.PSQLException
 import java.time.LocalDate
 
-private const val VURDERINGSKILDE_VURDERT_I_SPEIL = "VURDERT_I_SPEIL"
+private const val VURDERINGSKILDE_VURDERT_I_SP_VILKARSPROVING = "VURDERT_I_SP_VILKARSPROVING"
+private const val VURDERINGSKILDE_OVERFORT_FRA_SPLEIS = "OVERFORT_FRA_SPLEIS"
 private const val VURDERINGSKILDE_OVERFOERT_FRA_INFOTRYGD = "OVERFOERT_FRA_INFOTRYGD"
 
 internal class PostgresOpptjeningsvurderingRepository(
@@ -25,7 +26,8 @@ internal class PostgresOpptjeningsvurderingRepository(
     override fun lagre(vurdering: Opptjeningsvurdering) {
         try {
             when (vurdering) {
-                is Opptjeningsvurdering.VurdertISpeil -> lagreVurdertISpeil(vurdering)
+                is Opptjeningsvurdering.VurdertISpVilkårsprøving -> lagreMedVilkårsvurderinger(vurdering, VURDERINGSKILDE_VURDERT_I_SP_VILKARSPROVING)
+                is Opptjeningsvurdering.OverførtFraSpleis -> lagreMedVilkårsvurderinger(vurdering, VURDERINGSKILDE_OVERFORT_FRA_SPLEIS)
                 is Opptjeningsvurdering.OverførtFraInfotrygd -> lagreInfotrygd(vurdering)
             }
         } catch (e: PSQLException) {
@@ -34,7 +36,10 @@ internal class PostgresOpptjeningsvurderingRepository(
         }
     }
 
-    private fun lagreVurdertISpeil(totalvurdering: Opptjeningsvurdering.VurdertISpeil) {
+    private fun lagreMedVilkårsvurderinger(
+        totalvurdering: Opptjeningsvurdering.MedVilkårsvurderinger,
+        vurderingskilde: String,
+    ) {
         val vurdertTidspunkt = totalvurdering.vilkårsvurderinger.mapNotNull { it.vurdertTidspunkt }.maxOrNull()
 
         @Language("PostgreSQL")
@@ -54,7 +59,7 @@ internal class PostgresOpptjeningsvurderingRepository(
                     "fodselsnummer" to totalvurdering.fødselsnummer,
                     "skjaeringstidspunkt" to totalvurdering.skjæringstidspunkt,
                     "kategori" to totalvurdering.kategori.tilDbVerdi(),
-                    "vurderingskilde" to VURDERINGSKILDE_VURDERT_I_SPEIL,
+                    "vurderingskilde" to vurderingskilde,
                     "opptjening_ok" to totalvurdering.erOk,
                     "vurdertTidspunkt" to vurdertTidspunkt,
                 ),
@@ -190,14 +195,8 @@ internal class PostgresOpptjeningsvurderingRepository(
                     vurdertTidspunkt = rad.vurdertTidspunkt,
                 )
 
-            else -> {
-                val vilkårsvurderinger = finnVilkårsvurderingerFor(rad.id)
-                val avgjørendeVilkårsvurdering =
-                    rad.avgjørendeVilkårsvurderingId?.let { id ->
-                        requireNotNull(vilkårsvurderinger.find { it.id == id }) {
-                            "Avgjørende vilkårsvurdering $id er ikke knyttet til opptjeningsvurdering ${rad.id}"
-                        }
-                    }
+            VURDERINGSKILDE_VURDERT_I_SP_VILKARSPROVING -> {
+                val (vilkårsvurderinger, avgjørendeVilkårsvurdering) = finnVilkårsvurderingerOgAvgjørende(rad)
                 Opptjeningsvurdering.fraLagring(
                     id = rad.id,
                     fødselsnummer = rad.fødselsnummer,
@@ -208,7 +207,33 @@ internal class PostgresOpptjeningsvurderingRepository(
                     kategori = rad.kategori,
                 )
             }
+
+            VURDERINGSKILDE_OVERFORT_FRA_SPLEIS -> {
+                val (vilkårsvurderinger, avgjørendeVilkårsvurdering) = finnVilkårsvurderingerOgAvgjørende(rad)
+                Opptjeningsvurdering.spleisFraLagring(
+                    id = rad.id,
+                    fødselsnummer = rad.fødselsnummer,
+                    skjæringstidspunkt = rad.skjæringstidspunkt,
+                    vilkårsvurderinger = vilkårsvurderinger,
+                    avgjørendeVilkårsvurdering = avgjørendeVilkårsvurdering,
+                    erOk = rad.erOk,
+                    kategori = rad.kategori,
+                )
+            }
+
+            else -> error("Ukjent vurderingskilde for opptjeningsvurdering ${rad.id}: ${rad.vurderingskilde}")
         }
+
+    private fun finnVilkårsvurderingerOgAvgjørende(rad: OpptjeningsvurderingRad): Pair<List<Vilkårsvurdering>, Vilkårsvurdering?> {
+        val vilkårsvurderinger = finnVilkårsvurderingerFor(rad.id)
+        val avgjørendeVilkårsvurdering =
+            rad.avgjørendeVilkårsvurderingId?.let { id ->
+                requireNotNull(vilkårsvurderinger.find { it.id == id }) {
+                    "Avgjørende vilkårsvurdering $id er ikke knyttet til opptjeningsvurdering ${rad.id}"
+                }
+            }
+        return vilkårsvurderinger to avgjørendeVilkårsvurdering
+    }
 
     private fun finnVilkårsvurderingerFor(opptjeningsvurderingId: OpptjeningsvurderingId): List<Vilkårsvurdering> {
         @Language("PostgreSQL")
