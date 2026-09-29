@@ -45,6 +45,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         assertEquals(Kategori.Arbeidstaker, lagret.kategori)
         assertEquals(vurdering.erOk, lagret.erOk)
         assertEquals(vurdering.avgjørendeVilkårskode, lagret.avgjørendeVilkårskode)
+        assertEquals(vurdering.vilkårsvurderinger.single().id, lagret.avgjørendeVilkårsvurdering?.id)
 
         val vilkårsvurdering = lagret.vilkårsvurderinger.single()
         val kilde = vilkårsvurdering.kilde as Vurderingskilde.Automatisk
@@ -71,6 +72,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
 
         assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, kilde.grunnlag)
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, lagret.avgjørendeVilkårskode)
+        assertEquals(vurdering.vilkårsvurderinger.single().id, lagret.avgjørendeVilkårsvurdering?.id)
         assertEquals(Lovreferanse.`§ 8-2 første avsnitt, første setning`(), vilkårsvurdering.lovreferanse)
     }
 
@@ -105,6 +107,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         // Hovedregelen alene er ikke oppfylt, og det finnes ingen unntaksvilkår i denne vurderingen, så
         // avgjørendeVilkårskode()-regelen gir null (se Vilkårsvurdering.avgjørendeVilkårskode()).
         assertNull(lagret.avgjørendeVilkårskode)
+        assertNull(lagret.avgjørendeVilkårsvurdering)
         assertFalse(lagret.erOk)
     }
 
@@ -152,6 +155,10 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         val gjeldende = transaksjon { it.opptjeningsvurderinger.gjeldende(FØDSELSNUMMER, 1.februar) }!!
 
         assertEquals(første.id, gjeldende.id)
+        assertEquals(
+            første.vilkårsvurderinger.first().id,
+            (gjeldende as Opptjeningsvurdering.VurdertISpeil).avgjørendeVilkårsvurdering?.id,
+        )
     }
 
     @Test
@@ -200,7 +207,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
             fødselsnummer = FØDSELSNUMMER,
             skjæringstidspunkt = 1.februar,
             vilkårsvurderinger = vilkårsvurderinger,
-            avgjørendeVilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+            avgjørendeVilkårsvurdering = vilkårsvurderinger.first(),
             erOk = true,
         )
     }

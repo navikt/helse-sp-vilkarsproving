@@ -47,22 +47,28 @@ internal class SlettPersonRiver(
         context.publish(fødselsnummer, lagPersonSlettet(fødselsnummer))
     }
 
-    // 🔴 Rekkefølgen er ikke tilfeldig: `opptjeningsvurdering_vilkarsvurdering` har fremmednøkler til
-    // både `vilkarsvurdering` og `opptjeningsvurdering`, så koblingsradene må slettes før begge disse.
-    // En vilkarsvurdering-rad kan i praksis bare være koblet til opptjeningsvurderinger for samme
-    // person (den gjenbrukes aldri på tvers av personer), men vi henter likevel ut de koblede
-    // vilkarsvurdering-id-ene før koblingene slettes, og sjekker at ingen andre fortsatt peker på dem,
-    // i stedet for å anta eksklusivitet. `opptjeningsproving` har derimot ingen fremmednøkkel til
-    // `opptjeningsvurdering` (bevisst, jf. kommentarene i migreringene), så den kan slettes uavhengig av
-    // rekkefølgen på de tre andre.
     private fun slettPerson(
         tx: TransactionalSession,
         fødselsnummer: String,
     ) {
         val vilkarsvurderingIder = slettKoblingerTilOpptjeningsvurdering(tx, fødselsnummer)
+        fjernAvgjørendeVilkårsvurdering(tx, fødselsnummer)
         slettVilkarsvurdering(tx, vilkarsvurderingIder)
         slettOpptjeningsvurdering(tx, fødselsnummer)
         slettOpptjeningsproving(tx, fødselsnummer)
+    }
+
+    private fun fjernAvgjørendeVilkårsvurdering(
+        tx: TransactionalSession,
+        fødselsnummer: String,
+    ) {
+        @Language("PostgreSQL")
+        val query = """
+            UPDATE opptjeningsvurdering
+            SET avgjørende_vilkårsvurdering = NULL
+            WHERE fødselsnummer = :fnr AND avgjørende_vilkårsvurdering IS NOT NULL
+        """
+        tx.run(queryOf(query, mapOf("fnr" to fødselsnummer)).asUpdate)
     }
 
     private fun slettKoblingerTilOpptjeningsvurdering(
@@ -91,6 +97,9 @@ internal class SlettPersonRiver(
             WHERE id = ANY (:ider)
             AND NOT EXISTS (
                 SELECT 1 FROM opptjeningsvurdering_vilkarsvurdering WHERE vilkarsvurdering_id = vilkarsvurdering.id
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM opptjeningsvurdering WHERE avgjørende_vilkårsvurdering = vilkarsvurdering.id
             )
         """
         tx.run(

@@ -40,11 +40,10 @@ internal class PostgresOpptjeningsvurderingRepository(
         @Language("PostgreSQL")
         val opptjeningsvurderingSql = """
             insert into opptjeningsvurdering (
-                id, fødselsnummer, skjæringstidspunkt, kategori, vurderingskilde, opptjening_ok, avgjørende_vilkårskode, vurdert_tidspunkt
+                id, fødselsnummer, skjæringstidspunkt, kategori, vurderingskilde, opptjening_ok, vurdert_tidspunkt
             )
             values (
-                :id, :fodselsnummer, :skjaeringstidspunkt, :kategori, :vurderingskilde, :opptjening_ok, :avgjorendeVilkarskode,
-                coalesce(:vurdertTidspunkt, now())
+                :id, :fodselsnummer, :skjaeringstidspunkt, :kategori, :vurderingskilde, :opptjening_ok, coalesce(:vurdertTidspunkt, now())
             )
         """
         session.run(
@@ -57,7 +56,6 @@ internal class PostgresOpptjeningsvurderingRepository(
                     "kategori" to totalvurdering.kategori.tilDbVerdi(),
                     "vurderingskilde" to VURDERINGSKILDE_VURDERT_I_SPEIL,
                     "opptjening_ok" to totalvurdering.erOk,
-                    "avgjorendeVilkarskode" to totalvurdering.avgjørendeVilkårskode?.name,
                     "vurdertTidspunkt" to vurdertTidspunkt,
                 ),
             ).asUpdate,
@@ -101,6 +99,20 @@ internal class PostgresOpptjeningsvurderingRepository(
                         "opptjeningsvurderingId" to totalvurdering.id.value,
                         "vilkarsvurderingId" to enkeltvurdering.id.value,
                     ),
+                ).asUpdate,
+            )
+        }
+        totalvurdering.avgjørendeVilkårsvurdering?.let { avgjørende ->
+            @Language("PostgreSQL")
+            val sql = """
+                update opptjeningsvurdering
+                set avgjørende_vilkårsvurdering = :avgjorendeVilkarsvurderingId
+                where id = :id
+            """
+            session.run(
+                queryOf(
+                    sql,
+                    mapOf("id" to totalvurdering.id.value, "avgjorendeVilkarsvurderingId" to avgjørende.id.value),
                 ).asUpdate,
             )
         }
@@ -178,16 +190,24 @@ internal class PostgresOpptjeningsvurderingRepository(
                     vurdertTidspunkt = rad.vurdertTidspunkt,
                 )
 
-            else ->
+            else -> {
+                val vilkårsvurderinger = finnVilkårsvurderingerFor(rad.id)
+                val avgjørendeVilkårsvurdering =
+                    rad.avgjørendeVilkårsvurderingId?.let { id ->
+                        requireNotNull(vilkårsvurderinger.find { it.id == id }) {
+                            "Avgjørende vilkårsvurdering $id er ikke knyttet til opptjeningsvurdering ${rad.id}"
+                        }
+                    }
                 Opptjeningsvurdering.fraLagring(
                     id = rad.id,
                     fødselsnummer = rad.fødselsnummer,
                     skjæringstidspunkt = rad.skjæringstidspunkt,
-                    vilkårsvurderinger = finnVilkårsvurderingerFor(rad.id),
-                    avgjørendeVilkårskode = rad.avgjørendeVilkårskode,
+                    vilkårsvurderinger = vilkårsvurderinger,
+                    avgjørendeVilkårsvurdering = avgjørendeVilkårsvurdering,
                     erOk = rad.erOk,
                     kategori = rad.kategori,
                 )
+            }
         }
 
     private fun finnVilkårsvurderingerFor(opptjeningsvurderingId: OpptjeningsvurderingId): List<Vilkårsvurdering> {
@@ -222,7 +242,7 @@ internal class PostgresOpptjeningsvurderingRepository(
             kategori = row.string("kategori").fraDbVerdi(),
             vurderingskilde = row.string("vurderingskilde"),
             erOk = row.boolean("opptjening_ok"),
-            avgjørendeVilkårskode = row.stringOrNull("avgjørende_vilkårskode")?.let(Vilkårskode::valueOf),
+            avgjørendeVilkårsvurderingId = row.uuidOrNull("avgjørende_vilkårsvurdering")?.let(::VilkårsvurderingId),
             vurdertTidspunkt = row.instant("vurdert_tidspunkt"),
         )
 
@@ -233,7 +253,7 @@ internal class PostgresOpptjeningsvurderingRepository(
         val kategori: Kategori,
         val vurderingskilde: String,
         val erOk: Boolean,
-        val avgjørendeVilkårskode: Vilkårskode?,
+        val avgjørendeVilkårsvurderingId: VilkårsvurderingId?,
         val vurdertTidspunkt: java.time.Instant,
     )
 
@@ -242,7 +262,7 @@ internal class PostgresOpptjeningsvurderingRepository(
 
         @Language("PostgreSQL")
         const val SELECT_OPPTJENINGSVURDERING = """
-            select id, fødselsnummer, skjæringstidspunkt, kategori, vurderingskilde, opptjening_ok, avgjørende_vilkårskode, vurdert_tidspunkt
+            select id, fødselsnummer, skjæringstidspunkt, kategori, vurderingskilde, opptjening_ok, avgjørende_vilkårsvurdering, vurdert_tidspunkt
             from opptjeningsvurdering
         """
     }
