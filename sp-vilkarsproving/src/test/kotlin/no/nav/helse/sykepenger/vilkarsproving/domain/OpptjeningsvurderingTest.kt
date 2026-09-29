@@ -45,10 +45,7 @@ internal class OpptjeningsvurderingTest {
 
         // then
         assertTrue(vurdering.erOk)
-        // avgjørendeVilkårskode()-regelen krever at hovedregelen (OPPTJENING_ARBEID_MINST_4_UKER) i det
-        // hele tatt er blant vilkårsvurderingene før et unntak kan bli avgjørende. Her er den ikke det,
-        // så det finnes ingen avgjørende vilkår selv om utfallet er oppfylt.
-        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, vurdering.avgjørendeVilkårskode)
+        assertEquals(vilkårsvurdering, vurdering.avgjørendeVilkårsvurdering)
         val kilde = vurdering.vilkårsvurderinger.single().kilde
         assertIs<Vurderingskilde.Saksbehandler>(kilde)
         assertEquals("Z999999", kilde.ident)

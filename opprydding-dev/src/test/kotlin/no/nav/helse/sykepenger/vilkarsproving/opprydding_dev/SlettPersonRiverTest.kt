@@ -35,7 +35,7 @@ internal class SlettPersonRiverTest {
 
         insertOpptjeningsproving(fødselsnummer = fødselsnummer)
         val opptjeningsvurderingId = insertOpptjeningsvurdering(fødselsnummer = fødselsnummer)
-        insertVilkarsvurdering(opptjeningsvurderingId = opptjeningsvurderingId)
+        insertVilkarsvurdering(opptjeningsvurderingId = opptjeningsvurderingId, avgjørende = true)
 
         assertEquals(1, Database.countOpptjeningsproving())
         assertEquals(1, Database.countOpptjeningsvurdering())
@@ -69,6 +69,29 @@ internal class SlettPersonRiverTest {
         assertEquals(1, Database.countOpptjeningsvurdering())
         assertEquals(1, Database.countVilkarsvurdering())
         assertEquals(1, Database.countOpptjeningsvurderingVilkarsvurdering())
+    }
+
+    @Test
+    fun `beholder vilkårsvurderinger som deles med annen person`() {
+        val fødselsnummer1 = "01020312345"
+        val fødselsnummer2 = "02020312345"
+        val opptjeningsvurderingId1 = insertOpptjeningsvurdering(fødselsnummer = fødselsnummer1)
+        val opptjeningsvurderingId2 = insertOpptjeningsvurdering(fødselsnummer = fødselsnummer2)
+        val vilkarsvurderingId = UUID.randomUUID()
+        insertVilkarsvurdering(id = vilkarsvurderingId, opptjeningsvurderingId = opptjeningsvurderingId1, avgjørende = true)
+        kobleVilkarsvurdering(vilkarsvurderingId, opptjeningsvurderingId2, avgjørende = true)
+
+        rapid.sendTestMessage(slettPersonMelding(fødselsnummer1))
+
+        assertEquals(1, Database.countOpptjeningsvurdering())
+        assertEquals(1, Database.countVilkarsvurdering())
+        assertEquals(1, Database.countOpptjeningsvurderingVilkarsvurdering())
+
+        rapid.sendTestMessage(slettPersonMelding(fødselsnummer2))
+
+        assertEquals(0, Database.countOpptjeningsvurdering())
+        assertEquals(0, Database.countVilkarsvurdering())
+        assertEquals(0, Database.countOpptjeningsvurderingVilkarsvurdering())
     }
 
     @Test
@@ -139,6 +162,7 @@ internal class SlettPersonRiverTest {
     private fun insertVilkarsvurdering(
         id: UUID = UUID.randomUUID(),
         opptjeningsvurderingId: UUID,
+        avgjørende: Boolean = false,
     ) {
         Database.dataSource.connection.use { conn ->
             conn
@@ -152,6 +176,16 @@ internal class SlettPersonRiverTest {
                     stmt.setObject(1, id)
                     stmt.executeUpdate()
                 }
+        }
+        kobleVilkarsvurdering(id, opptjeningsvurderingId, avgjørende)
+    }
+
+    private fun kobleVilkarsvurdering(
+        vilkarsvurderingId: UUID,
+        opptjeningsvurderingId: UUID,
+        avgjørende: Boolean,
+    ) {
+        Database.dataSource.connection.use { conn ->
             conn
                 .prepareStatement(
                     """
@@ -161,9 +195,19 @@ internal class SlettPersonRiverTest {
                 """,
                 ).use { stmt ->
                     stmt.setObject(1, opptjeningsvurderingId)
-                    stmt.setObject(2, id)
+                    stmt.setObject(2, vilkarsvurderingId)
                     stmt.executeUpdate()
                 }
+            if (avgjørende) {
+                conn
+                    .prepareStatement(
+                        "UPDATE opptjeningsvurdering SET avgjørende_vilkårsvurdering = ? WHERE id = ?",
+                    ).use { stmt ->
+                        stmt.setObject(1, vilkarsvurderingId)
+                        stmt.setObject(2, opptjeningsvurderingId)
+                        stmt.executeUpdate()
+                    }
+            }
         }
     }
 
