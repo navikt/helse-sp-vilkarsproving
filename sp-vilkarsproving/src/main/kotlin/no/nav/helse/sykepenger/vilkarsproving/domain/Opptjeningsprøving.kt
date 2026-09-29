@@ -4,7 +4,7 @@ import java.time.Instant
 import java.time.LocalDate
 
 /**
- * Prosessen som leder fram til en [Opptjeningsvurdering.VurdertISpeil] av opptjening.
+ * Prosessen som leder fram til en [Opptjeningsvurdering.VurdertISpVilkårsprøving] av opptjening.
  *
  * Prøvingen eier livssyklusen — hva vi venter på, hvor lenge, og om vi er ferdige — mens selve
  * vurderingen er resultatet den produserer. En prøving i denne appen *er* en automatisk prøving: det
@@ -45,7 +45,7 @@ internal class Opptjeningsprøving private constructor(
     fun motta(
         grunnlag: Opptjeningsgrunnlag,
         versjonAvKode: String = "test",
-    ): Opptjeningsvurdering.VurdertISpeil {
+    ): Opptjeningsvurdering.VurdertISpVilkårsprøving {
         val venter =
             tilstand as? Tilstand.VenterPåGrunnlag
                 ?: error("Prøving $id venter ikke på grunnlag, men er i tilstand $tilstand")
@@ -58,7 +58,7 @@ internal class Opptjeningsprøving private constructor(
     private fun fullfør(
         grunnlag: Opptjeningsgrunnlag,
         versjonAvKode: String,
-    ): Opptjeningsvurdering.VurdertISpeil {
+    ): Opptjeningsvurdering.VurdertISpVilkårsprøving {
         val vurdering =
             Opptjeningsvurdering.automatisk(
                 opptjeningsprøvingId = id,
@@ -74,7 +74,7 @@ internal class Opptjeningsprøving private constructor(
     /** En påbegynt prøving. [vurdering] er satt dersom prøvingen kunne fullføres uten å innhente noe. */
     data class Påbegynt(
         val prøving: Opptjeningsprøving,
-        val vurdering: Opptjeningsvurdering.VurdertISpeil?,
+        val vurdering: Opptjeningsvurdering.VurdertISpVilkårsprøving?,
     )
 
     companion object {

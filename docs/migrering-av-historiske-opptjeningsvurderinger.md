@@ -162,15 +162,13 @@ Utvid svaret fra spleis-api med tidspunktet vurderingen ble gjort, og legg det p
 `Vilkårsvurdering.overførtFraSpleis`. Da vil den sist vurderte vurderingen være gjeldende også når
 flere vurderinger har samme skjæringstidspunkt.
 
-### Skill overførte vurderinger fra vurderinger gjort i speil
+### Skill overførte vurderinger fra vurderinger gjort i sp-vilkarsproving
 
-`lagreVurdertISpeil` setter i dag `opptjeningsvurdering.vurderingskilde` til
-`VURDERT_I_SPEIL`, også når vilkårsvurderingens kilde er `OVERFOERT_FRA_SPLEIS`. Vi trenger en
-egen verdi på opptjeningsvurderingen for å måle og kunne rulle tilbake importen.
-
-Legg til `OVERFOERT_FRA_SPLEIS` i en ny Flyway-migrering. Utvid domenet og repositoryet slik at
-overførte vurderinger skrives og hydrereres med denne kilden.
-`VURDERT_I_SPEIL` beholdes for vurderinger appen har gjort selv.
+Dette er på plass. Domenet har egne typer for `Opptjeningsvurdering.VurdertISpVilkårsprøving`,
+`Opptjeningsvurdering.OverførtFraSpleis` og `Opptjeningsvurdering.OverførtFraInfotrygd`.
+`opptjeningsvurdering.vurderingskilde` lagres som `VURDERT_I_SP_VILKARSPROVING`,
+`OVERFORT_FRA_SPLEIS` eller `OVERFOERT_FRA_INFOTRYGD`, samme verdier som `kravkilde` i API-et.
+Migrering `V4` erstattet den gamle verdien `VURDERT_I_SPEIL`.
 
 ### Ikke hopp over nyere vurderinger
 
@@ -191,21 +189,19 @@ skrivestien ikke legger noe i outbox-tabellen.
 ### Fase 1: gjør sp-vilkarsproving klar
 
 1. Utvid spleis-api og `SpleisOpptjeningsvurdering` med tidspunktet vurderingen ble gjort.
-2. Lag en Flyway-migrering med `OVERFOERT_FRA_SPLEIS` som vurderingskilde for
-   `opptjeningsvurdering`.
-3. Utvid domenet og `PostgresOpptjeningsvurderingRepository` slik at overførte vurderinger skrives
-   og leses med den nye kilden, og med vurderingstidspunktet fra spleis.
-4. Lag `ImporterOpptjeningsvurderingerService` i `application`:
+2. Sørg for at overførte vurderinger lagres med vurderingstidspunktet fra spleis. Kilden
+   `OVERFORT_FRA_SPLEIS` på `opptjeningsvurdering` er allerede på plass.
+3. Lag `ImporterOpptjeningsvurderingerService` i `application`:
    - Hent alle vurderinger fra `SpleisClient`.
    - Map med `tilOpptjeningsvurdering(fødselsnummer)`.
    - Lagre hver vurdering som ikke allerede finnes på id.
    - Returner antall lagret, allerede importert og feilet.
-5. Lag `ImporterHistoriskOpptjeningRiver` i `infra/kafka`. Den matcher
+4. Lag `ImporterHistoriskOpptjeningRiver` i `infra/kafka`. Den matcher
    `@event_name = "importer_historisk_opptjening"` og `fødselsnummer`, og publiserer ikke på
    rapid-en.
-6. Legg til Prometheus-metrikker for lagret, allerede importert og feilet, samt histogram for tid
+5. Legg til Prometheus-metrikker for lagret, allerede importert og feilet, samt histogram for tid
    per person.
-7. Test importservice, rekkefølgen for flere vurderinger med samme skjæringstidspunkt,
+6. Test importservice, rekkefølgen for flere vurderinger med samme skjæringstidspunkt,
    idempotens og riveren mot testdatabasen.
 
 Etter fase 1 er appen deployet, men ingen sender importmeldinger.
@@ -256,7 +252,7 @@ vurderingene.
 
 ### Fase 5: verifiser og rydd
 
-1. Sammenlign antall rader med `vurderingskilde = 'OVERFOERT_FRA_SPLEIS'` med antall personer i
+1. Sammenlign antall rader med `vurderingskilde = 'OVERFORT_FRA_SPLEIS'` med antall personer i
    spleis som har vilkårsgrunnlag. Forvent avvik for personer uten vilkårsgrunnlag og personer med
    vurderinger som allerede var lagret lokalt.
 2. Ta stikkprøver: sammenlign tilfeldige svar fra spleis-api med radene i databasen.
@@ -278,11 +274,11 @@ DELETE FROM opptjeningsvurdering_vilkarsvurdering
 WHERE opptjeningsvurdering_id IN (
   SELECT id
   FROM opptjeningsvurdering
-  WHERE vurderingskilde = 'OVERFOERT_FRA_SPLEIS'
+  WHERE vurderingskilde = 'OVERFORT_FRA_SPLEIS'
 );
 
 DELETE FROM opptjeningsvurdering
-WHERE vurderingskilde = 'OVERFOERT_FRA_SPLEIS';
+WHERE vurderingskilde = 'OVERFORT_FRA_SPLEIS';
 ```
 
 Slett også vilkårsvurderinger som ikke lenger er koblet til en opptjeningsvurdering. Skriv og test
@@ -298,7 +294,6 @@ hele rollback-skriptet i dev før fase 4.
 
 I sp-vilkarsproving:
 
-- En ny Flyway-migrering for `OVERFOERT_FRA_SPLEIS`
 - `sp-vilkarsproving/.../application/ImporterOpptjeningsvurderingerService.kt` (ny)
 - `sp-vilkarsproving/.../infra/kafka/ImporterHistoriskOpptjeningRiver.kt` (ny)
 - `sp-vilkarsproving/.../infra/kafka/OpptjeningsvurderingResultatRiver.kt`

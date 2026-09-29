@@ -12,6 +12,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurderingskilde
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
+import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.VilkårsvurderingId
@@ -37,7 +38,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
             )
         val vurdering = lagreVurdering(grunnlag)
 
-        val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.VurdertISpeil
+        val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.VurdertISpVilkårsprøving
 
         assertEquals(vurdering.id, lagret.id)
         assertEquals(FØDSELSNUMMER, lagret.fødselsnummer)
@@ -65,7 +66,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
     fun `vurdering av selvstendig næringsdrivende lagres og hentes tilbake`() {
         val vurdering = lagreVurdering(Opptjeningsgrunnlag.SelvstendigNæringsdrivende)
 
-        val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.VurdertISpeil
+        val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.VurdertISpVilkårsprøving
         assertEquals(Kategori.SelvstendigNæringsdrivende, lagret.kategori)
         val vilkårsvurdering = lagret.vilkårsvurderinger.single()
         val kilde = vilkårsvurdering.kilde as Vurderingskilde.Automatisk
@@ -94,7 +95,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
             )
         transaksjon { it.opptjeningsvurderinger.lagre(vurdering) }
 
-        val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.VurdertISpeil
+        val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.VurdertISpVilkårsprøving
         val lagretVilkårsvurdering = lagret.vilkårsvurderinger.single()
         val kilde = lagretVilkårsvurdering.kilde
 
@@ -132,6 +133,35 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
     }
 
     @Test
+    fun `vurdering overført fra spleis lagres og hentes tilbake som overført fra spleis`() {
+        val grunnlag = arbeidstakergrunnlag(arbeidsforhold(ansattFom = 1.januar, ansattTom = null))
+        val vurdering =
+            Opptjeningsvurdering.overførtFraSpleis(
+                id = OpptjeningsvurderingId.ny(),
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                vilkårsvurderinger =
+                    listOf(
+                        Vilkårsvurdering.overførtFraSpleis(
+                            vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+                            utfall = Utfall.Oppfylt,
+                            grunnlag = grunnlag,
+                            utledetFakta = UtledetFakta.Opptjeningstid(null, 0),
+                            vurdertTidspunkt = Instant.parse("2020-01-01T00:00:00Z"),
+                        ),
+                    ),
+            )
+        transaksjon { it.opptjeningsvurderinger.lagre(vurdering) }
+
+        val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.OverførtFraSpleis
+
+        assertTrue(lagret.erOk)
+        assertEquals(Kategori.Arbeidstaker, lagret.kategori)
+        assertEquals(vurdering.vilkårsvurderinger.single().id, lagret.avgjørendeVilkårsvurdering?.id)
+        assertEquals(Opptjeningsvurderingskilde.OVERFORT_FRA_SPLEIS, lagret.vilkårsvurderinger.single().vurderingskilde)
+    }
+
+    @Test
     fun `gjeldende er vurderingen med senest vurdert tidspunkt`() {
         val første = vurderingMedVurdertTidspunkt(Instant.parse("2026-01-02T00:00:00Z"))
         val andre = vurderingMedVurdertTidspunkt(Instant.parse("2026-01-01T00:00:00Z"))
@@ -157,7 +187,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         assertEquals(første.id, gjeldende.id)
         assertEquals(
             første.vilkårsvurderinger.first().id,
-            (gjeldende as Opptjeningsvurdering.VurdertISpeil).avgjørendeVilkårsvurdering?.id,
+            (gjeldende as Opptjeningsvurdering.VurdertISpVilkårsprøving).avgjørendeVilkårsvurdering?.id,
         )
     }
 
@@ -189,7 +219,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
 
     private fun vurderingMedVurdertTidspunkt(vurdertTidspunkt: Instant) = vurderingMedVurderteTidspunkter(vurdertTidspunkt)
 
-    private fun vurderingMedVurderteTidspunkter(vararg vurderteTidspunkter: Instant): Opptjeningsvurdering.VurdertISpeil {
+    private fun vurderingMedVurderteTidspunkter(vararg vurderteTidspunkter: Instant): Opptjeningsvurdering.VurdertISpVilkårsprøving {
         val vilkårsvurderinger =
             vurderteTidspunkter.map { vurdertTidspunkt ->
                 Vilkårsvurdering.fraLagring(
@@ -215,7 +245,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
     private fun lagreVurdering(
         grunnlag: Opptjeningsgrunnlag,
         skjæringstidspunkt: LocalDate = 1.februar,
-    ): Opptjeningsvurdering.VurdertISpeil =
+    ): Opptjeningsvurdering.VurdertISpVilkårsprøving =
         transaksjon { kontekst ->
             when (grunnlag) {
                 is Opptjeningsgrunnlag.Arbeidstaker -> {

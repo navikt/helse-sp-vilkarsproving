@@ -193,7 +193,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
 
     private fun påbegyntPrøving() = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving.also { prøvinger.lagre(it) }
 
-    private fun vurdert() = vurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpeil
+    private fun vurdert() = vurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpVilkårsprøving
 
     private fun arbeidsforholdPåVurdering() = ((vurdert().vilkårsvurderinger.single().kilde as Vurderingskilde.Automatisk).grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold
 

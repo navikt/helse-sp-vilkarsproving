@@ -162,7 +162,7 @@ internal class OpptjeningsvurderingResultatRiverTest {
     private fun manuellVurdering(
         vilkårskode: Vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
         utfall: Utfall,
-    ): Opptjeningsvurdering.VurdertISpeil {
+    ): Opptjeningsvurdering.VurdertISpVilkårsprøving {
         val vilkårsvurdering =
             Vilkårsvurdering.avSaksbehandler(
                 vilkårskode = vilkårskode,
