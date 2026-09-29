@@ -3,15 +3,18 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.spleis
 import no.nav.helse.Periode
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.til
+import java.time.Instant
 import java.time.LocalDate
 
 internal sealed interface SpleisOpptjeningsvurdering {
     val opptjeningsvurderingId: OpptjeningsvurderingId
     val skjæringstidspunkt: LocalDate
+    val opprettet: Instant
 
     data class SpleisArbeidstaker(
         override val opptjeningsvurderingId: OpptjeningsvurderingId,
         override val skjæringstidspunkt: LocalDate,
+        override val opprettet: Instant,
         val oppfylt: Boolean,
         val antallDager: Int,
         val opptjeningsperiode: Periode?,
@@ -34,11 +37,13 @@ internal sealed interface SpleisOpptjeningsvurdering {
 
     data class SpleisSelvstendig(
         override val opptjeningsvurderingId: OpptjeningsvurderingId,
+        override val opprettet: Instant,
         override val skjæringstidspunkt: LocalDate,
     ) : SpleisOpptjeningsvurdering
 
     data class InfotrygdArbeidstaker(
         override val opptjeningsvurderingId: OpptjeningsvurderingId,
+        override val opprettet: Instant,
         override val skjæringstidspunkt: LocalDate,
     ) : SpleisOpptjeningsvurdering
 }

@@ -1,5 +1,11 @@
 # sp-vilkarsproving
 
+## NB:
+
+- "vurdertTidspunkt" på vilkårsvurderinger overført/migrert fra Spleis har brukt "opprettet"-tidspunktet for det tidligste 
+vilkårsgrunnlaghistorikk-elementet hvor den spesifikke vilkårsvurderingen (opptjeningsvurderingen) forekom.
+Dette er en "best-guess" og ikke nøvendigvis det faktiske vurderingstidspunktet.
+
 ## Henvendelser
 
 Spørsmål knyttet til koden eller prosjektet kan stilles som issues her på GitHub.

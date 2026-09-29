@@ -12,6 +12,7 @@ import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import tools.jackson.databind.JsonNode
+import java.time.Instant
 import java.util.*
 
 class OpptjeningsvurderingResultatRiverCallthroughTest {
@@ -20,6 +21,7 @@ class OpptjeningsvurderingResultatRiverCallthroughTest {
     private val vurderingIdSpleisArbeidstakerIkkeOppfylt = UUID.randomUUID()
     private val vurderingIdSpleisSelvstendig = UUID.randomUUID()
     private val vurderingIdSpleisInfotrygd = UUID.randomUUID()
+    private val fellesOpprettet = Instant.now()
 
     private val rapid =
         TestRapid().apply {
@@ -33,6 +35,7 @@ class OpptjeningsvurderingResultatRiverCallthroughTest {
                                 listOf(
                                     SpleisOpptjeningsvurdering.SpleisArbeidstaker(
                                         opptjeningsvurderingId = OpptjeningsvurderingId(vurderingIdSpleisArbeidstaker),
+                                        opprettet = fellesOpprettet,
                                         skjæringstidspunkt = 1.februar,
                                         oppfylt = true,
                                         antallDager = 31,
@@ -41,6 +44,7 @@ class OpptjeningsvurderingResultatRiverCallthroughTest {
                                     ),
                                     SpleisOpptjeningsvurdering.SpleisArbeidstaker(
                                         opptjeningsvurderingId = OpptjeningsvurderingId(vurderingIdSpleisArbeidstakerIkkeOppfylt),
+                                        opprettet = fellesOpprettet,
                                         skjæringstidspunkt = 1.februar,
                                         oppfylt = false,
                                         antallDager = 1,
@@ -49,10 +53,12 @@ class OpptjeningsvurderingResultatRiverCallthroughTest {
                                     ),
                                     SpleisOpptjeningsvurdering.SpleisSelvstendig(
                                         opptjeningsvurderingId = OpptjeningsvurderingId(vurderingIdSpleisSelvstendig),
+                                        opprettet = fellesOpprettet,
                                         skjæringstidspunkt = 1.februar,
                                     ),
                                     SpleisOpptjeningsvurdering.InfotrygdArbeidstaker(
                                         opptjeningsvurderingId = OpptjeningsvurderingId(vurderingIdSpleisInfotrygd),
+                                        opprettet = fellesOpprettet,
                                         skjæringstidspunkt = 1.februar,
                                     ),
                                 )

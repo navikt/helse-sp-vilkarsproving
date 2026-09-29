@@ -228,7 +228,7 @@ internal class PostgresOpptjeningsvurderingRepository(
             id = VilkårsvurderingId(row.uuid("id")),
             vilkårskode = Vilkårskode.valueOf(row.string("vilkårskode")),
             utfall = Utfall.valueOf(row.string("utfall")),
-            vurdertTidspunkt = row.instantOrNull("vurdert_tidspunkt"),
+            vurdertTidspunkt = row.instant("vurdert_tidspunkt"),
             kilde = Vurderingskildejson.fraJson(row.string("kilde")),
             vurderingskilde = Opptjeningsvurderingskilde.valueOf(row.string("vurderingskilde")),
             lovreferanse = Lovreferansejson.fraJson(row.string("lovreferanse")),

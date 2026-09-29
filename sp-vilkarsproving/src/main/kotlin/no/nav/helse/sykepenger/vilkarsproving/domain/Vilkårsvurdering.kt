@@ -59,7 +59,7 @@ internal data class Vilkårsvurdering(
             utfall: Utfall,
             grunnlag: Opptjeningsgrunnlag,
             utledetFakta: UtledetFakta,
-            vurdertTidspunkt: Instant? = null,
+            vurdertTidspunkt: Instant,
         ) = Vilkårsvurdering(
             id = VilkårsvurderingId.ny(),
             vilkårskode = vilkårskode,
@@ -74,7 +74,7 @@ internal data class Vilkårsvurdering(
             id: VilkårsvurderingId,
             vilkårskode: Vilkårskode,
             utfall: Utfall,
-            vurdertTidspunkt: Instant?,
+            vurdertTidspunkt: Instant,
             kilde: Vurderingskilde,
             vurderingskilde: Opptjeningsvurderingskilde,
             lovreferanse: Lovreferanse,

@@ -15,6 +15,8 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.UUID
 
 internal interface ISpleisClient {
@@ -89,6 +91,7 @@ internal class SpleisClient(
         @JsonIgnoreProperties(ignoreUnknown = true)
         private data class OpptjeningsvurderingDto(
             val opptjeningsvurderingId: OpptjeningsvurderingId,
+            val opprettet: LocalDateTime,
             val type: OpptjeningsvurderingTypeDto,
             val skjæringstidspunkt: LocalDate,
             val kilde: OpptjeningsvurderingKildeDto,
@@ -100,11 +103,14 @@ internal class SpleisClient(
             val opptjeningsperiode: PeriodeDto? = null,
             val arbeidsforhold: List<ArbeidsforholdDto> = emptyList(),
         ) {
+            val opprettetInstant = opprettet.atZone(ZoneId.of("Europe/Oslo")).toInstant()
+
             fun tilDomene(): SpleisOpptjeningsvurdering =
                 when (kilde to type) {
                     OpptjeningsvurderingKildeDto.SPLEIS to OpptjeningsvurderingTypeDto.ARBEIDSTAKER ->
                         SpleisOpptjeningsvurdering.SpleisArbeidstaker(
                             opptjeningsvurderingId = opptjeningsvurderingId,
+                            opprettet = opprettetInstant,
                             skjæringstidspunkt = skjæringstidspunkt,
                             oppfylt = requireNotNull(oppfylt) { "oppfylt mangler for SPLEIS/ARBEIDSTAKER-vurdering $opptjeningsvurderingId" },
                             antallDager = requireNotNull(antallDager) { "antallDager mangler for SPLEIS/ARBEIDSTAKER-vurdering $opptjeningsvurderingId" },
@@ -115,12 +121,14 @@ internal class SpleisClient(
                     OpptjeningsvurderingKildeDto.SPLEIS to OpptjeningsvurderingTypeDto.SELVSTENDIG ->
                         SpleisOpptjeningsvurdering.SpleisSelvstendig(
                             opptjeningsvurderingId = opptjeningsvurderingId,
+                            opprettet = opprettetInstant,
                             skjæringstidspunkt = skjæringstidspunkt,
                         )
 
                     OpptjeningsvurderingKildeDto.INFOTRYGD to OpptjeningsvurderingTypeDto.ARBEIDSTAKER ->
                         SpleisOpptjeningsvurdering.InfotrygdArbeidstaker(
                             opptjeningsvurderingId = opptjeningsvurderingId,
+                            opprettet = opprettetInstant,
                             skjæringstidspunkt = skjæringstidspunkt,
                         )
 

@@ -10,6 +10,7 @@ import no.nav.helse.til
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
+import java.time.Instant
 import kotlin.test.assertTrue
 
 internal class VurderingsresponsTest {
@@ -108,6 +109,7 @@ internal class VurderingsresponsTest {
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
                 erOk = true,
+                vurdertTidspunkt = Instant.now(),
             )
 
         val krav = Vurderingsrespons.fra(vurdering).krav.single()
@@ -128,6 +130,7 @@ internal class VurderingsresponsTest {
                     listOf(
                         Vilkårsvurdering.overførtFraSpleis(
                             vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+                            vurdertTidspunkt = Instant.now(),
                             utfall = Utfall.Oppfylt,
                             grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,
                             utledetFakta = UtledetFakta.Ingen,

@@ -126,7 +126,7 @@ internal sealed interface Opptjeningsvurdering {
             fødselsnummer: String,
             skjæringstidspunkt: LocalDate,
             erOk: Boolean,
-            vurdertTidspunkt: Instant = Instant.now(),
+            vurdertTidspunkt: Instant,
         ) = OverførtFraInfotrygd(id, fødselsnummer, skjæringstidspunkt, Kategori.Arbeidstaker, erOk, vurdertTidspunkt)
 
         fun fraLagring(

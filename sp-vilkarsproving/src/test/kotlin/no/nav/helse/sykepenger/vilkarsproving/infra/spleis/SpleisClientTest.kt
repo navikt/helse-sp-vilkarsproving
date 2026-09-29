@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.Instant
 import java.time.LocalDate
 import java.util.*
 
@@ -21,6 +22,8 @@ internal class SpleisClientTest {
     private val server = WireMockServer(wireMockConfig().dynamicPort())
     private val scope = "api://dev-gcp.tbd.spleis-api/.default"
     private val fakeToken = "et-fake-token"
+    private val klokka12 = Instant.parse("2026-09-29T10:00:00Z") // Oslo
+    private val klokka11 = Instant.parse("2026-09-29T09:00:00Z") // Oslo
     private val tokenProvider =
         object : AccessTokenProvider {
             override fun machineToken(scope: String) = fakeToken
@@ -63,12 +66,14 @@ internal class SpleisClientTest {
         assertEquals(OpptjeningsvurderingId(UUID.fromString("b89e2ae5-59e3-388e-98cd-42a8e7350773")), infotrygdvurdering.opptjeningsvurderingId)
         assertEquals(LocalDate.of(2018, 1, 1), infotrygdvurdering.skjæringstidspunkt)
         assertTrue(infotrygdvurdering is SpleisOpptjeningsvurdering.InfotrygdArbeidstaker)
+        assertEquals(klokka12, infotrygdvurdering.opprettet)
 
         val ikkeOppfyltSpleisvurdering = opptjeningsvurderinger[1] as SpleisOpptjeningsvurdering.SpleisArbeidstaker
         assertEquals(false, ikkeOppfyltSpleisvurdering.oppfylt)
         assertEquals(0, ikkeOppfyltSpleisvurdering.antallDager)
         assertNull(ikkeOppfyltSpleisvurdering.opptjeningsperiode)
         assertEquals(emptyList<Arbeidsforhold>(), ikkeOppfyltSpleisvurdering.arbeidsforhold)
+        assertEquals(klokka12, ikkeOppfyltSpleisvurdering.opprettet)
 
         val oppfyltSpleisvurdering = opptjeningsvurderinger[2] as SpleisOpptjeningsvurdering.SpleisArbeidstaker
         assertEquals(true, oppfyltSpleisvurdering.oppfylt)
@@ -78,10 +83,12 @@ internal class SpleisClientTest {
             listOf(Arbeidsforhold("987654322", listOf(Ansettelsesperiode(LocalDate.of(2017, 4, 1), null)))),
             oppfyltSpleisvurdering.arbeidsforhold,
         )
+        assertEquals(klokka11, oppfyltSpleisvurdering.opprettet)
 
         val selvstendigvurdering = opptjeningsvurderinger[3]
         assertEquals(LocalDate.of(2018, 4, 1), selvstendigvurdering.skjæringstidspunkt)
         assertTrue(selvstendigvurdering is SpleisOpptjeningsvurdering.SpleisSelvstendig)
+        assertEquals(klokka12, selvstendigvurdering.opprettet)
 
         server.verify(
             postRequestedFor(urlEqualTo("/api/opptjeningsvurderinger"))
@@ -117,6 +124,7 @@ internal class SpleisClientTest {
                               "opptjeningsvurderinger": [
                                 {
                                   "opptjeningsvurderingId": "b89e2ae5-59e3-388e-98cd-42a8e7350773",
+                                  "opprettet": "$klokka12",
                                   "type": "SELVSTENDIG",
                                   "skjæringstidspunkt": "2018-01-01",
                                   "kilde": "INFOTRYGD"
@@ -139,12 +147,14 @@ internal class SpleisClientTest {
               "opptjeningsvurderinger": [
                 {
                   "opptjeningsvurderingId": "b89e2ae5-59e3-388e-98cd-42a8e7350773",
+                  "opprettet": "2026-09-29T12:00:00.000000",                  
                   "type": "ARBEIDSTAKER",
                   "skjæringstidspunkt": "2018-01-01",
                   "kilde": "INFOTRYGD"
                 },
                 {
                   "opptjeningsvurderingId": "00000000-0000-0000-0000-000000000001",
+                  "opprettet": "2026-09-29T12:00:00.000000",                  
                   "type": "ARBEIDSTAKER",
                   "skjæringstidspunkt": "2018-04-01",
                   "kilde": "SPLEIS",
@@ -155,6 +165,7 @@ internal class SpleisClientTest {
                 },
                 {
                   "opptjeningsvurderingId": "00000000-0000-0000-0000-000000000002",
+                  "opprettet": "2026-09-29T11:00:00.000000",                  
                   "type": "ARBEIDSTAKER",
                   "skjæringstidspunkt": "2018-04-01",
                   "kilde": "SPLEIS",
@@ -178,6 +189,7 @@ internal class SpleisClientTest {
                 },
                 {
                   "opptjeningsvurderingId": "00000000-0000-0000-0000-000000000003",
+                  "opprettet": "2026-09-29T12:00:00.000000",                  
                   "skjæringstidspunkt": "2018-04-01",
                   "kilde": "SPLEIS",
                   "type": "SELVSTENDIG"

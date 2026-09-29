@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import tools.jackson.module.kotlin.jacksonObjectMapper
+import java.time.Instant
 import java.time.LocalDate
 import java.util.*
 
@@ -257,6 +258,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
                     fødselsnummer = identitetsnummer.value,
                     skjæringstidspunkt = LocalDate.of(2024, 2, 1),
                     erOk = true,
+                    vurdertTidspunkt = Instant.now(),
                 )
             transaksjonProvider.opptjeningsvurderinger.lagre(vurdering)
 
@@ -289,6 +291,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             val spleisVurdering =
                 SpleisOpptjeningsvurdering.SpleisArbeidstaker(
                     opptjeningsvurderingId = OpptjeningsvurderingId(opptjeningsvurderingId),
+                    opprettet = Instant.now(),
                     skjæringstidspunkt = LocalDate.of(2024, 3, 1),
                     oppfylt = true,
                     antallDager = 30,
@@ -337,6 +340,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             val spleisVurdering =
                 SpleisOpptjeningsvurdering.SpleisSelvstendig(
                     opptjeningsvurderingId = OpptjeningsvurderingId(opptjeningsvurderingId),
+                    opprettet = Instant.now(),
                     skjæringstidspunkt = LocalDate.of(2024, 3, 1),
                 )
 
@@ -366,6 +370,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
                 SpleisOpptjeningsvurdering.InfotrygdArbeidstaker(
                     opptjeningsvurderingId = OpptjeningsvurderingId(opptjeningsvurderingId),
                     skjæringstidspunkt = LocalDate.of(2024, 3, 1),
+                    opprettet = Instant.now(),
                 )
 
             val pseudoIdProvider = InMemoryPersonPseudoIdProvider()

@@ -24,6 +24,7 @@ internal fun SpleisOpptjeningsvurdering.tilOpptjeningsvurdering(fødselsnummer: 
                             utfall = if (oppfylt) Utfall.Oppfylt else Utfall.IkkeOppfylt,
                             grunnlag = grunnlag,
                             utledetFakta = utledetFakta,
+                            vurdertTidspunkt = opprettet,
                         ),
                     ),
             )
@@ -41,6 +42,7 @@ internal fun SpleisOpptjeningsvurdering.tilOpptjeningsvurdering(fødselsnummer: 
                             utfall = Utfall.Oppfylt,
                             grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,
                             utledetFakta = UtledetFakta.Ingen,
+                            vurdertTidspunkt = opprettet,
                         ),
                     ),
             )
@@ -51,6 +53,7 @@ internal fun SpleisOpptjeningsvurdering.tilOpptjeningsvurdering(fødselsnummer: 
                 fødselsnummer = fødselsnummer,
                 skjæringstidspunkt = skjæringstidspunkt,
                 erOk = true,
+                vurdertTidspunkt = opprettet,
             )
     }
 
