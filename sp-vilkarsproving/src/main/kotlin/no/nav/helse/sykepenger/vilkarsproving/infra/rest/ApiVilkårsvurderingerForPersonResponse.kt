@@ -74,7 +74,7 @@ internal data class ApiVilkårsvurdering(
     val id: UUID,
     val vilkårskode: ApiVilkårskode,
     val utfall: ApiUtfall,
-    val vurdertTidspunkt: Instant?,
+    val vurdertTidspunkt: Instant,
     val lovreferanse: ApiLovreferanse,
     val kilde: ApiVurderingskilde,
 )

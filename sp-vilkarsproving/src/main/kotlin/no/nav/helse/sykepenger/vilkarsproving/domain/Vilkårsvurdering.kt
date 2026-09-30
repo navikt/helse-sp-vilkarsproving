@@ -6,7 +6,7 @@ internal data class Vilkårsvurdering(
     val id: VilkårsvurderingId,
     val vilkårskode: Vilkårskode,
     val utfall: Utfall,
-    val vurdertTidspunkt: Instant?,
+    val vurdertTidspunkt: Instant,
     val kilde: Vurderingskilde,
     val vurderingskilde: Opptjeningsvurderingskilde,
     val lovreferanse: Lovreferanse,

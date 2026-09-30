@@ -107,31 +107,6 @@ internal class OpptjeningsvurderingTest {
         assertEquals(Kategori.SelvstendigNæringsdrivende, vurdering.kategori)
     }
 
-    /*@Test
-    fun `vurdertTidspunkt kan være null`() {
-        val vilkårsvurdering =
-            Vilkårsvurdering.overførtFraSpleis(
-                vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
-                utfall = Utfall.Oppfylt,
-                utledetFakta = UtledetFakta.Ingen,
-                vurdertTidspunkt = null,
-                grunnlag =
-                    Opptjeningsgrunnlag.Arbeidstaker(
-                        arbeidsforhold =
-                            listOf(
-                                Arbeidsforhold(
-                                    orgnummer = "123456789",
-                                    ansettelseperiode = 31.januar til 31.januar,
-                                    type = Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT,
-                                ),
-                            ),
-                    ),
-            )
-
-        assertEquals(null, vilkårsvurdering.vurdertTidspunkt)
-        assertEquals(Opptjeningsvurderingskilde.OVERFORT_FRA_SPLEIS, vilkårsvurdering.vurderingskilde)
-    }*/
-
     private companion object {
         const val FØDSELSNUMMER = "12029240045"
     }

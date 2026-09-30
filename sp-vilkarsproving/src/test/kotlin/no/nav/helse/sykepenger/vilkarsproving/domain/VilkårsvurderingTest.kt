@@ -3,6 +3,7 @@ package no.nav.helse.sykepenger.vilkarsproving.domain
 import no.nav.helse.Periode
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering.Companion.avgjørendeVilkårsvurdering
+import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -30,7 +31,7 @@ internal class VilkårsvurderingTest {
         id = VilkårsvurderingId.ny(),
         vilkårskode = vilkårskode,
         utfall = utfall,
-        vurdertTidspunkt = null,
+        vurdertTidspunkt = Instant.now(),
         kilde =
             Vurderingskilde.Automatisk(
                 opptjeningsprøvingId = OpptjeningsprøvingId.ny(),

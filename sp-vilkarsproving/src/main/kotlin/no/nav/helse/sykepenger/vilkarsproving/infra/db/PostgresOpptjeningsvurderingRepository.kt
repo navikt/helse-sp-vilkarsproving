@@ -40,7 +40,7 @@ internal class PostgresOpptjeningsvurderingRepository(
         totalvurdering: Opptjeningsvurdering.MedVilkårsvurderinger,
         vurderingskilde: String,
     ) {
-        val vurdertTidspunkt = totalvurdering.vilkårsvurderinger.mapNotNull { it.vurdertTidspunkt }.maxOrNull()
+        val vurdertTidspunkt = totalvurdering.vilkårsvurderinger.maxOfOrNull { it.vurdertTidspunkt }
 
         @Language("PostgreSQL")
         val opptjeningsvurderingSql = """

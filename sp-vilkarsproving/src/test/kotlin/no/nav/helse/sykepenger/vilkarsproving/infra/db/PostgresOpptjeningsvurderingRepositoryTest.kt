@@ -56,9 +56,9 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         assertEquals(
             vurdering.vilkårsvurderinger
                 .single()
-                .vurdertTidspunkt!!
+                .vurdertTidspunkt
                 .truncatedTo(ChronoUnit.MILLIS),
-            vilkårsvurdering.vurdertTidspunkt!!.truncatedTo(ChronoUnit.MILLIS),
+            vilkårsvurdering.vurdertTidspunkt.truncatedTo(ChronoUnit.MILLIS),
         )
     }
 
