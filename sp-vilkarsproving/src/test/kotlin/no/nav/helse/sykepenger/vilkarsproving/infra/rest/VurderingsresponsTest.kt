@@ -1,7 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import no.nav.helse.Periode
-import no.nav.helse.desember
 import no.nav.helse.februar
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.domain.*
@@ -51,7 +50,7 @@ internal class VurderingsresponsTest {
 
         assertEquals(ApiUtfall.IKKE_OPPFYLT, vurdering.utfall)
         assertEquals(ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, vurdering.vilkårskode)
-        assertEquals(ApiLovreferanse("folketrygdloven", "8-2", 1, 1, null, 22.desember(2025)), vurdering.lovreferanse)
+        assertEquals(ApiLovreferanse("folketrygdloven", "8-2", 1, 1, null, 1.januar(2004)), vurdering.lovreferanse)
     }
 
     @Test
@@ -75,7 +74,7 @@ internal class VurderingsresponsTest {
         val kilde = api.kilde as ApiVurderingskilde.Saksbehandler
 
         assertEquals(ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, api.vilkårskode)
-        assertEquals(ApiLovreferanse("folketrygdloven", "8-2", 1, 1, null, 22.desember(2025)), api.lovreferanse)
+        assertEquals(ApiLovreferanse("folketrygdloven", "8-2", 1, 1, null, 1.januar(2004)), api.lovreferanse)
         assertEquals("Z999999", kilde.ident)
         assertEquals(listOf("journalpost-1", "journalpost-2"), kilde.journalpostId)
     }

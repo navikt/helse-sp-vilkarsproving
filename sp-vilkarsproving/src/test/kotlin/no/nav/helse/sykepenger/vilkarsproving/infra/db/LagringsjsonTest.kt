@@ -1,6 +1,5 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
-import no.nav.helse.desember
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Lovreferanse
@@ -167,7 +166,7 @@ internal class LagringsjsonTest {
         val lovreferanse = Lovreferanse.`§ 8-2 første avsnitt, første setning`()
 
         assertEquals(
-            """{"lov":"folketrygdloven","paragraf":"8-2","avsnitt":1,"setning":1,"bokstav":null,"iKraftFra":"2025-12-22"}""",
+            """{"lov":"folketrygdloven","paragraf":"8-2","avsnitt":1,"setning":1,"bokstav":null,"iKraftFra":"2004-01-01"}""",
             Lovreferansejson.tilJson(lovreferanse),
         )
         assertEquals(lovreferanse, mapFremOgTilbake(lovreferanse))
@@ -182,11 +181,11 @@ internal class LagringsjsonTest {
                 avsnitt = null,
                 setning = null,
                 bokstav = null,
-                iKraftFra = 22.desember(2025),
+                iKraftFra = 1.januar(2004),
             )
 
         assertEquals(
-            """{"lov":"folketrygdloven","paragraf":"8-2","avsnitt":null,"setning":null,"bokstav":null,"iKraftFra":"2025-12-22"}""",
+            """{"lov":"folketrygdloven","paragraf":"8-2","avsnitt":null,"setning":null,"bokstav":null,"iKraftFra":"2004-01-01"}""",
             Lovreferansejson.tilJson(lovreferanse),
         )
         assertEquals(lovreferanse, mapFremOgTilbake(lovreferanse))

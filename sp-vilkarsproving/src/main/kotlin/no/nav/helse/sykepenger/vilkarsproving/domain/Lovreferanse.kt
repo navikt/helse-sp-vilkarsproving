@@ -1,6 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.domain
 
-import no.nav.helse.desember
+import no.nav.helse.januar
 import java.time.LocalDate
 
 internal data class Lovreferanse(
@@ -19,7 +19,7 @@ internal data class Lovreferanse(
                 avsnitt = 1,
                 setning = 1,
                 bokstav = null,
-                iKraftFra = 22.desember(2025),
+                iKraftFra = 1.januar(2004),
             )
     }
 }
