@@ -169,11 +169,12 @@ internal class SlettPersonRiverTest {
                 .prepareStatement(
                     """
                 INSERT INTO vilkarsvurdering
-                    (id, vilkårskode, utfall, vurderingskilde, kilde, lovreferanse)
-                VALUES (?, 'OPPTJENING_ARBEID_MINST_4_UKER', 'OPPFYLT', 'VURDERT_I_SP_VILKARSPROVING', '{}'::jsonb, '{}'::jsonb)
+                    (id, vilkårskode, utfall, vurdert_tidspunkt, vurderingskilde, kilde, lovreferanse)
+                VALUES (?, 'OPPTJENING_ARBEID_MINST_4_UKER', 'OPPFYLT', ?, 'VURDERT_I_SP_VILKARSPROVING', '{}'::jsonb, '{}'::jsonb)
                 """,
                 ).use { stmt ->
                     stmt.setObject(1, id)
+                    stmt.setObject(2, java.sql.Timestamp.from(Instant.now()))
                     stmt.executeUpdate()
                 }
         }
