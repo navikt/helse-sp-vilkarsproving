@@ -1,6 +1,7 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.kafka
 
 import com.github.navikt.tbd_libs.rapids_and_rivers.JsonMessage
+import com.github.navikt.tbd_libs.rapids_and_rivers_api.OutgoingMessage
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +54,11 @@ internal class OutboxPubliseringsjobb(
                         when (val melding = konvolutt.melding) {
                             is OutboxMelding.OpptjeningsvurderingEndret -> melding.tilJsonMessage(konvolutt.identitetsnummer)
                         }
-                    rapidsConnection.publish(konvolutt.identitetsnummer.value, json.toJson())
+                    val (_, feiledeMeldinger) =
+                        rapidsConnection.publish(
+                            listOf(OutgoingMessage(body = json.toJson(), key = konvolutt.identitetsnummer.value)),
+                        )
+                    feiledeMeldinger.firstOrNull()?.apply { throw error }
                     kontekst.outbox.markerSomSendt(konvolutt.id)
                 }
             }
