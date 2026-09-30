@@ -4,6 +4,7 @@ import com.github.navikt.tbd_libs.access_token.AccessTokenProvider
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
+import com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering.SpleisArbeidstaker.Ansettelsesperiode
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold
@@ -14,6 +15,8 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.net.http.HttpTimeoutException
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.util.*
@@ -38,12 +41,54 @@ internal class SpleisClientTest {
     @BeforeEach
     fun setUp() {
         server.start()
-        client = SpleisClient(scope = scope, baseUrl = server.baseUrl(), tokenProvider = tokenProvider)
+        client =
+            SpleisClient(
+                scope = scope,
+                baseUrl = server.baseUrl(),
+                tokenProvider = tokenProvider,
+                timeout = Duration.ofMillis(200),
+                ventetidMellomForsøk = Duration.ZERO,
+            )
     }
 
     @AfterEach
     fun tearDown() {
         server.stop()
+    }
+
+    @Test
+    fun `prøver på nytt ved timeout`() {
+        server.stubFor(
+            post(urlEqualTo("/api/opptjeningsvurderinger"))
+                .inScenario("timeout")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(aResponse().withStatus(200).withFixedDelay(1000).withBody(enRespons))
+                .willSetStateTo("svarer"),
+        )
+        server.stubFor(
+            post(urlEqualTo("/api/opptjeningsvurderinger"))
+                .inScenario("timeout")
+                .whenScenarioStateIs("svarer")
+                .willReturn(aResponse().withStatus(200).withBody(enRespons)),
+        )
+
+        val opptjeningsvurderinger = client.hentOpptjeningsvurderinger("11111111111")
+
+        assertEquals(4, opptjeningsvurderinger.size)
+        server.verify(2, postRequestedFor(urlEqualTo("/api/opptjeningsvurderinger")))
+    }
+
+    @Test
+    fun `gir opp etter maks antall forsøk ved timeout`() {
+        server.stubFor(
+            post(urlEqualTo("/api/opptjeningsvurderinger"))
+                .willReturn(aResponse().withStatus(200).withFixedDelay(1000).withBody(enRespons)),
+        )
+
+        assertThrows<HttpTimeoutException> {
+            client.hentOpptjeningsvurderinger("11111111111")
+        }
+        server.verify(3, postRequestedFor(urlEqualTo("/api/opptjeningsvurderinger")))
     }
 
     @Test

@@ -28,6 +28,9 @@ internal class SpleisClient(
     private val baseUrl: String,
     private val tokenProvider: AccessTokenProvider,
     private val httpClient: HttpClient = HttpClient.newHttpClient(),
+    private val timeout: Duration = Duration.ofSeconds(10),
+    private val maksAntallForsøk: Int = 3,
+    private val ventetidMellomForsøk: Duration = Duration.ofMillis(500),
 ) : ISpleisClient {
     override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> {
         val m2mToken = tokenProvider.machineToken(scope)
@@ -38,7 +41,7 @@ internal class SpleisClient(
             HttpRequest
                 .newBuilder()
                 .uri(URI("$baseUrl/api/opptjeningsvurderinger"))
-                .timeout(Duration.ofSeconds(10))
+                .timeout(timeout)
                 .header("Accept", "application/json")
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer $m2mToken")
@@ -46,7 +49,13 @@ internal class SpleisClient(
                 .method("POST", HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)))
                 .build()
 
-        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+        val response =
+            httpClient.sendMedRetry(
+                request = request,
+                bodyHandler = HttpResponse.BodyHandlers.ofString(),
+                maksAntallForsøk = maksAntallForsøk,
+                ventetidMellomForsøk = ventetidMellomForsøk,
+            )
 
         if (response.statusCode() != 200) {
             throw SpleisClientException("Uventet svar fra spleis-api (HTTP ${response.statusCode()}): ${response.body()}")
