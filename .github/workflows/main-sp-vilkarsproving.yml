@@ -41,14 +41,14 @@ permissions:
 jobs:
   bygg-og-test:
     name: Bygg og test
-    uses: navikt/helse-sas-github-workflows/.github/workflows/bygg-og-test-med-gradle.yml@2f6844aa5e6852c64522681b3edb09c99445ad59 # v1.0.1
+    uses: navikt/sykepenger-github-workflows/.github/workflows/bygg-og-test-med-gradle.yml@2f6844aa5e6852c64522681b3edb09c99445ad59 # v1.0.1
     permissions:
       contents: read
 
   bygg-image:
     name: Bygg image
     needs: bygg-og-test
-    uses: navikt/helse-sas-github-workflows/.github/workflows/bygg-modul-image-med-jib.yml@2f6844aa5e6852c64522681b3edb09c99445ad59 # v1.0.1
+    uses: navikt/sykepenger-github-workflows/.github/workflows/bygg-modul-image-med-jib.yml@2f6844aa5e6852c64522681b3edb09c99445ad59 # v1.0.1
     with:
       modul: sp-vilkarsproving
     permissions:
@@ -61,7 +61,7 @@ jobs:
     name: Deploy til dev
     needs: bygg-image
     if: ${{github.ref_name == 'main' || startsWith(github.ref_name, 'dev-')}}
-    uses: navikt/helse-sas-github-workflows/.github/workflows/deploy.yml@2f6844aa5e6852c64522681b3edb09c99445ad59 # v1.0.1
+    uses: navikt/sykepenger-github-workflows/.github/workflows/deploy.yml@2f6844aa5e6852c64522681b3edb09c99445ad59 # v1.0.1
     with:
       CLUSTER: dev-gcp
       RESOURCE: .nais/dev.yaml
@@ -75,7 +75,7 @@ jobs:
     name: Deploy til prod
     needs: bygg-image
     if: ${{ github.ref_name == 'main' }}
-    uses: navikt/helse-sas-github-workflows/.github/workflows/deploy.yml@2f6844aa5e6852c64522681b3edb09c99445ad59 # v1.0.1
+    uses: navikt/sykepenger-github-workflows/.github/workflows/deploy.yml@2f6844aa5e6852c64522681b3edb09c99445ad59 # v1.0.1
     with:
       CLUSTER: prod-gcp
       RESOURCE: .nais/prod.yaml
