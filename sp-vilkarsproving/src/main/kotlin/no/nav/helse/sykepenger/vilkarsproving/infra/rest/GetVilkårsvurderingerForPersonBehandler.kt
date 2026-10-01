@@ -6,11 +6,11 @@ import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggWarn
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoId
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.GetBehandler
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.KallKontekst
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestResponse
+import no.nav.sykepenger.libs.logging.loggWarn
 
 internal class GetVilkårsvurderingerForPersonBehandler(
     private val spleisService: SpleisOpptjeningsvurderingService,
@@ -38,8 +38,7 @@ internal class GetVilkårsvurderingerForPersonBehandler(
                     ?: try {
                         spleisService.finn(OpptjeningsvurderingId(resource.opptjeningsvurderingId), identitetsnummer.value)
                     } catch (ex: SpleisClientException) {
-                        // warn log
-                        loggWarn("SpleisClientException ved henting av opptjeningsvurdering: ${ex.message}")
+                        loggWarn("Feil ved henting av opptjeningsvurdering fra Spleis", ex)
                         return@medPerson RestResponse.feil(ApiVilkårsvurderingerForPersonFeil.SpleisUtilgjengelig)
                     }
 

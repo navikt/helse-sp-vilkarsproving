@@ -9,9 +9,10 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggError
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggInfo
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.medMdc
+import no.nav.sykepenger.libs.logging.MdcKey
+import no.nav.sykepenger.libs.logging.loggError
+import no.nav.sykepenger.libs.logging.loggInfo
+import no.nav.sykepenger.libs.logging.medMdc
 import java.time.LocalDate
 
 internal class OpptjeningService(
@@ -27,8 +28,7 @@ internal class OpptjeningService(
         arbeidssituasjon: Arbeidssituasjon,
     ): VurderOpptjeningResultat =
         medMdc(
-            OpptjeningMdcKeys.FØDSELSNUMMER to fødselsnummer,
-            OpptjeningMdcKeys.SKJÆRINGSTIDSPUNKT to skjæringstidspunkt.toString(),
+            MdcKey.IDENTITETSNUMMER to fødselsnummer,
         ) {
             opptjeningsvurderingRepository
                 .gjeldende(fødselsnummer, skjæringstidspunkt)
@@ -36,7 +36,8 @@ internal class OpptjeningService(
                 ?.let { vurdering ->
                     loggInfo(
                         "Har allerede opptjeningsvurdering",
-                        "opptjeningsvurderingId" to vurdering.id,
+                        "opptjeningsvurderingId" to vurdering.id.toString(),
+                        "skjæringstidspunkt" to skjæringstidspunkt.toString(),
                     )
                     return@medMdc HarVurdering(fødselsnummer, skjæringstidspunkt, vurdering.id)
                 }
@@ -44,7 +45,8 @@ internal class OpptjeningService(
             opptjeningsprøvingRepository.finnSiste(fødselsnummer, skjæringstidspunkt, arbeidssituasjon.kategori)?.takeUnless { it.erAvsluttet }?.let {
                 loggInfo(
                     "Opptjeningsprøving pågår allerede. Etterspør grunnlaget på nytt",
-                    "opptjeningsprøvingId" to it.id,
+                    "opptjeningsprøvingId" to it.id.toString(),
+                    "skjæringstidspunkt" to skjæringstidspunkt.toString(),
                 )
                 return@medMdc TrengerArbeidsforhold(fødselsnummer, skjæringstidspunkt)
             }
@@ -61,8 +63,9 @@ internal class OpptjeningService(
             if (vurdering == null) {
                 loggInfo(
                     "Startet opptjeningsprøving. Venter på utestående behov",
-                    "opptjeningsprøvingId" to prøving.id,
-                    "uteståendeBehov" to prøving.uteståendeBehov,
+                    "opptjeningsprøvingId" to prøving.id.toString(),
+                    "uteståendeBehov" to prøving.uteståendeBehov.toString(),
+                    "skjæringstidspunkt" to skjæringstidspunkt.toString(),
                 )
                 return@medMdc TrengerArbeidsforhold(fødselsnummer, skjæringstidspunkt)
             }
@@ -70,8 +73,9 @@ internal class OpptjeningService(
             opptjeningsvurderingRepository.lagre(vurdering)
             loggInfo(
                 "Opptjeningsprøving fullført uten innhenting",
-                "opptjeningsprøvingId" to prøving.id,
-                "opptjeningsvurderingId" to vurdering.id,
+                "opptjeningsprøvingId" to prøving.id.toString(),
+                "opptjeningsvurderingId" to vurdering.id.toString(),
+                "skjæringstidspunkt" to skjæringstidspunkt.toString(),
             )
             HarVurdering(fødselsnummer, skjæringstidspunkt, vurdering.id)
         }
@@ -89,20 +93,20 @@ internal class OpptjeningService(
         skjæringstidspunkt: LocalDate,
     ): BehandleGrunnlagResultat =
         medMdc(
-            OpptjeningMdcKeys.FØDSELSNUMMER to fødselsnummer,
-            OpptjeningMdcKeys.SKJÆRINGSTIDSPUNKT to skjæringstidspunkt.toString(),
+            MdcKey.IDENTITETSNUMMER to fødselsnummer,
         ) {
             val prøving = opptjeningsprøvingRepository.finnSiste(fødselsnummer, skjæringstidspunkt, Kategori.Arbeidstaker)
 
             if (prøving == null) {
-                loggError("Mottatt grunnlag for opptjening, men fant ingen prøving")
+                loggError("Mottatt grunnlag for opptjening, men fant ingen prøving", "skjæringstidspunkt" to skjæringstidspunkt.toString())
                 return@medMdc BehandleGrunnlagResultat.IngenPrøvingFunnet
             }
 
             if (prøving.erAvsluttet) {
                 loggInfo(
                     "Mottatt grunnlag for opptjening, men prøving er allerede avsluttet",
-                    "opptjeningsprøvingId" to prøving.id,
+                    "opptjeningsprøvingId" to prøving.id.toString(),
+                    "skjæringstidspunkt" to skjæringstidspunkt.toString(),
                 )
                 return@medMdc BehandleGrunnlagResultat.AlleredeVurdert
             }
@@ -112,8 +116,9 @@ internal class OpptjeningService(
             opptjeningsprøvingRepository.lagre(prøving)
             loggInfo(
                 "Opptjeningsprøving fullført",
-                "opptjeningsprøvingId" to prøving.id,
-                "opptjeningsvurderingId" to vurdering.id,
+                "opptjeningsprøvingId" to prøving.id.toString(),
+                "opptjeningsvurderingId" to vurdering.id.toString(),
+                "skjæringstidspunkt" to skjæringstidspunkt.toString(),
             )
             BehandleGrunnlagResultat.NyVurderingForetatt(fødselsnummer, skjæringstidspunkt, vurdering.id)
         }

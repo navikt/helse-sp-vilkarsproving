@@ -1,11 +1,13 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.spleis
 
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggWarn
+import no.nav.sykepenger.libs.logging.navngittLogger
 import java.io.IOException
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
+
+private val logger = navngittLogger("no.nav.helse.sykepenger.vilkarsproving.infra.spleis.HttpClientRetry")
 
 internal fun <T> HttpClient.sendMedRetry(
     request: HttpRequest,
@@ -19,7 +21,12 @@ internal fun <T> HttpClient.sendMedRetry(
             return send(request, bodyHandler)
         } catch (ex: IOException) {
             if (forsøk >= maksAntallForsøk) throw ex
-            loggWarn("Kall mot ${request.uri()} feilet (forsøk $forsøk av $maksAntallForsøk), prøver igjen: $ex")
+            logger.warn(
+                "Kall mot Spleis feilet, prøver igjen",
+                ex,
+                "forsøk" to forsøk.toString(),
+                "maksAntallForsøk" to maksAntallForsøk.toString(),
+            )
             Thread.sleep(ventetidMellomForsøk.multipliedBy(forsøk.toLong()))
             forsøk++
         }

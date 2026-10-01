@@ -74,6 +74,20 @@ class AuditloggerTest {
     }
 
     @Test
+    fun `auditlogger rutes kun til egen audit appender`() {
+        assertFalse(auditLogger.isAdditive)
+        assertEquals(
+            listOf("auditLogger"),
+            auditLogger
+                .iteratorForAppenders()
+                .asSequence()
+                .map { it.name }
+                .toList()
+                .filterNotNull(),
+        )
+    }
+
+    @Test
     fun `auditlog_total-telleren oekes med riktig utfall-tag`() {
         val registry = SimpleMeterRegistry()
         val sut = Auditlogger(appNavn = "sp-vilkarsproving", meterRegistry = registry)

@@ -7,14 +7,14 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
-import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningMdcKeys
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResultat
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggInfo
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.medMdc
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
+import no.nav.sykepenger.libs.logging.MdcKey
+import no.nav.sykepenger.libs.logging.loggInfo
+import no.nav.sykepenger.libs.logging.medMdc
 import tools.jackson.databind.JsonNode
 import tools.jackson.module.kotlin.jacksonObjectMapper
 
@@ -53,10 +53,9 @@ internal class OpptjeningsvurderingRiver(
         val arbeidssituasjon = Arbeidssituasjon.valueOf(packet["Opptjeningsvurdering.arbeidssituasjon"].asString())
 
         medMdc(
-            OpptjeningMdcKeys.FØDSELSNUMMER to fødselsnummer,
-            OpptjeningMdcKeys.SKJÆRINGSTIDSPUNKT to skjæringstidspunkt.toString(),
+            MdcKey.IDENTITETSNUMMER to fødselsnummer,
         ) {
-            loggInfo("Mottatt behov for $behovKey")
+            loggInfo("Mottatt behov for $behovKey", "skjæringstidspunkt" to skjæringstidspunkt.toString())
 
             val vurderOpptjeningResultat =
                 transaksjonProvider.transaksjon { kontekst ->
@@ -80,7 +79,8 @@ internal class OpptjeningsvurderingRiver(
                         )
                     loggInfo(
                         "Har vurdering. Publiserer løsning",
-                        "opptjeningsvurderingId" to vurderOpptjeningResultat.opptjeningsvurderingId,
+                        "opptjeningsvurderingId" to vurderOpptjeningResultat.opptjeningsvurderingId.toString(),
+                        "skjæringstidspunkt" to skjæringstidspunkt.toString(),
                         "løsning" to packet.toJson(),
                     )
                     context.publish(packet.toJson())
@@ -100,6 +100,7 @@ internal class OpptjeningsvurderingRiver(
                     loggInfo(
                         "Trenger arbeidsforhold. Publiserer nytt behov",
                         "behov" to utgåendeBehov.toJson(),
+                        "skjæringstidspunkt" to skjæringstidspunkt.toString(),
                     )
                     context.publish(utgåendeBehov.toJson())
                 }

@@ -8,14 +8,14 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
-import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningMdcKeys
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggInfo
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggWarn
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.medMdc
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
+import no.nav.sykepenger.libs.logging.MdcKey
+import no.nav.sykepenger.libs.logging.loggInfo
+import no.nav.sykepenger.libs.logging.loggWarn
+import no.nav.sykepenger.libs.logging.medMdc
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.node.ObjectNode
 
@@ -62,12 +62,12 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(
         val fødselsnummer = packet["fødselsnummer"].asString()
 
         medMdc(
-            OpptjeningMdcKeys.FØDSELSNUMMER to fødselsnummer,
-            OpptjeningMdcKeys.SKJÆRINGSTIDSPUNKT to skjæringstidspunkt.toString(),
+            MdcKey.IDENTITETSNUMMER to fødselsnummer,
         ) {
             loggInfo(
                 "Mottatt løsning på behov for $behovKey",
-                "antallArbeidsforhold" to arbeidsforhold.size,
+                "antallArbeidsforhold" to arbeidsforhold.size.toString(),
+                "skjæringstidspunkt" to skjæringstidspunkt.toString(),
             )
             val resultat =
                 transaksjonProvider.transaksjon { kontekst ->
@@ -81,13 +81,14 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(
             // omverdenen om en vurdering vi ikke har lagret.
             when (resultat) {
                 OpptjeningService.BehandleGrunnlagResultat.AlleredeVurdert -> {
-                    loggWarn("Allerede vurdert. Ingen ny vurdering foretatt")
+                    loggWarn("Allerede vurdert. Ingen ny vurdering foretatt", "skjæringstidspunkt" to skjæringstidspunkt.toString())
                     // No-op. finn ut av lognivå
                 }
                 is OpptjeningService.BehandleGrunnlagResultat.NyVurderingForetatt -> {
                     loggInfo(
                         "Ny vurdering foretatt",
-                        "opptjeningsvurderingId" to resultat.opptjeningsvurderingId,
+                        "opptjeningsvurderingId" to resultat.opptjeningsvurderingId.toString(),
+                        "skjæringstidspunkt" to skjæringstidspunkt.toString(),
                     )
                     val opprinneligBehov = packet["opprinneligBehov"] as ObjectNode
                     val løsning = opprinneligBehov.putObject("@løsning")
@@ -97,14 +98,14 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(
                     val løsningString = opprinneligBehov.toString()
                     loggInfo(
                         "Publiserer løsning på behov for opptjeningsvurdering",
-                        "opptjeningsvurderingId" to resultat.opptjeningsvurderingId,
+                        "opptjeningsvurderingId" to resultat.opptjeningsvurderingId.toString(),
                         "løsning" to løsningString,
                     )
                     context.publish(løsningString)
                 }
 
                 OpptjeningService.BehandleGrunnlagResultat.IngenPrøvingFunnet -> {
-                    loggWarn("Ingen prøving funnet")
+                    loggWarn("Ingen prøving funnet", "skjæringstidspunkt" to skjæringstidspunkt.toString())
                     // No op med warning logging om vi ikke logger i servicen
                 }
             }

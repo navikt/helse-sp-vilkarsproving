@@ -6,13 +6,13 @@ import io.ktor.server.application.install
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.uri
 import io.ktor.server.response.respond
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.teamLogs
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.ProblemDetails
+import no.nav.sykepenger.libs.logging.loggError
 
 /**
  * Fanger opp exceptions som ikke er håndtert av `RestAdapter` (f.eks. feil i selve ktor-pipelinen
  * eller ruter uten `RestAdapter`). Fullstendig stacktrace/feilmelding-detaljer skal ALDRI i vanlig
- * logg eller til klienten — kun til `teamLogs`.
+ * logg eller til klienten — kun til Team Logs.
  */
 fun Application.configureStatusPages() {
     install(StatusPages) {
@@ -28,7 +28,7 @@ fun Application.configureStatusPages() {
             )
         }
         exception<Throwable> { call, cause ->
-            teamLogs.error("Uventet feil ved kall til ${call.request.uri}", cause)
+            loggError("Uventet feil ved kall", cause, "requestUri" to call.request.uri)
             call.respond(
                 HttpStatusCode.InternalServerError,
                 ProblemDetails(

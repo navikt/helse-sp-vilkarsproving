@@ -9,8 +9,8 @@ import io.micrometer.core.instrument.MeterRegistry
 import kotliquery.TransactionalSession
 import kotliquery.queryOf
 import kotliquery.sessionOf
+import no.nav.sykepenger.libs.logging.loggInfo
 import org.intellij.lang.annotations.Language
-import org.slf4j.LoggerFactory
 import java.util.UUID
 import javax.sql.DataSource
 
@@ -18,10 +18,6 @@ internal class SlettPersonRiver(
     rapidsConnection: RapidsConnection,
     private val dataSource: DataSource,
 ) : River.PacketListener {
-    private companion object {
-        private val sikkerlogg = LoggerFactory.getLogger("tjenestekall")
-    }
-
     init {
         River(rapidsConnection)
             .apply {
@@ -39,7 +35,7 @@ internal class SlettPersonRiver(
         meterRegistry: MeterRegistry,
     ) {
         val fødselsnummer = packet["fødselsnummer"].asString()
-        sikkerlogg.info("Sletter person med fødselsnummer: $fødselsnummer")
+        loggInfo("Sletter person", "fødselsnummer" to fødselsnummer)
 
         sessionOf(dataSource).use { session ->
             session.transaction { tx -> slettPerson(tx, fødselsnummer) }

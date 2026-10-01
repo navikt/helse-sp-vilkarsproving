@@ -195,19 +195,12 @@ class RestAdapterTest {
     fun `uventet exception gir 500 uten aa lekke stacktrace til klienten, og logges kun til teamLogs`() =
         testApplication {
             val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
-            val teamLogsLogger = loggerContext.getLogger("tjenestekall") as Logger
             val rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME) as Logger
-            val teamLogsAppender =
-                ListAppender<ILoggingEvent>().apply {
-                    context = loggerContext
-                    start()
-                }
             val rootAppender =
                 ListAppender<ILoggingEvent>().apply {
                     context = loggerContext
                     start()
                 }
-            teamLogsLogger.addAppender(teamLogsAppender)
             rootLogger.addAppender(rootAppender)
 
             try {
@@ -223,15 +216,32 @@ class RestAdapterTest {
                     "responsen skal ikke lekke exception-meldingen",
                 )
                 assertTrue(
-                    teamLogsAppender.list.any { it.formattedMessage.contains("Uventet feil") },
-                    "forventet at feilen logges til teamLogs (tjenestekall)",
+                    rootAppender.list.any { event ->
+                        event.formattedMessage.contains("Uventet feil") &&
+                            event.markerList?.any { it.name == "NOT_NAV_LOGS" } == true
+                    },
+                    "forventet at feilen logges til Team Logs",
+                )
+                assertTrue(
+                    rootAppender.list.any { event ->
+                        event.markerList?.any { it.name == "NOT_NAV_LOGS" } == true && event.throwableProxy != null
+                    },
+                    "forventet stacktrace bare i Team Logs-hendelsen",
                 )
                 assertFalse(
-                    rootAppender.list.any { it.throwableProxy != null },
-                    "stacktracen skal ikke havne i vanlig (root) logg",
+                    rootAppender.list.any { event ->
+                        event.markerList?.any { it.name == "NOT_NAV_LOGS" } != true && event.throwableProxy != null
+                    },
+                    "stacktracen skal ikke havne i nav-logs-hendelsen",
+                )
+                assertFalse(
+                    rootAppender.list.any { event ->
+                        event.markerList?.any { it.name == "NOT_NAV_LOGS" } != true &&
+                            ("hemmelig detalj" in event.formattedMessage || "requestUri:" in event.formattedMessage)
+                    },
+                    "nav-logs-hendelsen skal ikke inneholde feil- eller forespørselsdetaljer",
                 )
             } finally {
-                teamLogsLogger.detachAppender(teamLogsAppender)
                 rootLogger.detachAppender(rootAppender)
             }
         }

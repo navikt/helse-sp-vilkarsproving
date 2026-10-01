@@ -11,7 +11,6 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.TilgangsgrupperTilB
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.configureJwtAuthentication
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.db.dataSource
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.db.migrerSynkront
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggInfo
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.openapi.configureOpenApiPlugin
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoIdProvider
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.ValkeyPersonPseudoIdProvider
@@ -25,6 +24,7 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestAdapter
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestRuting
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.configureRestRuting
+import no.nav.sykepenger.libs.logging.loggInfo
 import javax.sql.DataSource
 
 fun <ROLLE : Brukerrolle, TRANSAKSJON> startApp(
@@ -87,6 +87,6 @@ private fun <ROLLE : Brukerrolle, TRANSAKSJON> Application.ktorApp(
     configureOpenApiPlugin(konfigurasjon.openApi)
     configureRestRuting(restAdapter, endepunkter)
     monitor.subscribe(ApplicationStarted) {
-        loggInfo("Ktor-applikasjon startet for ${konfigurasjon.appNavn}")
+        loggInfo("Ktor-applikasjon startet", "appNavn" to konfigurasjon.appNavn)
     }
 }

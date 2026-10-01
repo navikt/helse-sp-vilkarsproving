@@ -13,6 +13,7 @@ dependencies {
     implementation(libs.postgresql)
     implementation(libs.cloud.sql.postgres.socket.factory)
     implementation(libs.rapids.and.rivers)
+    implementation(libs.sykepenger.logging)
 
     testImplementation(project(":migreringer"))
     testImplementation(libs.rapids.and.rivers.test)
