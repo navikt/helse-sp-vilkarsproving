@@ -1,11 +1,11 @@
 plugins {
-    id("no.nav.helse.sas.sas-deployable")
+    id("no.nav.sykepenger.deployable")
     // Kreves av ktors Resources-plugin for å generere serializers for @Resource-klassene
     alias(libs.plugins.kotlin.serialization)
     `java-test-fixtures`
 }
 
-sasDeployable {
+sykepengerDeployable {
     mainClass = "no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppKt"
 }
 

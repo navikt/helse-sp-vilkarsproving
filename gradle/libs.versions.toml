@@ -1,12 +1,12 @@
 [versions]
 flyway = "13.6.0"
 kotlinx-coroutines = "1.11.0"
-# Må følge Kotlin-versjonen som sas-kotlin-pluginen bruker
+# Må følge Kotlin-versjonen som no.nav.sykepenger.kotlin-pluginen bruker
 kotlin = "2.4.20"
 ktor = "3.5.2"
 tbd-libs = "20260917.2152"
 rapidsAndRivers = "2026071513121784113927"
-sasGradlePlugins = "20260918.1635"
+sykepengerGradlePlugins = "20261001.1830"
 testcontainers = "2.0.5"
 
 [libraries]
@@ -27,6 +27,6 @@ wiremock = "org.wiremock:wiremock-jetty12:3.13.2"
 
 [plugins]
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-sas-deployable = { id = "no.nav.helse.sas.sas-deployable", version.ref = "sasGradlePlugins" }
-sas-kotlin = { id = "no.nav.helse.sas.sas-kotlin", version.ref = "sasGradlePlugins" }
-sas-root = { id = "no.nav.helse.sas.sas-root", version.ref = "sasGradlePlugins" }
+sykepenger-deployable = { id = "no.nav.sykepenger.deployable", version.ref = "sykepengerGradlePlugins" }
+sykepenger-kotlin = { id = "no.nav.sykepenger.kotlin", version.ref = "sykepengerGradlePlugins" }
+sykepenger-root = { id = "no.nav.sykepenger.root", version.ref = "sykepengerGradlePlugins" }
