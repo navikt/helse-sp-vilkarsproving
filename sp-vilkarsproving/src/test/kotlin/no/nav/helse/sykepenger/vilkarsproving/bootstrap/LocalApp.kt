@@ -7,23 +7,23 @@ import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
-import no.nav.helse.speil.backend.app.auditlogg.Auditlogger
-import no.nav.helse.speil.backend.app.auth.AZURE_AD_AUTHENTICATION_NAME
-import no.nav.helse.speil.backend.app.auth.AccessToken
-import no.nav.helse.speil.backend.app.auth.NavIdent
-import no.nav.helse.speil.backend.app.auth.Saksbehandler
-import no.nav.helse.speil.backend.app.auth.SaksbehandlerOid
-import no.nav.helse.speil.backend.app.auth.SaksbehandlerPrincipal
-import no.nav.helse.speil.backend.app.auth.Tilgang
-import no.nav.helse.speil.backend.app.openapi.OpenApiConfig
-import no.nav.helse.speil.backend.app.rest.RestAdapter
-import no.nav.helse.speil.backend.app.rest.configureRestRuting
-import no.nav.helse.speil.backend.app.testfixtures.InMemoryPersonPseudoIdProvider
-import no.nav.helse.speil.backend.app.testfixtures.installTestPlugins
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auditlogg.Auditlogger
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AZURE_AD_AUTHENTICATION_NAME
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.NavIdent
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerOid
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerPrincipal
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.openapi.OpenApiConfig
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestAdapter
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.configureRestRuting
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures.InMemoryPersonPseudoIdProvider
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures.installTestPlugins
 import java.util.UUID
 
 private const val PORT = 8181

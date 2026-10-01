@@ -1,8 +1,5 @@
 package no.nav.helse.sykepenger.vilkarsproving.application
 
-import no.nav.helse.speil.backend.app.logging.loggError
-import no.nav.helse.speil.backend.app.logging.loggInfo
-import no.nav.helse.speil.backend.app.logging.medMdc
 import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResultat.HarVurdering
 import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResultat.TrengerArbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
@@ -12,6 +9,9 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggError
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggInfo
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.medMdc
 import java.time.LocalDate
 
 internal class OpptjeningService(

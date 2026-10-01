@@ -11,12 +11,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import no.nav.helse.speil.backend.app.logging.loggError
-import no.nav.helse.speil.backend.app.logging.loggInfo
-import no.nav.helse.speil.backend.app.person.Identitetsnummer
-import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggError
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggInfo
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.Identitetsnummer
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 

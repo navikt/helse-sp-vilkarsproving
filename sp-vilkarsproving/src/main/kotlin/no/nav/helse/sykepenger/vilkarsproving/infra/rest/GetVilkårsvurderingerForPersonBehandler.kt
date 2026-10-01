@@ -1,16 +1,16 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
-import no.nav.helse.speil.backend.app.auth.Tilgang
-import no.nav.helse.speil.backend.app.logging.loggWarn
-import no.nav.helse.speil.backend.app.person.PersonPseudoId
-import no.nav.helse.speil.backend.app.rest.GetBehandler
-import no.nav.helse.speil.backend.app.rest.KallKontekst
-import no.nav.helse.speil.backend.app.rest.RestResponse
 import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggWarn
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoId
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.GetBehandler
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.KallKontekst
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestResponse
 
 internal class GetVilkårsvurderingerForPersonBehandler(
     private val spleisService: SpleisOpptjeningsvurderingService,

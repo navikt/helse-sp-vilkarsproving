@@ -1,6 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.spleis
 
-import no.nav.helse.speil.backend.app.logging.loggWarn
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggWarn
 import java.io.IOException
 import java.net.http.HttpClient
 import java.net.http.HttpRequest

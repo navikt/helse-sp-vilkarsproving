@@ -1,6 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
-import no.nav.helse.speil.backend.app.rest.ApiErrorCode
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.ApiErrorCode
 
 internal enum class ApiManuellVilkårsvurderingFeil(
     override val httpStatus: Int,

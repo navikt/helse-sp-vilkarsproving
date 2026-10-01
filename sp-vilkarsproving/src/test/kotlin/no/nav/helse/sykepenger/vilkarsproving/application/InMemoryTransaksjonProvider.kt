@@ -1,6 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.application
 
-import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
 
 internal class InMemoryTransaksjonProvider(
     override val opptjeningsprøvinger: InMemoryOpptjeningsprøvingRepository = InMemoryOpptjeningsprøvingRepository(),

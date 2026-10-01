@@ -6,15 +6,15 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
-import no.nav.helse.speil.backend.app.logging.loggError
-import no.nav.helse.speil.backend.app.logging.loggInfo
-import no.nav.helse.speil.backend.app.logging.medMdc
-import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningMdcKeys
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggError
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggInfo
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.medMdc
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
 
 internal open class OpptjeningsvurderingResultatRiver(
     rapidsConnection: RapidsConnection,
