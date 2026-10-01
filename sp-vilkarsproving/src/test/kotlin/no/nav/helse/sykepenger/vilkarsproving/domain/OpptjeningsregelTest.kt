@@ -11,6 +11,7 @@ import no.nav.helse.mai
 import no.nav.helse.mandag
 import no.nav.helse.mars
 import no.nav.helse.oktober
+import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype.FRILANSER
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT
 import no.nav.helse.søndag
 import no.nav.helse.til
@@ -95,6 +96,87 @@ internal class OpptjeningsregelTest {
         val nyJobb = arbeidsforhold(10.februar til 28.februar, orgnummer = "222222222")
 
         assertEquals(Utfall.IkkeOppfylt, vurderArbeidstaker(1.mars, gammelJobb, nyJobb))
+    }
+
+    // Et arbeidsforhold som slutter fredag regnes som løpende over helgen fram til skjæringstidspunktet,
+    // og helgedagene teller med i opptjeningstiden
+    @Test
+    fun `arbeidsforhold som slutter fredag teller fram til skjæringstidspunkt mandag`() {
+        val resultat = vurder(mandag den 2.mars(2026), arbeidsforhold((fredag den 30.januar(2026)) til (fredag den 27.februar(2026))))
+
+        assertEquals(Utfall.Oppfylt, resultat.utfall)
+        assertEquals(30.januar(2026) til 1.mars(2026), resultat.opptjeningstid.opptjeningsperiode)
+        assertEquals(31, resultat.opptjeningstid.opptjeningsdager)
+    }
+
+    @Test
+    fun `arbeidsforhold som slutter fredag teller fram til skjæringstidspunkt søndag`() {
+        val resultat = vurder(søndag den 8.mars(2026), arbeidsforhold((lørdag den 7.februar(2026)) til (fredag den 6.mars(2026))))
+
+        assertEquals(Utfall.Oppfylt, resultat.utfall)
+        assertEquals(7.februar(2026) til 7.mars(2026), resultat.opptjeningstid.opptjeningsperiode)
+        assertEquals(29, resultat.opptjeningstid.opptjeningsdager)
+    }
+
+    @Test
+    fun `arbeidsforhold som slutter lørdag teller fram til skjæringstidspunkt mandag`() {
+        val resultat = vurder(mandag den 2.mars(2026), arbeidsforhold((lørdag den 31.januar(2026)) til (lørdag den 28.februar(2026))))
+
+        assertEquals(Utfall.Oppfylt, resultat.utfall)
+        assertEquals(31.januar(2026) til 1.mars(2026), resultat.opptjeningstid.opptjeningsperiode)
+        assertEquals(30, resultat.opptjeningstid.opptjeningsdager)
+    }
+
+    // Helgedagene fram til skjæringstidspunktet teller med, og kan avgjøre utfallet
+    @Test
+    fun `helgedager fram til skjæringstidspunktet kan gi nok opptjeningsdager`() {
+        // 2.februar til 27.februar er bare 26 dager, men 28.februar og 1.mars teller også
+        val resultat = vurder(mandag den 2.mars(2026), arbeidsforhold((mandag den 2.februar(2026)) til (fredag den 27.februar(2026))))
+
+        assertEquals(Utfall.Oppfylt, resultat.utfall)
+        assertEquals(28, resultat.opptjeningstid.opptjeningsdager)
+    }
+
+    @Test
+    fun `arbeidsforhold som slutter torsdag teller ikke fram til skjæringstidspunkt mandag`() {
+        val resultat = vurder(mandag den 2.mars(2026), arbeidsforhold((torsdag den 1.januar(2026)) til (torsdag den 26.februar(2026))))
+
+        assertEquals(Utfall.IkkeOppfylt, resultat.utfall)
+        assertEquals(null, resultat.opptjeningstid.opptjeningsperiode)
+        assertEquals(0, resultat.opptjeningstid.opptjeningsdager)
+    }
+
+    @Test
+    fun `arbeidsforhold som slutter fredag teller ikke fram til skjæringstidspunkt tirsdag`() {
+        val resultat = vurder(tirsdag den 3.mars(2026), arbeidsforhold((torsdag den 1.januar(2026)) til (fredag den 27.februar(2026))))
+
+        assertEquals(Utfall.IkkeOppfylt, resultat.utfall)
+    }
+
+    @Test
+    fun `frilansoppdrag teller ikke med i opptjeningen`() {
+        val frilans = Arbeidsforhold(orgnummer = ORGNUMMER, ansettelseperiode = 1.januar til 31.januar, type = FRILANSER)
+
+        assertEquals(Utfall.IkkeOppfylt, vurderArbeidstaker(1.februar, frilans))
+    }
+
+    @Test
+    fun `frilansoppdrag binder ikke sammen arbeidsforhold`() {
+        val gammelJobb = arbeidsforhold(1.januar til 10.januar, orgnummer = "111111111")
+        val frilans = Arbeidsforhold(orgnummer = "222222222", ansettelseperiode = 11.januar til 20.januar, type = FRILANSER)
+        val nyJobb = arbeidsforhold(21.januar til 31.januar, orgnummer = "333333333")
+
+        assertEquals(Utfall.IkkeOppfylt, vurderArbeidstaker(1.februar, gammelJobb, frilans, nyJobb))
+    }
+
+    @Test
+    fun `frilansoppdrag påvirker ikke opptjening fra andre arbeidsforhold`() {
+        val frilans = Arbeidsforhold(orgnummer = "222222222", ansettelseperiode = 1.desember(2017) til 31.januar, type = FRILANSER)
+        val jobb = arbeidsforhold(4.januar til 31.januar, orgnummer = "111111111")
+
+        val resultat = vurder(1.februar, frilans, jobb)
+        assertEquals(Utfall.Oppfylt, resultat.utfall)
+        assertEquals(4.januar til 31.januar, resultat.opptjeningstid.opptjeningsperiode)
     }
 
     // To samtidige arbeidsforhold gir ikke dobbelt opptjening
@@ -260,10 +342,16 @@ internal class OpptjeningsregelTest {
         ) = Arbeidsforhold(orgnummer = orgnummer, ansettelseperiode = ansettelseperiode, type = ORDINÆRT)
 
         val OpptjeningsregelResultat.utfall get() = this.vilkårsutfall.single().utfall
+        val OpptjeningsregelResultat.opptjeningstid get() = this.vilkårsutfall.single().utledetFakta as UtledetFakta.Opptjeningstid
+
+        fun vurder(
+            skjæringstidspunkt: LocalDate,
+            vararg arbeidsforhold: Arbeidsforhold,
+        ) = Opptjeningsregel.vurder(skjæringstidspunkt, Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold.toList()))
 
         fun vurderArbeidstaker(
             skjæringstidspunkt: LocalDate,
             vararg arbeidsforhold: Arbeidsforhold,
-        ) = Opptjeningsregel.vurder(skjæringstidspunkt, Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold.toList())).utfall
+        ) = vurder(skjæringstidspunkt, *arbeidsforhold).utfall
     }
 }

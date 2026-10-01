@@ -21,15 +21,18 @@ internal object Opptjeningsregel {
         skjæringstidspunkt: LocalDate,
         arbeidsforhold: List<Arbeidsforhold>,
     ): OpptjeningsregelResultat {
+        val dagenFør = skjæringstidspunkt.forrigeDag
         val opptjeningsperiode =
             arbeidsforhold
+                .filter { it.type != Arbeidsforhold.Arbeidsforholdtype.FRILANSER }
                 .map { it.ansettelseperiode }
+                .filterNot { it.start > dagenFør }
+                .map { it.subset(it.start til dagenFør) }
                 .grupperSammenhengendePerioderMedHensynTilHelg()
-                .find { skjæringstidspunkt.forrigeDag in it }
-        val opptjeningsdager =
-            opptjeningsperiode
-                ?.subset(opptjeningsperiode.start til skjæringstidspunkt.forrigeDag)
-                ?.count() ?: 0
+                .find { it.erRettFør(skjæringstidspunkt) }
+                // Et arbeidsforhold som slutter fredag/lørdag regnes som løpende over helgen fram til skjæringstidspunktet
+                ?.let { it.start til dagenFør }
+        val opptjeningsdager = opptjeningsperiode?.count() ?: 0
 
         return OpptjeningsregelResultat(
             listOf(
