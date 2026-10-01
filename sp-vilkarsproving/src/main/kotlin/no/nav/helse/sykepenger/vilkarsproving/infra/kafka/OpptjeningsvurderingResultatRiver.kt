@@ -60,8 +60,9 @@ internal open class OpptjeningsvurderingResultatRiver(
                         it.opptjeningsvurderinger.finn(opptjeningsvurderingId)
                     }
 
-                val utfall =
-                    opptjeningsvurdering?.erOk ?: spleisClient
+                val lokalVurdering = opptjeningsvurdering?.erOk
+                val spleisVurdering =
+                    spleisClient
                         .hentOpptjeningsvurderinger(fødselsnummer = fødselsnummer)
                         .find { it.opptjeningsvurderingId == opptjeningsvurderingId }
                         ?.let { vurdering ->
@@ -72,7 +73,26 @@ internal open class OpptjeningsvurderingResultatRiver(
                                 is SpleisOpptjeningsvurdering.InfotrygdArbeidstaker,
                                 -> true
                             }
-                        } ?: error("Fant ikke vurdering med id $opptjeningsvurderingId")
+                        }
+
+                var utfall =
+                    lokalVurdering ?: spleisVurdering ?: error("Fant ikke vurdering med id $opptjeningsvurderingId")
+
+                if (lokalVurdering != null && spleisVurdering != null && lokalVurdering != spleisVurdering) {
+                    loggError(
+                        "Uoverensstemmelse mellom lokal vurdering og vurdering fra Spleis. Lokal vurdering: $lokalVurdering, Spleis vurdering: $spleisVurdering",
+                        "opptjeningsvurderingId" to opptjeningsvurderingId.toString(),
+                        "fødselsnummer" to fødselsnummer,
+                    )
+                    utfall = spleisVurdering
+                }
+                if (lokalVurdering != null && spleisVurdering != null && lokalVurdering == spleisVurdering) {
+                    loggInfo(
+                        "Lokal vurdering og vurdering fra Spleis er enige. Vurdering: $lokalVurdering",
+                        "opptjeningsvurderingId" to opptjeningsvurderingId.toString(),
+                        "fødselsnummer" to fødselsnummer,
+                    )
+                }
 
                 packet["@løsning"] = mapOf(behovnavn to mapOf("ok" to utfall))
                 loggInfo(

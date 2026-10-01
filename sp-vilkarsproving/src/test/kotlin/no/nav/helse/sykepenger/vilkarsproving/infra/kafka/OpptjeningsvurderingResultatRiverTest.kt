@@ -28,7 +28,7 @@ internal class OpptjeningsvurderingResultatRiverTest {
                 this,
                 transaksjon,
                 object : ISpleisClient {
-                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> = throw NotImplementedError("Trengs ikke for denne testen")
+                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> = emptyList()
                 },
             )
         }
