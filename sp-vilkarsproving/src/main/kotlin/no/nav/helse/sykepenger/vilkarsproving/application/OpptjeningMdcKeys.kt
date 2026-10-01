@@ -1,6 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.application
 
-import no.nav.helse.speil.backend.app.logging.MdcKey
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.MdcKey
 
 /**
  * MDC-nøkler for fødselsnummer og skjæringstidspunkt slik at [OpptjeningService] slipper å gjenta

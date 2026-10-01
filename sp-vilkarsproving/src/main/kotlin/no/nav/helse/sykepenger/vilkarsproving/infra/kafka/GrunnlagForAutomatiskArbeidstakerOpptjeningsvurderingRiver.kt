@@ -8,14 +8,14 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
-import no.nav.helse.speil.backend.app.logging.loggInfo
-import no.nav.helse.speil.backend.app.logging.loggWarn
-import no.nav.helse.speil.backend.app.logging.medMdc
-import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningMdcKeys
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggInfo
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggWarn
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.medMdc
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.node.ObjectNode
 

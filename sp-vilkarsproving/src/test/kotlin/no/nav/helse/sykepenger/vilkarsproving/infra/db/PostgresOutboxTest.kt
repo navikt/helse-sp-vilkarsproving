@@ -1,9 +1,9 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
-import no.nav.helse.speil.backend.app.person.Identitetsnummer
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvolutt
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvoluttId
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.Identitetsnummer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

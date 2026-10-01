@@ -2,8 +2,8 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
 import kotliquery.Session
 import kotliquery.sessionOf
-import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
 import javax.sql.DataSource
 
 internal class PostgresTransaksjonProvider(

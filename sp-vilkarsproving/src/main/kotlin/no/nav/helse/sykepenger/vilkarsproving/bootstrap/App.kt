@@ -1,10 +1,5 @@
 package no.nav.helse.sykepenger.vilkarsproving.bootstrap
 
-import no.nav.helse.speil.backend.app.auth.Brukerrolle
-import no.nav.helse.speil.backend.app.auth.TilgangsgrupperTilBrukerroller
-import no.nav.helse.speil.backend.app.bootstrap.AppKonfigurasjon
-import no.nav.helse.speil.backend.app.bootstrap.startApp
-import no.nav.helse.speil.backend.app.rest.RestRuting
 import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.PostgresTransaksjonProvider
@@ -16,6 +11,11 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerF
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClient
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Brukerrolle
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.TilgangsgrupperTilBrukerroller
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.bootstrap.AppKonfigurasjon
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.bootstrap.startApp
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestRuting
 
 enum class AppRolle(
     override val navn: String,

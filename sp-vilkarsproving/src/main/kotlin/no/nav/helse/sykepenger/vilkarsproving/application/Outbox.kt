@@ -1,6 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.application
 
-import no.nav.helse.speil.backend.app.person.Identitetsnummer
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.Identitetsnummer
 import java.time.LocalDate
 import java.util.*
 

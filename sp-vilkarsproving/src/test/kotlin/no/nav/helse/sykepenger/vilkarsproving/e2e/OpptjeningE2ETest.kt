@@ -1,7 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.e2e
 
 import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
-import no.nav.helse.speil.backend.app.rest.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.Database
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.DatabaseTest
@@ -10,6 +9,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRe
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
