@@ -4,7 +4,7 @@ kotlinx-coroutines = "1.11.0"
 # Må følge Kotlin-versjonen som no.nav.sykepenger.kotlin-pluginen bruker
 kotlin = "2.4.20"
 ktor = "3.5.2"
-tbd-libs = "20260917.2152"
+tbd-libs = "20260930.1309"
 rapidsAndRivers = "2026071513121784113927"
 sykepengerGradlePlugins = "20261001.1830"
 testcontainers = "2.0.5"
