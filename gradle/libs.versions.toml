@@ -4,7 +4,7 @@ kotlinx-coroutines = "1.11.0"
 # Må følge Kotlin-versjonen som no.nav.sykepenger.kotlin-pluginen bruker
 kotlin = "2.4.20"
 kotlinx-serialization-json = "1.11.0"
-ktor = "3.5.2"
+ktor = "3.6.0"
 sykepenger-logging = "20260829.1737"
 mockk = "1.14.11"
 smiley4-ktor-openapi-tools = "5.7.0"
