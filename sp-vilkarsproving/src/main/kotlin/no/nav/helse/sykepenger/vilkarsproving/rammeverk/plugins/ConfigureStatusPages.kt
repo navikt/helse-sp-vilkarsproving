@@ -22,7 +22,7 @@ fun Application.configureStatusPages() {
                 ProblemDetails(
                     title = "Ugyldig forespørsel",
                     status = HttpStatusCode.BadRequest.value,
-                    detail = cause.message,
+                    detail = null,
                     instance = call.request.uri,
                 ),
             )
