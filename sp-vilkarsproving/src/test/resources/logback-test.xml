@@ -1,26 +1,36 @@
 <configuration>
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <layout class="ch.qos.logback.classic.PatternLayout">
-            <Pattern>
-                %d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n
-            </Pattern>
-        </layout>
+    <appender name="nav-logs" class="ch.qos.logback.core.read.ListAppender">
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator class="ch.qos.logback.classic.boolex.OnMarkerEvaluator">
+                <marker>NOT_NAV_LOGS</marker>
+            </evaluator>
+            <OnMatch>DENY</OnMatch>
+            <OnMismatch>ACCEPT</OnMismatch>
+        </filter>
     </appender>
 
-    <appender name="team-logs" class="ch.qos.logback.core.ConsoleAppender">
-        <filter class="no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.SkipTeamLogsMarkerFilter"/>
-        <layout class="ch.qos.logback.classic.PatternLayout">
-            <Pattern>
-                %d{HH:mm:ss.SSS} [%t] %-5level [team-logs] %logger{36} - %msg%n
-            </Pattern>
-        </layout>
+    <appender name="team-logs" class="ch.qos.logback.core.read.ListAppender">
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator class="ch.qos.logback.classic.boolex.OnMarkerEvaluator">
+                <marker>NOT_TEAM_LOGS</marker>
+            </evaluator>
+            <OnMatch>DENY</OnMatch>
+            <OnMismatch>ACCEPT</OnMismatch>
+        </filter>
     </appender>
+
+    <appender name="auditLogger" class="ch.qos.logback.core.read.ListAppender"/>
 
     <logger name="tjenestekall" level="DEBUG" additivity="false">
         <appender-ref ref="team-logs"/>
     </logger>
 
+    <logger name="auditLogger" level="INFO" additivity="false">
+        <appender-ref ref="auditLogger"/>
+    </logger>
+
     <root level="DEBUG">
-        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="nav-logs"/>
+        <appender-ref ref="team-logs"/>
     </root>
 </configuration>

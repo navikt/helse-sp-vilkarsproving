@@ -13,8 +13,8 @@ import io.ktor.server.application.install
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.swagger.v3.oas.models.media.Schema
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggInfo
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.serialization.customSerializersModule
+import no.nav.sykepenger.libs.logging.loggInfo
 import java.math.BigDecimal
 
 fun Application.configureOpenApiPlugin(config: OpenApiConfig) {

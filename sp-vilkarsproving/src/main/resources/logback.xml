@@ -1,32 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="STDOUT_JSON" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <!-- Inkluder bare spesifikke MDC-felter, ettersom noen MDC-felter kan inneholde personinformasjon -->
-            <includeMdcKeyName>callId</includeMdcKeyName>
-            <includeMdcKeyName>trace_flags</includeMdcKeyName>
-            <includeMdcKeyName>span_id</includeMdcKeyName>
-            <includeMdcKeyName>trace_id</includeMdcKeyName>
-        </encoder>
+    <include resource="no/nav/sykepenger/libs/logging/logback-base.xml"/>
+
+    <appender name="auditLogger" class="com.papertrailapp.logback.Syslog4jAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>%m%n%xEx</pattern>
+        </layout>
+        <syslogConfig class="org.productivity.java.syslog4j.impl.net.tcp.TCPNetSyslogConfig">
+            <host>audit.nais</host>
+            <port>6514</port>
+            <ident>sp-vilkarsproving</ident>
+            <maxMessageLength>128000</maxMessageLength>
+        </syslogConfig>
     </appender>
 
-    <appender name="team-logs" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-        <filter class="no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.SkipTeamLogsMarkerFilter"/>
-        <destination>team-logs.nais-system:5170</destination>
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <customFields>
-                {"google_cloud_project":"${GOOGLE_CLOUD_PROJECT}","nais_namespace_name":"${NAIS_NAMESPACE}","nais_pod_name":"${NAIS_POD_NAME}","nais_container_name":"${NAIS_APP_NAME}"}
-            </customFields>
-            <includeContext>false</includeContext>
-        </encoder>
-    </appender>
-
-    <logger name="tjenestekall" level="DEBUG" additivity="false">
-        <appender-ref ref="team-logs"/>
+    <logger name="auditLogger" level="INFO" additivity="false">
+        <appender-ref ref="auditLogger"/>
     </logger>
-    <logger name="no.nav.helse" level="DEBUG"/>
-
-    <root level="INFO">
-        <appender-ref ref="STDOUT_JSON"/>
-    </root>
 </configuration>

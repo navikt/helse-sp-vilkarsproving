@@ -2,11 +2,13 @@ package no.nav.helse.sykepenger.vilkarsproving.rammeverk.db
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggInfo
+import no.nav.sykepenger.libs.logging.navngittLogger
 import org.flywaydb.core.Flyway
 
+private val logger = navngittLogger("no.nav.helse.sykepenger.vilkarsproving.rammeverk.db.Migrering")
+
 fun migrerSynkront(config: DatabaseConfig) {
-    loggInfo("Migrerer database")
+    logger.info("Migrerer database")
     val migreringsDataSource =
         HikariDataSource(
             HikariConfig().apply {
@@ -27,5 +29,5 @@ fun migrerSynkront(config: DatabaseConfig) {
             .load()
             .migrate()
     }
-    loggInfo("Migrering ferdig")
+    logger.info("Migrering ferdig")
 }

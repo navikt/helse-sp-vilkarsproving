@@ -6,15 +6,15 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
-import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningMdcKeys
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggError
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggInfo
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.medMdc
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
+import no.nav.sykepenger.libs.logging.MdcKey
+import no.nav.sykepenger.libs.logging.loggError
+import no.nav.sykepenger.libs.logging.loggInfo
+import no.nav.sykepenger.libs.logging.medMdc
 
 internal open class OpptjeningsvurderingResultatRiver(
     rapidsConnection: RapidsConnection,
@@ -49,10 +49,9 @@ internal open class OpptjeningsvurderingResultatRiver(
         val fødselsnummer = packet["fødselsnummer"].asString()
 
         medMdc(
-            OpptjeningMdcKeys.FØDSELSNUMMER to fødselsnummer,
-            OpptjeningMdcKeys.OPPTJENINGSVURDERING_ID to opptjeningsvurderingId.toString(),
+            MdcKey.IDENTITETSNUMMER to fødselsnummer,
         ) {
-            loggInfo("Mottatt behov for $behovnavn")
+            loggInfo("Mottatt behov for $behovnavn", "opptjeningsvurderingId" to opptjeningsvurderingId.toString())
 
             try {
                 val opptjeningsvurdering =
@@ -80,7 +79,9 @@ internal open class OpptjeningsvurderingResultatRiver(
 
                 if (lokalVurdering != null && spleisVurdering != null && lokalVurdering != spleisVurdering) {
                     loggError(
-                        "Uoverensstemmelse mellom lokal vurdering og vurdering fra Spleis. Lokal vurdering: $lokalVurdering, Spleis vurdering: $spleisVurdering",
+                        "Uoverensstemmelse mellom lokal vurdering og vurdering fra Spleis",
+                        "lokalVurdering" to lokalVurdering.toString(),
+                        "spleisVurdering" to spleisVurdering.toString(),
                         "opptjeningsvurderingId" to opptjeningsvurderingId.toString(),
                         "fødselsnummer" to fødselsnummer,
                     )
@@ -88,7 +89,8 @@ internal open class OpptjeningsvurderingResultatRiver(
                 }
                 if (lokalVurdering != null && spleisVurdering != null && lokalVurdering == spleisVurdering) {
                     loggInfo(
-                        "Lokal vurdering og vurdering fra Spleis er enige. Vurdering: $lokalVurdering",
+                        "Lokal vurdering og vurdering fra Spleis er enige",
+                        "vurdering" to lokalVurdering.toString(),
                         "opptjeningsvurderingId" to opptjeningsvurderingId.toString(),
                         "fødselsnummer" to fødselsnummer,
                     )
@@ -101,7 +103,7 @@ internal open class OpptjeningsvurderingResultatRiver(
                 )
                 context.publish(packet.toJson())
             } catch (ex: Exception) {
-                loggError("Feil under håndtering av behov $behovnavn", ex)
+                loggError("Feil under håndtering av behov $behovnavn", ex, "opptjeningsvurderingId" to opptjeningsvurderingId.toString())
             }
         }
     }

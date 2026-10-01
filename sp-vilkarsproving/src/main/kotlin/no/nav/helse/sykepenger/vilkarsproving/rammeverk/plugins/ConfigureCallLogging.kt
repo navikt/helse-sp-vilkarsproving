@@ -5,7 +5,7 @@ import io.ktor.server.application.install
 import io.ktor.server.plugins.callid.callIdMdc
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.request.path
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.teamLogs
+import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 
 private val ENGANGSSTIER_UTEN_LOGGING = setOf("/metrics", "/isalive", "/isready")
@@ -13,7 +13,7 @@ private val ENGANGSSTIER_UTEN_LOGGING = setOf("/metrics", "/isalive", "/isready"
 fun Application.configureCallLogging() {
     install(CallLogging) {
         disableDefaultColors()
-        logger = teamLogs
+        logger = LoggerFactory.getLogger("tjenestekall")
         level = Level.INFO
         callIdMdc("callId")
         filter { call -> call.request.path() !in ENGANGSSTIER_UTEN_LOGGING }

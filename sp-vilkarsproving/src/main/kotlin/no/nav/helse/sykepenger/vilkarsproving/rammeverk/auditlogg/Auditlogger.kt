@@ -3,7 +3,6 @@ package no.nav.helse.sykepenger.vilkarsproving.rammeverk.auditlogg
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Metrics
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.NavIdent
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.Instant
 
@@ -17,7 +16,8 @@ class Auditlogger(
     private val appNavn: String,
     private val meterRegistry: MeterRegistry = Metrics.globalRegistry,
 ) {
-    private val auditLogg: Logger = LoggerFactory.getLogger("auditLogger")
+    // CEF krever saksbehandlerident i meldingen; denne loggeren rutes bare til audit.nais.
+    private val auditLogg = LoggerFactory.getLogger("auditLogger")
 
     fun loggPersonoppslag(
         saksbehandler: NavIdent,

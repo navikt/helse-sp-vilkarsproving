@@ -8,10 +8,10 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Brukerrolle
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggDebug
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.Identitetsnummer
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoId
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoIdProvider
+import no.nav.sykepenger.libs.logging.loggDebug
 
 class KallKontekst<TRANSAKSJON, ROLLE : Brukerrolle>(
     val saksbehandler: Saksbehandler,
@@ -50,7 +50,7 @@ class KallKontekst<TRANSAKSJON, ROLLE : Brukerrolle>(
                 loggDebug(
                     "403: populasjonstilgangskontrollen ga avslag",
                     "navIdent" to saksbehandler.navIdent.value,
-                    "tilgangSomMangler" to tilgangsresultat.tilgangSomMangler,
+                    "tilgangSomMangler" to tilgangsresultat.tilgangSomMangler.toString(),
                 )
                 RestResponse.feil(manglerTilgang())
             }

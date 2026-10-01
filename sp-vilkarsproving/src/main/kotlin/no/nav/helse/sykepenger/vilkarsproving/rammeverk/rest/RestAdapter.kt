@@ -9,8 +9,8 @@ import io.ktor.server.response.respond
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auditlogg.Auditlogger
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Brukerrolle
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerPrincipal
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.logging.loggDebug
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoIdProvider
+import no.nav.sykepenger.libs.logging.loggDebug
 
 class RestAdapter<ROLLE : Brukerrolle, TRANSAKSJON>(
     private val personPseudoIdProvider: PersonPseudoIdProvider,
@@ -32,8 +32,8 @@ class RestAdapter<ROLLE : Brukerrolle, TRANSAKSJON>(
             loggDebug(
                 "403: saksbehandler mangler påkrevd tilgang",
                 "navIdent" to principal.saksbehandler.navIdent.value,
-                "påkrevdTilgang" to behandler.påkrevdTilgang,
-                "harTilganger" to principal.tilganger,
+                "påkrevdTilgang" to behandler.påkrevdTilgang.toString(),
+                "harTilganger" to principal.tilganger.toString(),
             )
             return call.respondProblem(RammeverkFeilkode.ManglerTilgang)
         }
@@ -41,8 +41,8 @@ class RestAdapter<ROLLE : Brukerrolle, TRANSAKSJON>(
             loggDebug(
                 "403: saksbehandler mangler påkrevd brukerrolle",
                 "navIdent" to principal.saksbehandler.navIdent.value,
-                "påkrevdeBrukerroller" to behandler.påkrevdeBrukerroller,
-                "harBrukerroller" to principal.brukerroller,
+                "påkrevdeBrukerroller" to behandler.påkrevdeBrukerroller.toString(),
+                "harBrukerroller" to principal.brukerroller.toString(),
             )
             return call.respondProblem(RammeverkFeilkode.ManglerTilgang)
         }
