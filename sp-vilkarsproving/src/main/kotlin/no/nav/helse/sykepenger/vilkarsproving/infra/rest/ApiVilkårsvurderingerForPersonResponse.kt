@@ -1,16 +1,11 @@
-@file:UseContextualSerialization(UUID::class, Instant::class, LocalDate::class)
-
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.UseContextualSerialization
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
-@Serializable
 internal data class ApiVilkårsvurderingerForPersonResponse(
     val skjæringstidspunkt: LocalDate,
     val krav: List<ApiOpptjeningsvurdering>,
@@ -22,7 +17,6 @@ internal data class ApiVilkårsvurderingerForPersonResponse(
     JsonSubTypes.Type(value = ApiOpptjeningsvurdering.OverførtFraSpleis::class, name = "OVERFORT_FRA_SPLEIS"),
     JsonSubTypes.Type(value = ApiOpptjeningsvurdering.OverførtFraInfotrygd::class, name = "OVERFOERT_FRA_INFOTRYGD"),
 )
-@Serializable
 internal sealed interface ApiOpptjeningsvurdering {
     val id: UUID
     val kravkode: ApiKravkode
@@ -30,7 +24,6 @@ internal sealed interface ApiOpptjeningsvurdering {
 
     val kravkilde: ApiKravkilde
 
-    @Serializable
     data class VurdertISpVilkarproving(
         override val id: UUID,
         override val kravkode: ApiKravkode,
@@ -41,7 +34,6 @@ internal sealed interface ApiOpptjeningsvurdering {
         override val kravkilde: ApiKravkilde = ApiKravkilde.VURDERT_I_SP_VILKARSPROVING
     }
 
-    @Serializable
     data class OverførtFraSpleis(
         override val id: UUID,
         override val kravkode: ApiKravkode,
@@ -52,7 +44,6 @@ internal sealed interface ApiOpptjeningsvurdering {
         override val kravkilde: ApiKravkilde = ApiKravkilde.OVERFORT_FRA_SPLEIS
     }
 
-    @Serializable
     data class OverførtFraInfotrygd(
         override val id: UUID,
         override val kravkode: ApiKravkode,
@@ -62,14 +53,12 @@ internal sealed interface ApiOpptjeningsvurdering {
     }
 }
 
-@Serializable
 internal enum class ApiKravkilde {
     VURDERT_I_SP_VILKARSPROVING,
     OVERFORT_FRA_SPLEIS,
     OVERFOERT_FRA_INFOTRYGD,
 }
 
-@Serializable
 internal data class ApiVilkårsvurdering(
     val id: UUID,
     val vilkårskode: ApiVilkårskode,
@@ -79,7 +68,6 @@ internal data class ApiVilkårsvurdering(
     val kilde: ApiVurderingskilde,
 )
 
-@Serializable
 internal data class ApiLovreferanse(
     val lov: String,
     val paragraf: String,
@@ -89,18 +77,15 @@ internal data class ApiLovreferanse(
     val iKraftFra: LocalDate,
 )
 
-@Serializable
 internal enum class ApiUtfall {
     OPPFYLT,
     IKKE_OPPFYLT,
 }
 
-@Serializable
 internal enum class ApiKravkode {
     OPPTJENING,
 }
 
-@Serializable
 internal enum class ApiVilkårskode {
     OPPTJENING_ARBEID_MINST_4_UKER,
 }
@@ -111,11 +96,9 @@ internal enum class ApiVilkårskode {
     JsonSubTypes.Type(value = ApiVurderingskilde.Saksbehandler::class, name = "SAKSBEHANDLER"),
     JsonSubTypes.Type(value = ApiVurderingskilde.OverførtFraSpleis::class, name = "OVERFOERT_FRA_SPLEIS"),
 )
-@Serializable
 internal sealed interface ApiVurderingskilde {
     val kildetype: ApiKildetype
 
-    @Serializable
     data class Automatisk(
         val versjonAvKildekode: String,
         val grunnlag: ApiVurderingsgrunnlag,
@@ -123,7 +106,6 @@ internal sealed interface ApiVurderingskilde {
         override val kildetype: ApiKildetype = ApiKildetype.AUTOMATISK
     }
 
-    @Serializable
     data class Saksbehandler(
         val ident: String,
         val fritekstbegrunnelse: String,
@@ -132,7 +114,6 @@ internal sealed interface ApiVurderingskilde {
         override val kildetype: ApiKildetype = ApiKildetype.SAKSBEHANDLER
     }
 
-    @Serializable
     data class OverførtFraSpleis(
         val grunnlag: ApiVurderingsgrunnlag,
     ) : ApiVurderingskilde {
@@ -140,7 +121,6 @@ internal sealed interface ApiVurderingskilde {
     }
 }
 
-@Serializable
 internal enum class ApiKildetype {
     AUTOMATISK,
     SAKSBEHANDLER,
@@ -152,11 +132,9 @@ internal enum class ApiKildetype {
     JsonSubTypes.Type(value = ApiVurderingsgrunnlag.Arbeidsforhold::class, name = "ARBEIDSFORHOLD"),
     JsonSubTypes.Type(value = ApiVurderingsgrunnlag.SelvstendigNæringsdrivende::class, name = "SELVSTENDIG_NAERINGSDRIVENDE"),
 )
-@Serializable
 internal sealed interface ApiVurderingsgrunnlag {
     val grunnlagstype: ApiGrunnlagstype
 
-    @Serializable
     data class Arbeidsforhold(
         val arbeidsforhold: List<ApiArbeidsforhold>,
         val opptjeningsperiode: ApiPeriode?,
@@ -165,7 +143,6 @@ internal sealed interface ApiVurderingsgrunnlag {
         override val grunnlagstype: ApiGrunnlagstype = ApiGrunnlagstype.ARBEIDSFORHOLD
     }
 
-    @Serializable
     data class SelvstendigNæringsdrivende(
         override val grunnlagstype: ApiGrunnlagstype = ApiGrunnlagstype.SELVSTENDIG_NAERINGSDRIVENDE,
     ) : ApiVurderingsgrunnlag {
@@ -175,19 +152,16 @@ internal sealed interface ApiVurderingsgrunnlag {
     }
 }
 
-@Serializable
 internal enum class ApiGrunnlagstype {
     ARBEIDSFORHOLD,
     SELVSTENDIG_NAERINGSDRIVENDE,
 }
 
-@Serializable
 internal data class ApiPeriode(
     val fom: LocalDate,
     val tom: LocalDate,
 )
 
-@Serializable
 internal data class ApiArbeidsforhold(
     val organisasjonsnummer: String,
     val fom: LocalDate,
@@ -195,7 +169,6 @@ internal data class ApiArbeidsforhold(
     val type: ApiArbeidsforholdtype,
 )
 
-@Serializable
 internal enum class ApiArbeidsforholdtype {
     FORENKLET_OPPGJØRSORDNING,
     FRILANSER,

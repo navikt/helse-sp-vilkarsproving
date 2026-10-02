@@ -199,8 +199,8 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
         }
 
     /**
-     * Formen på json-en er selve kontrakten mot Speil, og den produseres av Jackson — ikke av
-     * kotlinx-annotasjonene, som kun styrer openapi-spec-en. Testen går derfor helt ut på wire, og
+     * Formen på json-en er selve kontrakten mot Speil, og den produseres av Jackson. Testen går
+     * derfor helt ut på wire, og
      * ville ikke fanget en manglende `@JsonTypeInfo` om den bare sammenlignet kotlin-objekter.
      */
     @Test
