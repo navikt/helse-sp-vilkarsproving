@@ -28,6 +28,7 @@ import java.util.UUID
 private const val PORT = 8181
 
 fun main() {
+    val transaksjonProvider = InMemoryTransaksjonProvider()
     val server =
         embeddedServer(CIO, port = PORT) {
             installTestPlugins(
@@ -39,12 +40,13 @@ fun main() {
                     RestAdapter<Transaksjonskontekst>(
                         personPseudoIdProvider = InMemoryPersonPseudoIdProvider(),
                         populasjonstilgangskontrollProvider = TillatAltPopulasjonstilgangskontrollProvider(),
-                        transaksjonProvider = InMemoryTransaksjonProvider(),
+                        transaksjonProvider = transaksjonProvider,
                     ),
                 // Rutene defineres i App.kt, slik at LocalApp automatisk får nye endepunkter.
                 endepunkter =
                     endepunkter(
                         spleisClient = TomSpleisClient(),
+                        transaksjonProvider = transaksjonProvider,
                     ),
             )
         }

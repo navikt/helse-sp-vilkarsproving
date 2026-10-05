@@ -17,7 +17,7 @@ import io.ktor.server.application.call
 import io.ktor.server.auth.authentication
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
-import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
+import no.nav.helse.sykepenger.vilkarsproving.application.PersonAvstemmingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.Database
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.DatabaseTest
@@ -118,7 +118,8 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
         routing {
             get(
                 GetVilkårsvurderingerForPersonBehandler(
-                    SpleisOpptjeningsvurderingService(
+                    PersonAvstemmingService(
+                        transaksjon,
                         object : ISpleisClient {
                             override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> = emptyList()
                         },

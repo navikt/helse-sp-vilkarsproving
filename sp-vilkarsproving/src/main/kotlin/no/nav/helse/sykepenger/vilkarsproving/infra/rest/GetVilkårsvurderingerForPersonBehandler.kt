@@ -1,7 +1,7 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoId
-import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
+import no.nav.helse.sykepenger.vilkarsproving.application.PersonAvstemmingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
@@ -12,7 +12,7 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestResponse
 import no.nav.sykepenger.libs.logging.loggWarn
 
 internal class GetVilkårsvurderingerForPersonBehandler(
-    private val spleisService: SpleisOpptjeningsvurderingService,
+    private val avstemmingService: PersonAvstemmingService,
 ) : GetBehandler<ApiVilkårsvurderingerForPersonResource, ApiVilkårsvurderingerForPersonResponse, ApiVilkårsvurderingerForPersonFeil, Transaksjonskontekst> {
     override val påkrevdTilgang = Tilgang.Les
     override val tag = "vilkarsvurderinger"
@@ -31,16 +31,22 @@ internal class GetVilkårsvurderingerForPersonBehandler(
             manglerTilgang = { ApiVilkårsvurderingerForPersonFeil.ManglerTilgang },
         ) { identitetsnummer ->
 
+            val spleisFeilet =
+                try {
+                    avstemmingService.lagreOpptjeningsvurderinger(fødselsnummer = identitetsnummer.value)
+                    false
+                } catch (ex: SpleisClientException) {
+                    loggWarn("Feil ved avstemming av opptjeningsvurderinger mot Spleis", ex)
+                    true
+                }
+
             val vurdering =
                 kallKontekst.transaksjon.opptjeningsvurderinger
                     .finn(OpptjeningsvurderingId(resource.opptjeningsvurderingId))
-                    ?: try {
-                        spleisService.finn(OpptjeningsvurderingId(resource.opptjeningsvurderingId), identitetsnummer.value)
-                    } catch (ex: SpleisClientException) {
-                        loggWarn("Feil ved henting av opptjeningsvurdering fra Spleis", ex)
-                        return@medPerson RestResponse.feil(ApiVilkårsvurderingerForPersonFeil.SpleisUtilgjengelig)
-                    }
 
+            if (vurdering == null && spleisFeilet) {
+                return@medPerson RestResponse.feil(ApiVilkårsvurderingerForPersonFeil.SpleisUtilgjengelig)
+            }
             if (vurdering == null || vurdering.fødselsnummer != identitetsnummer.value) {
                 return@medPerson RestResponse.feil(ApiVilkårsvurderingerForPersonFeil.VurderingIkkeFunnet)
             }
