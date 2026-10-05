@@ -14,6 +14,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskA
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingResultatRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OutboxPubliseringsjobb
+import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.PersonAvstemmingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
@@ -38,6 +39,8 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.configureRestRuting
 import no.nav.sykepenger.libs.logging.loggInfo
 
 private const val APP_NAVN = "sp-vilkarsproving"
+
+private fun erProdGcp(): Boolean = System.getenv()["NAIS_CLUSTER_NAME"] == "prod-gcp"
 
 data class AppKonfigurasjon(
     val appNavn: String,
@@ -100,14 +103,16 @@ fun main() {
                 transaksjonProvider = transaksjonProvider,
                 spleisClient = spleisClient,
             )
-           /* PersonAvstemmingRiver(
-                rapidsConnection = this,
-                personAvstemmingService =
-                    PersonAvstemmingService(
-                        transaksjonProvider = transaksjonProvider,
-                        spleisClient = spleisClient,
-                    ),
-            )*/
+            if (!erProdGcp()) {
+                PersonAvstemmingRiver(
+                    rapidsConnection = this,
+                    personAvstemmingService =
+                        PersonAvstemmingService(
+                            transaksjonProvider = transaksjonProvider,
+                            spleisClient = spleisClient,
+                        ),
+                )
+            }
             register(
                 OutboxPubliseringsjobb(
                     rapidsConnection = this,
