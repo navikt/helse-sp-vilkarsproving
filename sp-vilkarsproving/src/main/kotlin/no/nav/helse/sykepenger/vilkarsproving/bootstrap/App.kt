@@ -7,7 +7,7 @@ import com.github.navikt.tbd_libs.populasjonstilgang.client.tilgangsmaskinenClie
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
 import no.nav.helse.rapids_rivers.RapidApplication
-import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
+import no.nav.helse.sykepenger.vilkarsproving.application.PersonAvstemmingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.PostgresTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver
@@ -140,7 +140,7 @@ private fun Application.ktorApp(
         tilgangsgrupperTilTilganger = konfigurasjon.tilganger,
     )
     configureOpenApiPlugin(konfigurasjon.openApi)
-    configureRestRuting(restAdapter, endepunkter(spleisClient = spleisClient))
+    configureRestRuting(restAdapter, endepunkter(spleisClient, transaksjonProvider))
     monitor.subscribe(ApplicationStarted) {
         loggInfo("Ktor-applikasjon startet", "appNavn" to konfigurasjon.appNavn)
     }
@@ -150,8 +150,11 @@ private fun Application.ktorApp(
  * Appens HTTP-endepunkter, definert ett sted. Både produksjonsappen ([main]) og LocalApp bruker
  * denne, slik at et nytt endepunkt bare trenger å registreres her for å bli med begge steder.
  */
-internal fun endepunkter(spleisClient: ISpleisClient): RestRuting<Transaksjonskontekst>.() -> Unit =
+internal fun endepunkter(
+    spleisClient: ISpleisClient,
+    transaksjonProvider: TransaksjonProvider<Transaksjonskontekst>,
+): RestRuting<Transaksjonskontekst>.() -> Unit =
     {
-        get(GetVilkårsvurderingerForPersonBehandler(SpleisOpptjeningsvurderingService(spleisClient)))
+        get(GetVilkårsvurderingerForPersonBehandler(PersonAvstemmingService(transaksjonProvider, spleisClient)))
         post(PostManuellVilkårsvurderingBehandler())
     }

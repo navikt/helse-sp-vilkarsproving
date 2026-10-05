@@ -13,8 +13,9 @@ import io.ktor.server.application.call
 import io.ktor.server.auth.authentication
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
+import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryMigreringsloggRepository
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
-import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
+import no.nav.helse.sykepenger.vilkarsproving.application.PersonAvstemmingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
@@ -23,6 +24,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.tilOpptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.*
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureResources
@@ -71,7 +73,10 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
         private val vurderinger: List<SpleisOpptjeningsvurdering> = emptyList(),
         private val svikt: RuntimeException? = null,
     ) : ISpleisClient {
+        var antallKall = 0
+
         override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> {
+            antallKall++
             svikt?.let { throw it }
             return vurderinger
         }
@@ -98,7 +103,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
                 transaksjonProvider = transaksjonProvider,
             )
         routing {
-            get(GetVilkårsvurderingerForPersonBehandler(SpleisOpptjeningsvurderingService(spleisClient)), restAdapter)
+            get(GetVilkårsvurderingerForPersonBehandler(PersonAvstemmingService(transaksjonProvider, spleisClient)), restAdapter)
         }
     }
 
@@ -360,6 +365,122 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
         }
 
     @Test
+    fun `vurderingene fra spleis lagres i db og registreres i migreringsloggen`() =
+        testApplication {
+            val etterspurt = spleisSelvstendig()
+            val enAnnen = spleisSelvstendig()
+            val transaksjonProvider = InMemoryTransaksjonProvider()
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+
+            application {
+                settOppTestapp(
+                    principal(),
+                    transaksjonProvider,
+                    personPseudoIdProvider = pseudoIdProvider,
+                    spleisClient = FakeSpleisClient(vurderinger = listOf(etterspurt, enAnnen)),
+                )
+            }
+
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=${etterspurt.opptjeningsvurderingId.value}")
+            assertEquals(HttpStatusCode.OK, response.status)
+
+            assertEquals(
+                setOf(etterspurt.opptjeningsvurderingId, enAnnen.opptjeningsvurderingId),
+                transaksjonProvider.opptjeningsvurderinger.alleVurderinger
+                    .map { it.id }
+                    .toSet(),
+            ) { "Alle personens vurderinger skal overføres, ikke bare den som ble etterspurt" }
+            assertEquals(
+                setOf(identitetsnummer.value),
+                transaksjonProvider.opptjeningsvurderinger.alleVurderinger
+                    .map { it.fødselsnummer }
+                    .toSet(),
+            )
+            assertEquals(
+                InMemoryMigreringsloggRepository.Nedlasting(identitetsnummer.value, antallVurderinger = 2, antallHoppetOver = 0),
+                transaksjonProvider.migreringslogg.alleNedlastinger.single(),
+            )
+        }
+
+    @Test
+    fun `spleis kalles bare første gang, deretter leses vurderingen fra db`() =
+        testApplication {
+            val spleisVurdering = spleisSelvstendig()
+            val spleisClient = FakeSpleisClient(vurderinger = listOf(spleisVurdering))
+            val transaksjonProvider = InMemoryTransaksjonProvider()
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+
+            application {
+                settOppTestapp(principal(), transaksjonProvider, personPseudoIdProvider = pseudoIdProvider, spleisClient = spleisClient)
+            }
+
+            repeat(3) {
+                val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=${spleisVurdering.opptjeningsvurderingId.value}")
+                assertEquals(HttpStatusCode.OK, response.status)
+            }
+
+            assertEquals(1, spleisClient.antallKall)
+            assertEquals(1, transaksjonProvider.opptjeningsvurderinger.antallLagringer)
+            assertEquals(1, transaksjonProvider.migreringslogg.alleNedlastinger.size)
+        }
+
+    @Test
+    fun `vurderinger som allerede finnes i db lagres ikke paa nytt`() =
+        testApplication {
+            val spleisVurdering = spleisSelvstendig()
+            val transaksjonProvider = InMemoryTransaksjonProvider()
+            transaksjonProvider.opptjeningsvurderinger.lagre(spleisVurdering.tilOpptjeningsvurdering(identitetsnummer.value))
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+
+            application {
+                settOppTestapp(
+                    principal(),
+                    transaksjonProvider,
+                    personPseudoIdProvider = pseudoIdProvider,
+                    spleisClient = FakeSpleisClient(vurderinger = listOf(spleisVurdering)),
+                )
+            }
+
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=${spleisVurdering.opptjeningsvurderingId.value}")
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals(1, transaksjonProvider.opptjeningsvurderinger.antallLagringer)
+            assertEquals(
+                InMemoryMigreringsloggRepository.Nedlasting(identitetsnummer.value, antallVurderinger = 1, antallHoppetOver = 1),
+                transaksjonProvider.migreringslogg.alleNedlastinger.single(),
+            )
+        }
+
+    @Test
+    fun `avstemmer ikke når saksbehandler mangler populasjonstilgang`() =
+        testApplication {
+            val spleisClient = FakeSpleisClient(vurderinger = listOf(spleisSelvstendig()))
+            val transaksjonProvider = InMemoryTransaksjonProvider()
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+
+            application {
+                settOppTestapp(
+                    principal(),
+                    transaksjonProvider,
+                    tilgangskontroll = FakeTilgangskontroll(TilgangskontrollResultat.ManglerTilgang(TilgangSomMangler.Habilitet)),
+                    personPseudoIdProvider = pseudoIdProvider,
+                    spleisClient = spleisClient,
+                )
+            }
+
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=${UUID.randomUUID()}")
+
+            assertEquals(HttpStatusCode.Forbidden, response.status)
+            assertEquals(0, spleisClient.antallKall)
+            assertEquals(0, transaksjonProvider.opptjeningsvurderinger.antallLagringer)
+            assertEquals(0, transaksjonProvider.migreringslogg.alleNedlastinger.size)
+        }
+
+    @Test
     fun `finner ikke vurdering i db, men finner den hos spleis som overfoert fra infotrygd`() =
         testApplication {
             val opptjeningsvurderingId = UUID.randomUUID()
@@ -422,4 +543,43 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
 
             assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
         }
+
+    @Test
+    fun `spleis-api svikter, men vurderingen finnes allerede i db gir 200`() =
+        testApplication {
+            val transaksjonProvider = InMemoryTransaksjonProvider()
+            val vurdering =
+                Opptjeningsvurdering.automatisk(
+                    opptjeningsprøvingId = OpptjeningsprøvingId.ny(),
+                    fødselsnummer = identitetsnummer.value,
+                    skjæringstidspunkt = LocalDate.of(2024, 2, 1),
+                    grunnlag = Opptjeningsgrunnlag.SelvstendigNæringsdrivende,
+                )
+            transaksjonProvider.opptjeningsvurderinger.lagre(vurdering)
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+
+            application {
+                settOppTestapp(
+                    principal(),
+                    transaksjonProvider,
+                    personPseudoIdProvider = pseudoIdProvider,
+                    spleisClient = FakeSpleisClient(svikt = SpleisClientException("spleis-api svarte 500")),
+                )
+            }
+
+            val response = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=${vurdering.id.value}")
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals(0, transaksjonProvider.migreringslogg.alleNedlastinger.size) {
+                "Feilet avstemming skal ikke registreres, ellers prøver vi aldri igjen"
+            }
+        }
+
+    private fun spleisSelvstendig() =
+        SpleisOpptjeningsvurdering.SpleisSelvstendig(
+            opptjeningsvurderingId = OpptjeningsvurderingId(UUID.randomUUID()),
+            opprettet = Instant.now(),
+            skjæringstidspunkt = LocalDate.of(2024, 3, 1),
+        )
 }

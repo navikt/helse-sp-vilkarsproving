@@ -9,7 +9,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
-import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
+import no.nav.helse.sykepenger.vilkarsproving.application.PersonAvstemmingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
@@ -27,6 +27,7 @@ import tools.jackson.module.kotlin.jacksonObjectMapper
 
 class VilkårsvurderingerForPersonOpenApiTest {
     private fun Application.settOppTestapp() {
+        val transaksjonProvider = InMemoryTransaksjonProvider()
         configureContentNegotiation()
         configureResources()
         val restAdapter =
@@ -49,11 +50,12 @@ class VilkårsvurderingerForPersonOpenApiTest {
                             fødselsnummer: String,
                         ) = TilgangskontrollResultat.Ok
                     },
-                transaksjonProvider = InMemoryTransaksjonProvider(),
+                transaksjonProvider = transaksjonProvider,
             )
         configureOpenApiPlugin(OpenApiConfig(eksponerOpenApi = true, tittel = "sp-vilkarsproving"))
         val spleisService =
-            SpleisOpptjeningsvurderingService(
+            PersonAvstemmingService(
+                transaksjonProvider,
                 object : ISpleisClient {
                     override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> = emptyList()
                 },
