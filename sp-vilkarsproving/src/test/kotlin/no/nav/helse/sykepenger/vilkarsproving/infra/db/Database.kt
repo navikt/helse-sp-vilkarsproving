@@ -7,6 +7,7 @@ internal object Database {
     private val database = TestDatabase.start(postgresImage = "postgres:18").also { it.migrer() }
 
     val transaksjonProvider = PostgresTransaksjonProvider(database.dataSource)
+    val dataSource = database.dataSource
 
     fun tøm() =
         database.tøm(
@@ -14,6 +15,7 @@ internal object Database {
             "vilkarsvurdering",
             "opptjeningsproving",
             "opptjeningsvurdering",
+            "migreringslogg",
             "outbox",
         )
 

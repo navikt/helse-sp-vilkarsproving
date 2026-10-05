@@ -52,6 +52,16 @@ internal class SlettPersonRiver(
         slettVilkarsvurdering(tx, vilkarsvurderingIder)
         slettOpptjeningsvurdering(tx, fødselsnummer)
         slettOpptjeningsproving(tx, fødselsnummer)
+        slettMigreringslogg(tx, fødselsnummer)
+    }
+
+    private fun slettMigreringslogg(
+        tx: TransactionalSession,
+        fødselsnummer: String,
+    ) {
+        @Language("PostgreSQL")
+        val query = "DELETE FROM migreringslogg WHERE fødselsnummer = :fnr"
+        tx.run(queryOf(query, mapOf("fnr" to fødselsnummer)).asUpdate)
     }
 
     private fun fjernAvgjørendeVilkårsvurdering(

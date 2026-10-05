@@ -36,11 +36,13 @@ internal class SlettPersonRiverTest {
         insertOpptjeningsproving(fødselsnummer = fødselsnummer)
         val opptjeningsvurderingId = insertOpptjeningsvurdering(fødselsnummer = fødselsnummer)
         insertVilkarsvurdering(opptjeningsvurderingId = opptjeningsvurderingId, avgjørende = true)
+        insertMigreringslogg(fødselsnummer = fødselsnummer)
 
         assertEquals(1, Database.countOpptjeningsproving())
         assertEquals(1, Database.countOpptjeningsvurdering())
         assertEquals(1, Database.countVilkarsvurdering())
         assertEquals(1, Database.countOpptjeningsvurderingVilkarsvurdering())
+        assertEquals(1, Database.countMigreringslogg())
 
         rapid.sendTestMessage(slettPersonMelding(fødselsnummer))
 
@@ -48,6 +50,7 @@ internal class SlettPersonRiverTest {
         assertEquals(0, Database.countOpptjeningsvurdering())
         assertEquals(0, Database.countVilkarsvurdering())
         assertEquals(0, Database.countOpptjeningsvurderingVilkarsvurdering())
+        assertEquals(0, Database.countMigreringslogg())
     }
 
     @Test
@@ -62,6 +65,8 @@ internal class SlettPersonRiverTest {
         insertOpptjeningsproving(fødselsnummer = fødselsnummer2)
         val opptjeningsvurderingId2 = insertOpptjeningsvurdering(fødselsnummer = fødselsnummer2)
         insertVilkarsvurdering(opptjeningsvurderingId = opptjeningsvurderingId2)
+        insertMigreringslogg(fødselsnummer = fødselsnummer1)
+        insertMigreringslogg(fødselsnummer = fødselsnummer2)
 
         rapid.sendTestMessage(slettPersonMelding(fødselsnummer1))
 
@@ -69,6 +74,7 @@ internal class SlettPersonRiverTest {
         assertEquals(1, Database.countOpptjeningsvurdering())
         assertEquals(1, Database.countVilkarsvurdering())
         assertEquals(1, Database.countOpptjeningsvurderingVilkarsvurdering())
+        assertEquals(1, Database.countMigreringslogg())
     }
 
     @Test
@@ -179,6 +185,21 @@ internal class SlettPersonRiverTest {
                 }
         }
         kobleVilkarsvurdering(id, opptjeningsvurderingId, avgjørende)
+    }
+
+    private fun insertMigreringslogg(fødselsnummer: String) {
+        Database.dataSource.connection.use { conn ->
+            conn
+                .prepareStatement(
+                    """
+                INSERT INTO migreringslogg (fødselsnummer, antall_vurderinger, antall_hoppet_over)
+                VALUES (?, 1, 0)
+                """,
+                ).use { stmt ->
+                    stmt.setString(1, fødselsnummer)
+                    stmt.executeUpdate()
+                }
+        }
     }
 
     private fun kobleVilkarsvurdering(

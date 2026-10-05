@@ -48,6 +48,14 @@ fun main() {
                 transaksjonProvider = transaksjonProvider,
                 spleisClient = spleisClient,
             )
+           /* PersonAvstemmingRiver(
+                rapidsConnection = this,
+                personAvstemmingService =
+                    PersonAvstemmingService(
+                        transaksjonProvider = transaksjonProvider,
+                        spleisClient = spleisClient,
+                    ),
+            )*/
             register(
                 OutboxPubliseringsjobb(
                     rapidsConnection = this,

@@ -5,6 +5,7 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
 internal class InMemoryTransaksjonProvider(
     override val opptjeningsprøvinger: InMemoryOpptjeningsprøvingRepository = InMemoryOpptjeningsprøvingRepository(),
     override val opptjeningsvurderinger: InMemoryOpptjeningsvurderingRepository = InMemoryOpptjeningsvurderingRepository(),
+    override val migreringslogg: InMemoryMigreringsloggRepository = InMemoryMigreringsloggRepository(),
     override val outbox: InMemoryOutbox = InMemoryOutbox(),
 ) : TransaksjonProvider<Transaksjonskontekst>,
     Transaksjonskontekst {
