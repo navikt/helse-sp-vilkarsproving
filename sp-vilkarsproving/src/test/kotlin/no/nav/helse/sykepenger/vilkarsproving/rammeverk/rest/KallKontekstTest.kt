@@ -3,7 +3,6 @@ package no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest
 import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangSomMangler
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auditlogg.Auditlogger
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Brukerrolle
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.NavIdent
@@ -17,16 +16,13 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
-/** Verifiserer [KallKontekst.medPerson]s rekkefølge: pseudo-id → tilgangskontroll → auditlogg → block. */
 class KallKontekstTest {
     private val identitetsnummer = Identitetsnummer("12345678901")
     private val saksbehandler = Saksbehandler(NavIdent("Z999999"), SaksbehandlerOid("oid"), "Test Testesen")
 
     private enum class TestRolle(
         override val navn: String,
-    ) : Brukerrolle {
-        Saksbehandler("saksbehandler"),
-    }
+    ) : Brukerrolle
 
     private enum class TestFeil(
         override val httpStatus: Int,
@@ -77,7 +73,6 @@ class KallKontekstTest {
                 accessToken = AccessToken("token"),
                 personPseudoIdProvider = pseudoIdProvider,
                 populasjonstilgangskontrollProvider = fake,
-                auditlogger = Auditlogger("test"),
             )
     }
 
@@ -97,7 +92,7 @@ class KallKontekstTest {
     }
 
     @Test
-    fun `manglende populasjonstilgang gir manglerTilgang-feil og auditlogges`() {
+    fun `manglende populasjonstilgang gir manglerTilgang-feil`() {
         val oppsett =
             Oppsett(TilgangskontrollResultat.ManglerTilgang(TilgangSomMangler.Habilitet), saksbehandler, identitetsnummer)
 
@@ -113,7 +108,7 @@ class KallKontekstTest {
     }
 
     @Test
-    fun `ok tilgang kjoerer block med identitetsnummer og auditlogger Permit`() {
+    fun `ok tilgang kjoerer block med identitetsnummer`() {
         val oppsett = Oppsett(TilgangskontrollResultat.Ok, saksbehandler, identitetsnummer)
         var mottattIdentitetsnummer: Identitetsnummer? = null
 

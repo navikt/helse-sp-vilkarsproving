@@ -16,7 +16,6 @@ import io.ktor.server.auth.authentication
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auditlogg.Auditlogger
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Brukerrolle
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.NavIdent
@@ -42,9 +41,7 @@ private enum class TestRolle(
 private enum class TestFeil(
     override val httpStatus: Int,
     override val tittel: String,
-) : ApiErrorCode {
-    NoeGikkGalt(400, "Noe gikk galt"),
-}
+) : ApiErrorCode
 
 private object EnkelResource
 
@@ -130,7 +127,6 @@ class RestAdapterTest {
             RestAdapter<TestRolle, Unit>(
                 personPseudoIdProvider = InMemoryPersonPseudoIdProvider(),
                 populasjonstilgangskontrollProvider = tilgangskontroll,
-                auditlogger = Auditlogger("test"),
                 transaksjonProvider =
                     object : TransaksjonProvider<Unit> {
                         override fun <T> transaksjon(block: (Unit) -> T): T = block(Unit)

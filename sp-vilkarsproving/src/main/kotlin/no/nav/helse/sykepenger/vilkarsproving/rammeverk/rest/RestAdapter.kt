@@ -6,7 +6,6 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.principal
 import io.ktor.server.request.uri
 import io.ktor.server.response.respond
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auditlogg.Auditlogger
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Brukerrolle
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerPrincipal
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoIdProvider
@@ -15,7 +14,6 @@ import no.nav.sykepenger.libs.logging.loggDebug
 class RestAdapter<ROLLE : Brukerrolle, TRANSAKSJON>(
     private val personPseudoIdProvider: PersonPseudoIdProvider,
     private val populasjonstilgangskontrollProvider: PopulasjonstilgangskontrollProvider,
-    private val auditlogger: Auditlogger,
     private val transaksjonProvider: TransaksjonProvider<TRANSAKSJON>,
 ) {
     suspend fun <RESOURCE : Any, RESPONSE, ERROR : ApiErrorCode> håndter(
@@ -58,7 +56,6 @@ class RestAdapter<ROLLE : Brukerrolle, TRANSAKSJON>(
                         accessToken = principal.accessToken,
                         personPseudoIdProvider = personPseudoIdProvider,
                         populasjonstilgangskontrollProvider = populasjonstilgangskontrollProvider,
-                        auditlogger = auditlogger,
                     )
                 kjørBehandler(resource, kallKontekst)
             }

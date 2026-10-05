@@ -24,7 +24,6 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.bundles.smiley4.ktor.openapi.tools)
     implementation(libs.sykepenger.logging)
-    implementation(libs.logback.syslog4j)
     implementation(libs.hikaricp)
     implementation(libs.postgresql)
     implementation(libs.flyway.database.postgresql)

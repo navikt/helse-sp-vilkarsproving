@@ -9,7 +9,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.routing.get
 import io.ktor.server.testing.testApplication
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auditlogg.Auditlogger
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AzureAdConfig
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Brukerrolle
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
@@ -34,9 +33,7 @@ private enum class RutingTestRolle(
 private enum class RutingTestFeil(
     override val httpStatus: Int,
     override val tittel: String,
-) : ApiErrorCode {
-    NoeGikkGalt(400, "Noe gikk galt"),
-}
+) : ApiErrorCode
 
 private object RutingResource
 
@@ -97,7 +94,6 @@ class ConfigureRestRutingTest {
             RestAdapter<RutingTestRolle, Unit>(
                 personPseudoIdProvider = InMemoryPersonPseudoIdProvider(),
                 populasjonstilgangskontrollProvider = ÅpenTilgangskontroll,
-                auditlogger = Auditlogger("test"),
                 transaksjonProvider =
                     object : TransaksjonProvider<Unit> {
                         override fun <T> transaksjon(block: (Unit) -> T): T = block(Unit)

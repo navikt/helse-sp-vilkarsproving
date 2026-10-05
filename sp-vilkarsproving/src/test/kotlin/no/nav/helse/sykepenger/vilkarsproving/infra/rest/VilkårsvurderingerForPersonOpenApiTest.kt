@@ -14,7 +14,6 @@ import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auditlogg.Auditlogger
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.openapi.OpenApiConfig
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.openapi.configureOpenApiPlugin
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
@@ -51,7 +50,6 @@ class VilkårsvurderingerForPersonOpenApiTest {
                             fødselsnummer: String,
                         ) = TilgangskontrollResultat.Ok
                     },
-                auditlogger = Auditlogger("test"),
                 transaksjonProvider = InMemoryTransaksjonProvider(),
             )
         configureOpenApiPlugin(OpenApiConfig(eksponerOpenApi = true, tittel = "sp-vilkarsproving"))

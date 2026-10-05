@@ -11,7 +11,6 @@ import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonPro
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auditlogg.Auditlogger
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AZURE_AD_AUTHENTICATION_NAME
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.NavIdent
@@ -40,7 +39,6 @@ fun main() {
                     RestAdapter<AppRolle, Transaksjonskontekst>(
                         personPseudoIdProvider = InMemoryPersonPseudoIdProvider(),
                         populasjonstilgangskontrollProvider = TillatAltPopulasjonstilgangskontrollProvider(),
-                        auditlogger = Auditlogger("sp-vilkarsproving-local"),
                         transaksjonProvider = InMemoryTransaksjonProvider(),
                     ),
                 // Rutene defineres i App.kt, slik at LocalApp automatisk får nye endepunkter.

@@ -29,7 +29,6 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerF
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auditlogg.Auditlogger
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.NavIdent
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
@@ -116,7 +115,6 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                             fødselsnummer: String,
                         ) = TilgangskontrollResultat.Ok
                     },
-                auditlogger = Auditlogger("test"),
                 transaksjonProvider = transaksjon,
             )
         routing {

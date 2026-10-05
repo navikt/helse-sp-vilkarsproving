@@ -5,7 +5,6 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
 import no.nav.helse.rapids_rivers.RapidApplication
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auditlogg.Auditlogger
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Brukerrolle
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.TilgangsgrupperTilBrukerroller
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.configureJwtAuthentication
@@ -66,12 +65,10 @@ private fun <ROLLE : Brukerrolle, TRANSAKSJON> Application.ktorApp(
     val populasjonstilgangskontrollProvider = konfigurasjon.populasjonstilgang.tilgangsmaskinenClient(texasClient)
     val personPseudoIdProvider: PersonPseudoIdProvider =
         ValkeyPersonPseudoIdProvider.fraEnv(konfigurasjon.valkeyInstansPersonPseudoId, env)
-    val auditlogger = Auditlogger(konfigurasjon.appNavn)
     val restAdapter =
         RestAdapter<ROLLE, TRANSAKSJON>(
             personPseudoIdProvider = personPseudoIdProvider,
             populasjonstilgangskontrollProvider = populasjonstilgangskontrollProvider,
-            auditlogger = auditlogger,
             transaksjonProvider = transaksjonProvider,
         )
     configureCallId()

@@ -2,8 +2,6 @@ package no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest
 
 import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auditlogg.AuditloggUtfall
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auditlogg.Auditlogger
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Brukerrolle
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
@@ -21,7 +19,6 @@ class KallKontekst<TRANSAKSJON, ROLLE : Brukerrolle>(
     val accessToken: AccessToken,
     private val personPseudoIdProvider: PersonPseudoIdProvider,
     private val populasjonstilgangskontrollProvider: PopulasjonstilgangskontrollProvider,
-    private val auditlogger: Auditlogger,
 ) {
     fun <RESPONSE, ERROR : ApiErrorCode> medPerson(
         personPseudoId: PersonPseudoId,
@@ -37,16 +34,8 @@ class KallKontekst<TRANSAKSJON, ROLLE : Brukerrolle>(
             populasjonstilgangskontrollProvider.kontrollerKjerneTilgang(accessToken.value, identitetsnummer.value)
 
         return when (tilgangsresultat) {
-            is TilgangskontrollResultat.Ok -> {
-                auditlogger.loggPersonoppslag(saksbehandler.navIdent, AuditloggUtfall.Permit)
-                block(identitetsnummer)
-            }
+            is TilgangskontrollResultat.Ok -> block(identitetsnummer)
             is TilgangskontrollResultat.ManglerTilgang -> {
-                auditlogger.loggPersonoppslag(
-                    saksbehandler.navIdent,
-                    AuditloggUtfall.Deny,
-                    begrunnelse = "manglerTilgang=${tilgangsresultat.tilgangSomMangler}",
-                )
                 loggDebug(
                     "403: populasjonstilgangskontrollen ga avslag",
                     "navIdent" to saksbehandler.navIdent.value,
@@ -54,12 +43,8 @@ class KallKontekst<TRANSAKSJON, ROLLE : Brukerrolle>(
                 )
                 RestResponse.feil(manglerTilgang())
             }
-            is TilgangskontrollResultat.IdentIkkeFunnet -> {
-                auditlogger.loggPersonoppslag(saksbehandler.navIdent, AuditloggUtfall.Deny, begrunnelse = "identIkkeFunnet")
-                RestResponse.feil(personIkkeFunnet())
-            }
+            is TilgangskontrollResultat.IdentIkkeFunnet -> RestResponse.feil(personIkkeFunnet())
             is TilgangskontrollResultat.UventetFeil -> {
-                auditlogger.loggPersonoppslag(saksbehandler.navIdent, AuditloggUtfall.Deny, begrunnelse = "uventetFeil")
                 // Samme 403 som et ekte avslag, men helt annen årsak: her klarte ikke
                 // tilgangsmaskinen å ta en beslutning. Forklaringen kastes ellers bort.
                 loggDebug(

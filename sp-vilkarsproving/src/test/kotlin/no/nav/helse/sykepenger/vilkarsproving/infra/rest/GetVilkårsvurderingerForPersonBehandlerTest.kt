@@ -23,7 +23,6 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auditlogg.Auditlogger
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.*
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.Identitetsnummer
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
@@ -97,7 +96,6 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             RestAdapter<AppRolle, Transaksjonskontekst>(
                 personPseudoIdProvider = personPseudoIdProvider,
                 populasjonstilgangskontrollProvider = tilgangskontroll,
-                auditlogger = Auditlogger("test"),
                 transaksjonProvider = transaksjonProvider,
             )
         routing {
