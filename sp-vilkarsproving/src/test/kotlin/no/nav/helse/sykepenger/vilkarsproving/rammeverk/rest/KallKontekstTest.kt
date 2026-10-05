@@ -4,7 +4,6 @@ import com.github.navikt.tbd_libs.populasjonstilgang.api.Populasjonstilgangskont
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangSomMangler
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Brukerrolle
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.NavIdent
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerOid
@@ -19,10 +18,6 @@ import java.util.UUID
 class KallKontekstTest {
     private val identitetsnummer = Identitetsnummer("12345678901")
     private val saksbehandler = Saksbehandler(NavIdent("Z999999"), SaksbehandlerOid("oid"), "Test Testesen")
-
-    private enum class TestRolle(
-        override val navn: String,
-    ) : Brukerrolle
 
     private enum class TestFeil(
         override val httpStatus: Int,
@@ -65,10 +60,9 @@ class KallKontekstTest {
         val personPseudoId: PersonPseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
         val fake = FakeTilgangskontroll(tilgangsresultat)
         val kallKontekst =
-            KallKontekst<Unit, TestRolle>(
+            KallKontekst<Unit>(
                 saksbehandler = saksbehandler,
                 tilganger = emptySet(),
-                brukerroller = emptySet(),
                 transaksjon = Unit,
                 accessToken = AccessToken("token"),
                 personPseudoIdProvider = pseudoIdProvider,

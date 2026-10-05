@@ -15,7 +15,6 @@ import io.ktor.server.testing.testApplication
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
-import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
@@ -66,7 +65,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
         ): TilgangskontrollResultat = resultat
     }
 
-    private fun principal(tilganger: Set<Tilgang> = setOf(Tilgang.Les)) = SaksbehandlerPrincipal(saksbehandler, tilganger, emptySet<AppRolle>(), AccessToken("token"))
+    private fun principal(tilganger: Set<Tilgang> = setOf(Tilgang.Les)) = SaksbehandlerPrincipal(saksbehandler, tilganger, AccessToken("token"))
 
     private class FakeSpleisClient(
         private val vurderinger: List<SpleisOpptjeningsvurdering> = emptyList(),
@@ -79,7 +78,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
     }
 
     private fun Application.settOppTestapp(
-        principal: SaksbehandlerPrincipal<AppRolle>?,
+        principal: SaksbehandlerPrincipal?,
         transaksjonProvider: InMemoryTransaksjonProvider = InMemoryTransaksjonProvider(),
         tilgangskontroll: PopulasjonstilgangskontrollProvider = FakeTilgangskontroll(),
         personPseudoIdProvider: InMemoryPersonPseudoIdProvider = InMemoryPersonPseudoIdProvider(),
@@ -93,7 +92,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             }
         }
         val restAdapter =
-            RestAdapter<AppRolle, Transaksjonskontekst>(
+            RestAdapter<Transaksjonskontekst>(
                 personPseudoIdProvider = personPseudoIdProvider,
                 populasjonstilgangskontrollProvider = tilgangskontroll,
                 transaksjonProvider = transaksjonProvider,

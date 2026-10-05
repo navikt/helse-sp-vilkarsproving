@@ -3,7 +3,6 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvolutt
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
-import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
@@ -20,7 +19,6 @@ internal class PostManuellVilkårsvurderingBehandler :
         ApiManuellVilkårsvurderingRequest,
         ApiManuellVilkårsvurderingResponse,
         ApiManuellVilkårsvurderingFeil,
-        AppRolle,
         Transaksjonskontekst,
     > {
     override val påkrevdTilgang = Tilgang.Skriv
@@ -31,7 +29,7 @@ internal class PostManuellVilkårsvurderingBehandler :
     override fun behandle(
         resource: ApiManuellVilkårsvurderingResource,
         request: ApiManuellVilkårsvurderingRequest,
-        kallKontekst: KallKontekst<Transaksjonskontekst, AppRolle>,
+        kallKontekst: KallKontekst<Transaksjonskontekst>,
     ): RestResponse<ApiManuellVilkårsvurderingResponse, ApiManuellVilkårsvurderingFeil> {
         val personPseudoId =
             PersonPseudoId.fraString(resource.personId)

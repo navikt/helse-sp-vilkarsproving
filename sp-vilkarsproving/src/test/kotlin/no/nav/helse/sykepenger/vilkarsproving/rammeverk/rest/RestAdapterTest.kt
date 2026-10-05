@@ -17,7 +17,6 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Brukerrolle
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.NavIdent
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerOid
@@ -31,12 +30,6 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
-
-private enum class TestRolle(
-    override val navn: String,
-) : Brukerrolle {
-    Beslutter("beslutter"),
-}
 
 private enum class TestFeil(
     override val httpStatus: Int,
@@ -69,29 +62,28 @@ private class FakeTilgangskontroll(
     ): TilgangskontrollResultat = resultat
 }
 
-private object EnkelBehandler : GetBehandler<EnkelResource, String, TestFeil, TestRolle, Unit> {
+private object EnkelBehandler : GetBehandler<EnkelResource, String, TestFeil, Unit> {
     override val påkrevdTilgang = Tilgang.Skriv
-    override val påkrevdeBrukerroller = setOf(TestRolle.Beslutter)
     override val tag = "test"
 
     override fun behandle(
         resource: EnkelResource,
-        kallKontekst: KallKontekst<Unit, TestRolle>,
+        kallKontekst: KallKontekst<Unit>,
     ): RestResponse<String, TestFeil> = RestResponse.ok("hei ${kallKontekst.saksbehandler.navIdent.value}")
 }
 
-private object FeilendeBehandler : GetBehandler<EnkelResource, String, TestFeil, TestRolle, Unit> {
+private object FeilendeBehandler : GetBehandler<EnkelResource, String, TestFeil, Unit> {
     override val påkrevdTilgang = Tilgang.Les
     override val tag = "test"
 
     override fun behandle(
         resource: EnkelResource,
-        kallKontekst: KallKontekst<Unit, TestRolle>,
+        kallKontekst: KallKontekst<Unit>,
     ): RestResponse<String, TestFeil> = throw RuntimeException("noe gikk fælt galt, med hemmelig detalj")
 }
 
 /**
- * Verifiserer den sentrale autorisasjonsstien i [RestAdapter]: 401 → 403-tilgang → 403-rolle → transaksjon →
+ * Verifiserer den sentrale autorisasjonsstien i [RestAdapter]: 401 → 403-tilgang → transaksjon →
  * responsmapping. Populasjonstilgangskontroll skjer i [KallKontekst.medPerson], se `KallKontekstTest`.
  *
  * Testene bruker vanlige ktor-routes (ikke `Ruting.kt`s typede `Resources`-DSL, som forutsetter
@@ -107,11 +99,10 @@ class RestAdapterTest {
 
     private fun principal(
         tilganger: Set<Tilgang> = setOf(Tilgang.Les),
-        brukerroller: Set<TestRolle> = emptySet(),
-    ) = SaksbehandlerPrincipal(saksbehandler, tilganger, brukerroller, AccessToken("token"))
+    ) = SaksbehandlerPrincipal(saksbehandler, tilganger, AccessToken("token"))
 
     private fun Application.settOppTestapp(
-        principal: SaksbehandlerPrincipal<TestRolle>? = null,
+        principal: SaksbehandlerPrincipal? = null,
         tilgangskontroll: PopulasjonstilgangskontrollProvider = FakeTilgangskontroll(),
         feilendeBehandler: Boolean = false,
         medStatusPages: Boolean = false,
@@ -124,7 +115,7 @@ class RestAdapterTest {
             }
         }
         val restAdapter =
-            RestAdapter<TestRolle, Unit>(
+            RestAdapter<Unit>(
                 personPseudoIdProvider = InMemoryPersonPseudoIdProvider(),
                 populasjonstilgangskontrollProvider = tilgangskontroll,
                 transaksjonProvider =
@@ -154,7 +145,7 @@ class RestAdapterTest {
     fun `principal uten paakrevd tilgang gir 403`() =
         testApplication {
             application {
-                settOppTestapp(principal(tilganger = setOf(Tilgang.Les), brukerroller = setOf(TestRolle.Beslutter)))
+                settOppTestapp(principal(tilganger = setOf(Tilgang.Les)))
             }
 
             val response = client.get("/enkel")
@@ -163,22 +154,10 @@ class RestAdapterTest {
         }
 
     @Test
-    fun `principal uten paakrevd brukerrolle gir 403`() =
+    fun `gyldig kall med riktig tilgang gir 200 med mappet body`() =
         testApplication {
             application {
-                settOppTestapp(principal(tilganger = setOf(Tilgang.Skriv), brukerroller = emptySet()))
-            }
-
-            val response = client.get("/enkel")
-
-            assertEquals(HttpStatusCode.Forbidden, response.status)
-        }
-
-    @Test
-    fun `gyldig kall med riktig tilgang og rolle gir 200 med mappet body`() =
-        testApplication {
-            application {
-                settOppTestapp(principal(tilganger = setOf(Tilgang.Skriv), brukerroller = setOf(TestRolle.Beslutter)))
+                settOppTestapp(principal(tilganger = setOf(Tilgang.Skriv)))
             }
 
             val response = client.get("/enkel")

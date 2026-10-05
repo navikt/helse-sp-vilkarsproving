@@ -10,9 +10,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.routing.get
 import io.ktor.server.testing.testApplication
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AzureAdConfig
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Brukerrolle
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.TilgangsgrupperTilBrukerroller
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.TilgangsgrupperTilTilganger
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.configureJwtAuthentication
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
@@ -24,12 +22,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-private enum class RutingTestRolle(
-    override val navn: String,
-) : Brukerrolle {
-    Beslutter("beslutter"),
-}
-
 private enum class RutingTestFeil(
     override val httpStatus: Int,
     override val tittel: String,
@@ -37,13 +29,13 @@ private enum class RutingTestFeil(
 
 private object RutingResource
 
-private object RutingBehandler : GetBehandler<RutingResource, String, RutingTestFeil, RutingTestRolle, Unit> {
+private object RutingBehandler : GetBehandler<RutingResource, String, RutingTestFeil, Unit> {
     override val påkrevdTilgang = Tilgang.Les
     override val tag = "test"
 
     override fun behandle(
         resource: RutingResource,
-        kallKontekst: KallKontekst<Unit, RutingTestRolle>,
+        kallKontekst: KallKontekst<Unit>,
     ): RestResponse<String, RutingTestFeil> = RestResponse.ok("hei ${kallKontekst.saksbehandler.navIdent.value}")
 }
 
@@ -88,10 +80,9 @@ class ConfigureRestRutingTest {
                     jwkProviderUri = mockOAuth2Server.jwksUrl("azuread").toString(),
                 ),
             tilgangsgrupperTilTilganger = TilgangsgrupperTilTilganger(tilgangLesGruppeIder = setOf("les-uuid"), tilgangSkrivGruppeIder = setOf("skriv-uuid")),
-            tilgangsgrupperTilBrukerroller = TilgangsgrupperTilBrukerroller(mapOf("beslutter-uuid" to RutingTestRolle.Beslutter)),
         )
         val restAdapter =
-            RestAdapter<RutingTestRolle, Unit>(
+            RestAdapter<Unit>(
                 personPseudoIdProvider = InMemoryPersonPseudoIdProvider(),
                 populasjonstilgangskontrollProvider = ÅpenTilgangskontroll,
                 transaksjonProvider =

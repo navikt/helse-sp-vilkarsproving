@@ -1,4 +1,4 @@
-package no.nav.helse.sykepenger.vilkarsproving.rammeverk.bootstrap
+package no.nav.helse.sykepenger.vilkarsproving.bootstrap
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

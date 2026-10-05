@@ -18,7 +18,6 @@ import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
 import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
-import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.Database
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.DatabaseTest
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver
@@ -88,7 +87,6 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
             SaksbehandlerPrincipal(
                 saksbehandler,
                 setOf(Tilgang.Les, Tilgang.Skriv),
-                emptySet<AppRolle>(),
                 AccessToken("token"),
             )
         intercept(ApplicationCallPipeline.Plugins) {
@@ -96,7 +94,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
         }
 
         val restAdapter =
-            RestAdapter<AppRolle, Transaksjonskontekst>(
+            RestAdapter<Transaksjonskontekst>(
                 personPseudoIdProvider = personPseudoIdProvider,
                 populasjonstilgangskontrollProvider =
                     object : PopulasjonstilgangskontrollProvider {

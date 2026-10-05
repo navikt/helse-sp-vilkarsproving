@@ -3,19 +3,15 @@ package no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest
 import io.github.smiley4.ktoropenapi.config.RouteConfig
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Brukerrolle
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
 
 /**
  * Kontrakten alle REST-endepunkter i appen implementerer. Deny-by-default: [påkrevdTilgang] må
  * alltid deklareres eksplisitt — det finnes ingen "ingen tilgang kreves"-variant.
  */
-interface RestBehandler<ROLLE : Brukerrolle> {
+interface RestBehandler {
     /** Tilgangen (Les/Skriv) som kreves for å kalle dette endepunktet. Deny-by-default. */
     val påkrevdTilgang: Tilgang
-
-    /** Ytterligere brukerroller som kreves, utover [påkrevdTilgang]. Tomt sett = ingen ekstra krav. */
-    val påkrevdeBrukerroller: Set<ROLLE> get() = emptySet()
 
     /** Kort tag brukt til gruppering i generert OpenAPI-dokumentasjon. */
     val tag: String
@@ -29,7 +25,7 @@ interface RestBehandler<ROLLE : Brukerrolle> {
             ?: this::class.java.name
 }
 
-inline fun <reified RESPONSE, ERROR : ApiErrorCode, ROLLE : Brukerrolle> RestBehandler<ROLLE>.openApiUtenRequestBody(config: RouteConfig) {
+inline fun <reified RESPONSE, ERROR : ApiErrorCode> RestBehandler.openApiUtenRequestBody(config: RouteConfig) {
     config.operationId = operationIdBasertPåKlassenavn()
     config.response {
         val harResponsBody = RESPONSE::class != Unit::class
@@ -51,26 +47,26 @@ inline fun <reified RESPONSE, ERROR : ApiErrorCode, ROLLE : Brukerrolle> RestBeh
 }
 
 /** Som [openApiUtenRequestBody], men dokumenterer i tillegg request-bodyen. */
-inline fun <reified REQUEST, reified RESPONSE, ERROR : ApiErrorCode, ROLLE : Brukerrolle> RestBehandler<ROLLE>.openApiMedRequestBody(
+inline fun <reified REQUEST, reified RESPONSE, ERROR : ApiErrorCode> RestBehandler.openApiMedRequestBody(
     config: RouteConfig,
 ) {
     config.request {
         body<REQUEST>()
     }
-    openApiUtenRequestBody<RESPONSE, ERROR, ROLLE>(config)
+    openApiUtenRequestBody<RESPONSE, ERROR>(config)
 }
 
-interface GetBehandler<RESOURCE, RESPONSE, ERROR : ApiErrorCode, ROLLE : Brukerrolle, TRANSAKSJON> : RestBehandler<ROLLE> {
+interface GetBehandler<RESOURCE, RESPONSE, ERROR : ApiErrorCode, TRANSAKSJON> : RestBehandler {
     fun behandle(
         resource: RESOURCE,
-        kallKontekst: KallKontekst<TRANSAKSJON, ROLLE>,
+        kallKontekst: KallKontekst<TRANSAKSJON>,
     ): RestResponse<RESPONSE, ERROR>
 }
 
-interface PostBehandler<RESOURCE, REQUEST, RESPONSE, ERROR : ApiErrorCode, ROLLE : Brukerrolle, TRANSAKSJON> : RestBehandler<ROLLE> {
+interface PostBehandler<RESOURCE, REQUEST, RESPONSE, ERROR : ApiErrorCode, TRANSAKSJON> : RestBehandler {
     fun behandle(
         resource: RESOURCE,
         request: REQUEST,
-        kallKontekst: KallKontekst<TRANSAKSJON, ROLLE>,
+        kallKontekst: KallKontekst<TRANSAKSJON>,
     ): RestResponse<RESPONSE, ERROR>
 }

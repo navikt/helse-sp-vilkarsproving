@@ -2,7 +2,6 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
-import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
@@ -14,13 +13,13 @@ import no.nav.sykepenger.libs.logging.loggWarn
 
 internal class GetVilkårsvurderingerForPersonBehandler(
     private val spleisService: SpleisOpptjeningsvurderingService,
-) : GetBehandler<ApiVilkårsvurderingerForPersonResource, ApiVilkårsvurderingerForPersonResponse, ApiVilkårsvurderingerForPersonFeil, AppRolle, Transaksjonskontekst> {
+) : GetBehandler<ApiVilkårsvurderingerForPersonResource, ApiVilkårsvurderingerForPersonResponse, ApiVilkårsvurderingerForPersonFeil, Transaksjonskontekst> {
     override val påkrevdTilgang = Tilgang.Les
     override val tag = "vilkarsvurderinger"
 
     override fun behandle(
         resource: ApiVilkårsvurderingerForPersonResource,
-        kallKontekst: KallKontekst<Transaksjonskontekst, AppRolle>,
+        kallKontekst: KallKontekst<Transaksjonskontekst>,
     ): RestResponse<ApiVilkårsvurderingerForPersonResponse, ApiVilkårsvurderingerForPersonFeil> {
         val personPseudoId =
             PersonPseudoId.fraString(resource.personId)

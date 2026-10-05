@@ -13,10 +13,9 @@ import java.util.concurrent.TimeUnit
 
 const val AZURE_AD_AUTHENTICATION_NAME = "azure-ad-jwt"
 
-fun <ROLLE : Brukerrolle> Application.configureJwtAuthentication(
+fun Application.configureJwtAuthentication(
     azureAdConfig: AzureAdConfig,
     tilgangsgrupperTilTilganger: TilgangsgrupperTilTilganger,
-    tilgangsgrupperTilBrukerroller: TilgangsgrupperTilBrukerroller<ROLLE>,
 ) {
     val jwkProvider =
         JwkProviderBuilder(URI(azureAdConfig.jwkProviderUri).toURL())
@@ -50,7 +49,6 @@ fun <ROLLE : Brukerrolle> Application.configureJwtAuthentication(
 
                 val saksbehandler = Saksbehandler(NavIdent(navIdent), SaksbehandlerOid(oid), navn)
                 val tilganger = tilgangsgrupperTilTilganger.tilganger(entraGrupper)
-                val brukerroller = tilgangsgrupperTilBrukerroller.brukerroller(entraGrupper)
 
                 // Rå Authorization-header, IKKE noe som logges — kun videreført til AccessToken for
                 // senere OBO-bruk (Texas).
@@ -60,7 +58,7 @@ fun <ROLLE : Brukerrolle> Application.configureJwtAuthentication(
                         ?.let(::AccessToken)
                         ?: return@validate null
 
-                SaksbehandlerPrincipal(saksbehandler, tilganger, brukerroller, accessToken)
+                SaksbehandlerPrincipal(saksbehandler, tilganger, accessToken)
             }
             challenge { _, _ ->
                 call.respond(HttpStatusCode.Unauthorized)

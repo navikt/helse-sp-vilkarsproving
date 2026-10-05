@@ -18,12 +18,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-private enum class TestRolle(
-    override val navn: String,
-) : Brukerrolle {
-    Beslutter("beslutter"),
-}
-
 class ConfigureJwtAuthenticationTest {
     private val mockOAuth2Server = MockOAuth2Server()
 
@@ -42,20 +36,17 @@ class ConfigureJwtAuthenticationTest {
 
     private fun tilgangsgrupper() = TilgangsgrupperTilTilganger(tilgangLesGruppeIder = setOf("les-uuid"), tilgangSkrivGruppeIder = setOf("skriv-uuid"))
 
-    private fun brukerroller() = TilgangsgrupperTilBrukerroller(mapOf("beslutter-uuid" to TestRolle.Beslutter))
-
     @Test
     fun `gyldig token med kjente grupper gir tilgang og bygger SaksbehandlerPrincipal`() =
         testApplication {
             application {
-                configureJwtAuthentication(azureAdConfig(), tilgangsgrupper(), brukerroller())
+                configureJwtAuthentication(azureAdConfig(), tilgangsgrupper())
                 routing {
                     authenticate(AZURE_AD_AUTHENTICATION_NAME) {
                         get("/beskyttet") {
-                            val principal = call.principal<SaksbehandlerPrincipal<TestRolle>>()!!
+                            val principal = call.principal<SaksbehandlerPrincipal>()!!
                             call.respondText(
-                                "${principal.saksbehandler.navIdent.value}|" +
-                                    "${principal.tilganger}|${principal.brukerroller}",
+                                "${principal.saksbehandler.navIdent.value}|${principal.tilganger}",
                             )
                         }
                     }
@@ -66,7 +57,7 @@ class ConfigureJwtAuthenticationTest {
                 TokenUtsteder(mockOAuth2Server, issuerId = "azuread", audience = "test-client-id")
                     .utstedSaksbehandlerToken(
                         navIdent = "Z999999",
-                        entraGrupper = setOf("les-uuid", "beslutter-uuid"),
+                        entraGrupper = setOf("les-uuid"),
                     )
 
             val response =
@@ -78,19 +69,18 @@ class ConfigureJwtAuthenticationTest {
             val body = response.bodyAsText()
             assertTrue(body.startsWith("Z999999|"), "forventet NAVident i responsen: $body")
             assertTrue(body.contains("Les"), "forventet Tilgang.Les i responsen: $body")
-            assertTrue(body.contains("Beslutter"), "forventet TestRolle.Beslutter i responsen: $body")
         }
 
     @Test
-    fun `token uten groups-claim gir tomt tilgangs- og rollesett, ikke feil`() =
+    fun `token uten groups-claim gir tomt tilgangssett, ikke feil`() =
         testApplication {
             application {
-                configureJwtAuthentication(azureAdConfig(), tilgangsgrupper(), brukerroller())
+                configureJwtAuthentication(azureAdConfig(), tilgangsgrupper())
                 routing {
                     authenticate(AZURE_AD_AUTHENTICATION_NAME) {
                         get("/beskyttet") {
-                            val principal = call.principal<SaksbehandlerPrincipal<TestRolle>>()!!
-                            call.respondText("${principal.tilganger}|${principal.brukerroller}")
+                            val principal = call.principal<SaksbehandlerPrincipal>()!!
+                            call.respondText("${principal.tilganger}")
                         }
                     }
                 }
@@ -106,14 +96,14 @@ class ConfigureJwtAuthenticationTest {
                 }
 
             assertEquals(HttpStatusCode.OK, response.status)
-            assertEquals("[]|[]", response.bodyAsText())
+            assertEquals("[]", response.bodyAsText())
         }
 
     @Test
     fun `manglende token gir 401`() =
         testApplication {
             application {
-                configureJwtAuthentication(azureAdConfig(), tilgangsgrupper(), brukerroller())
+                configureJwtAuthentication(azureAdConfig(), tilgangsgrupper())
                 routing {
                     authenticate(AZURE_AD_AUTHENTICATION_NAME) {
                         get("/beskyttet") { call.respondText("uinnom") }
@@ -130,7 +120,7 @@ class ConfigureJwtAuthenticationTest {
     fun `token med feil audience gir 401`() =
         testApplication {
             application {
-                configureJwtAuthentication(azureAdConfig(), tilgangsgrupper(), brukerroller())
+                configureJwtAuthentication(azureAdConfig(), tilgangsgrupper())
                 routing {
                     authenticate(AZURE_AD_AUTHENTICATION_NAME) {
                         get("/beskyttet") { call.respondText("uinnom") }

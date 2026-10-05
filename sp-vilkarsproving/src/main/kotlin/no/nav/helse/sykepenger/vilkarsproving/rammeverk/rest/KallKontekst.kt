@@ -3,7 +3,6 @@ package no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest
 import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Brukerrolle
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.Identitetsnummer
@@ -11,10 +10,9 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoId
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoIdProvider
 import no.nav.sykepenger.libs.logging.loggDebug
 
-class KallKontekst<TRANSAKSJON, ROLLE : Brukerrolle>(
+class KallKontekst<TRANSAKSJON>(
     val saksbehandler: Saksbehandler,
     val tilganger: Set<Tilgang>,
-    val brukerroller: Set<ROLLE>,
     val transaksjon: TRANSAKSJON,
     val accessToken: AccessToken,
     private val personPseudoIdProvider: PersonPseudoIdProvider,

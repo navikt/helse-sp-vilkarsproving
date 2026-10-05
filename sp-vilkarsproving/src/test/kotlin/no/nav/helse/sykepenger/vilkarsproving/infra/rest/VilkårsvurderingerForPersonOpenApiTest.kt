@@ -11,7 +11,6 @@ import io.ktor.server.testing.testApplication
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
-import no.nav.helse.sykepenger.vilkarsproving.bootstrap.AppRolle
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.openapi.OpenApiConfig
@@ -31,7 +30,7 @@ class VilkårsvurderingerForPersonOpenApiTest {
         configureContentNegotiation()
         configureResources()
         val restAdapter =
-            RestAdapter<AppRolle, Transaksjonskontekst>(
+            RestAdapter<Transaksjonskontekst>(
                 personPseudoIdProvider = InMemoryPersonPseudoIdProvider(),
                 populasjonstilgangskontrollProvider =
                     object : PopulasjonstilgangskontrollProvider {

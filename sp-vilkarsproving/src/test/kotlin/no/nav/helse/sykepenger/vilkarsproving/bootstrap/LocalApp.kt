@@ -36,7 +36,7 @@ fun main() {
             installerLokalAutentisering()
             configureRestRuting(
                 restAdapter =
-                    RestAdapter<AppRolle, Transaksjonskontekst>(
+                    RestAdapter<Transaksjonskontekst>(
                         personPseudoIdProvider = InMemoryPersonPseudoIdProvider(),
                         populasjonstilgangskontrollProvider = TillatAltPopulasjonstilgangskontrollProvider(),
                         transaksjonProvider = InMemoryTransaksjonProvider(),
@@ -71,7 +71,6 @@ private fun Application.installerLokalAutentisering() {
                     navn = "Lokal Saksbehandler",
                 ),
             tilganger = Tilgang.entries.toSet(),
-            brukerroller = AppRolle.entries.toSet(),
             accessToken = AccessToken("lokalt-token"),
         )
 

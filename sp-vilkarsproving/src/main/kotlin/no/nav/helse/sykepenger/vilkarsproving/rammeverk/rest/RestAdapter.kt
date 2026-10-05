@@ -6,12 +6,11 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.principal
 import io.ktor.server.request.uri
 import io.ktor.server.response.respond
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Brukerrolle
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerPrincipal
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoIdProvider
 import no.nav.sykepenger.libs.logging.loggDebug
 
-class RestAdapter<ROLLE : Brukerrolle, TRANSAKSJON>(
+class RestAdapter<TRANSAKSJON>(
     private val personPseudoIdProvider: PersonPseudoIdProvider,
     private val populasjonstilgangskontrollProvider: PopulasjonstilgangskontrollProvider,
     private val transaksjonProvider: TransaksjonProvider<TRANSAKSJON>,
@@ -19,11 +18,11 @@ class RestAdapter<ROLLE : Brukerrolle, TRANSAKSJON>(
     suspend fun <RESOURCE : Any, RESPONSE, ERROR : ApiErrorCode> håndter(
         call: ApplicationCall,
         resource: RESOURCE,
-        behandler: RestBehandler<ROLLE>,
-        kjørBehandler: (resource: RESOURCE, kallKontekst: KallKontekst<TRANSAKSJON, ROLLE>) -> RestResponse<RESPONSE, ERROR>,
+        behandler: RestBehandler,
+        kjørBehandler: (resource: RESOURCE, kallKontekst: KallKontekst<TRANSAKSJON>) -> RestResponse<RESPONSE, ERROR>,
     ) {
         val principal =
-            call.principal<SaksbehandlerPrincipal<ROLLE>>()
+            call.principal<SaksbehandlerPrincipal>()
                 ?: return call.respondProblem(RammeverkFeilkode.Uautentisert)
 
         if (behandler.påkrevdTilgang !in principal.tilganger) {
@@ -35,15 +34,6 @@ class RestAdapter<ROLLE : Brukerrolle, TRANSAKSJON>(
             )
             return call.respondProblem(RammeverkFeilkode.ManglerTilgang)
         }
-        if (!principal.brukerroller.containsAll(behandler.påkrevdeBrukerroller)) {
-            loggDebug(
-                "403: saksbehandler mangler påkrevd brukerrolle",
-                "navIdent" to principal.saksbehandler.navIdent.value,
-                "påkrevdeBrukerroller" to behandler.påkrevdeBrukerroller.toString(),
-                "harBrukerroller" to principal.brukerroller.toString(),
-            )
-            return call.respondProblem(RammeverkFeilkode.ManglerTilgang)
-        }
 
         val restResponse =
             transaksjonProvider.transaksjon { transaksjon ->
@@ -51,7 +41,6 @@ class RestAdapter<ROLLE : Brukerrolle, TRANSAKSJON>(
                     KallKontekst(
                         saksbehandler = principal.saksbehandler,
                         tilganger = principal.tilganger,
-                        brukerroller = principal.brukerroller,
                         transaksjon = transaksjon,
                         accessToken = principal.accessToken,
                         personPseudoIdProvider = personPseudoIdProvider,
