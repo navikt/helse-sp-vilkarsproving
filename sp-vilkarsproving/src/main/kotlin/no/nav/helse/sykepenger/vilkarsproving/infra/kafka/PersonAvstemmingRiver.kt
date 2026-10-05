@@ -7,15 +7,20 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
 import no.nav.helse.sykepenger.vilkarsproving.application.PersonAvstemmingService
+import no.nav.sykepenger.libs.logging.MdcKey
+import no.nav.sykepenger.libs.logging.loggInfo
+import no.nav.sykepenger.libs.logging.medMdc
 
 internal class PersonAvstemmingRiver(
     rapidsConnection: RapidsConnection,
     private val personAvstemmingService: PersonAvstemmingService,
 ) : River.PacketListener {
+    private val eventName = "person_avstemming"
+
     init {
         River(rapidsConnection)
             .apply {
-                precondition { it.requireValue("@event_name", "person_avstemming") }
+                precondition { it.requireValue("@event_name", eventName) }
                 validate {
                     it.requireKey("@id", "fødselsnummer")
                 }
@@ -29,6 +34,13 @@ internal class PersonAvstemmingRiver(
         meterRegistry: MeterRegistry,
     ) {
         val fødselsnummer = packet["fødselsnummer"].asString()
-        personAvstemmingService.lagreOpptjeningsvurderinger(fødselsnummer)
+
+        medMdc(
+            MdcKey.IDENTITETSNUMMER to fødselsnummer,
+            MdcKey.MELDING_ID to packet["@id"].asString(),
+        ) {
+            loggInfo("Mottatt $eventName")
+            personAvstemmingService.lagreOpptjeningsvurderinger(fødselsnummer)
+        }
     }
 }
