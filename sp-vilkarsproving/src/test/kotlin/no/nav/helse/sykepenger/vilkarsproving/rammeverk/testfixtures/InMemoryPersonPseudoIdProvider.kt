@@ -1,8 +1,8 @@
 package no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures
 
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.Identitetsnummer
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoId
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoIdProvider
+import com.github.navikt.tbd_libs.personpseudoid.Identitetsnummer
+import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoId
+import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoIdProvider
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 

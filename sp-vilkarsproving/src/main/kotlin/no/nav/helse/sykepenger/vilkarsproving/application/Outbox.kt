@@ -1,6 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.application
 
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.Identitetsnummer
+import com.github.navikt.tbd_libs.personpseudoid.Identitetsnummer
 import java.time.LocalDate
 import java.util.*
 

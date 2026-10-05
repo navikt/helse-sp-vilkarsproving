@@ -1,5 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
+import com.github.navikt.tbd_libs.personpseudoid.Identitetsnummer
 import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangSomMangler
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
@@ -23,7 +24,6 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.*
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.Identitetsnummer
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureResources
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestAdapter

@@ -1,5 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest
 
+import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoIdProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
@@ -7,7 +8,6 @@ import io.ktor.server.auth.principal
 import io.ktor.server.request.uri
 import io.ktor.server.response.respond
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerPrincipal
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoIdProvider
 import no.nav.sykepenger.libs.logging.loggDebug
 
 class RestAdapter<TRANSAKSJON>(

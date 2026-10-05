@@ -1,11 +1,11 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
+import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoId
 import no.nav.helse.sykepenger.vilkarsproving.application.SpleisOpptjeningsvurderingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoId
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.GetBehandler
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.KallKontekst
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestResponse

@@ -1,13 +1,13 @@
 package no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest
 
+import com.github.navikt.tbd_libs.personpseudoid.Identitetsnummer
+import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoId
+import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoIdProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.Identitetsnummer
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoId
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoIdProvider
 import no.nav.sykepenger.libs.logging.loggDebug
 
 class KallKontekst<TRANSAKSJON>(

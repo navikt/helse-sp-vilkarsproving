@@ -1,5 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
+import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoId
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvolutt
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
@@ -8,7 +9,6 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PersonPseudoId
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.KallKontekst
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.PostBehandler
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestResponse

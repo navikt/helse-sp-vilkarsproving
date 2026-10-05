@@ -1,6 +1,9 @@
 package no.nav.helse.sykepenger.vilkarsproving.bootstrap
 
 import com.github.navikt.tbd_libs.access_token.TexasClient
+import com.github.navikt.tbd_libs.personpseudoid.ValkeyPersonPseudoIdProvider
+import com.github.navikt.tbd_libs.populasjonstilgang.client.PopulasjonstilgangConfig
+import com.github.navikt.tbd_libs.populasjonstilgang.client.tilgangsmaskinenClient
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
 import no.nav.helse.rapids_rivers.RapidApplication
@@ -23,9 +26,6 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.db.dataSource
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.db.migrerSynkront
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.openapi.OpenApiConfig
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.openapi.configureOpenApiPlugin
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.PopulasjonstilgangConfig
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.ValkeyPersonPseudoIdProvider
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.tilgangsmaskinenClient
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureCallId
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureCallLogging
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation

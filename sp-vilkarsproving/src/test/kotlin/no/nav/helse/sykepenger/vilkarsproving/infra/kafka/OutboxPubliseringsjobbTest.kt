@@ -1,5 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.kafka
 
+import com.github.navikt.tbd_libs.personpseudoid.Identitetsnummer
 import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.FailedMessage
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.OutgoingMessage
@@ -9,7 +10,6 @@ import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonPro
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvolutt
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvoluttId
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.Identitetsnummer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

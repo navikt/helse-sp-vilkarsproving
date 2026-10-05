@@ -2,6 +2,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.github.navikt.tbd_libs.personpseudoid.Identitetsnummer
 import kotliquery.Row
 import kotliquery.Session
 import kotliquery.queryOf
@@ -9,7 +10,6 @@ import no.nav.helse.sykepenger.vilkarsproving.application.Outbox
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvolutt
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvoluttId
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.Identitetsnummer
 import org.intellij.lang.annotations.Language
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import tools.jackson.module.kotlin.readValue

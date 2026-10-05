@@ -1,5 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.e2e
 
+import com.github.navikt.tbd_libs.personpseudoid.Identitetsnummer
 import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
 import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
@@ -34,7 +35,6 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerOid
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerPrincipal
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.person.Identitetsnummer
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureResources
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestAdapter
