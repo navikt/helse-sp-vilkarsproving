@@ -26,7 +26,7 @@ class Auditlogger(
     ) {
         val cef =
             buildString {
-                append("CEF:0|NAV|$appNavn|1.0|audit:access|Sporingslogg|INFO|")
+                append("CEF:0|Vedtaksløsning for sykepenger|$appNavn|1.0|audit:access|Sporingslogg|INFO|")
                 append("end=${Instant.now().toEpochMilli()} ")
                 append("suid=${saksbehandler.value} ")
                 append("flexString1Label=Decision flexString1=${utfall.name}")
