@@ -10,6 +10,7 @@ internal sealed interface Opptjeningsvurdering {
     val skjæringstidspunkt: LocalDate
     val kategori: Kategori
     val erOk: Boolean
+    val vurdertTidspunkt: Instant
 
     fun prøvPåNyttMed(vilkårsvurdering: Vilkårsvurdering): VurdertISpVilkårsprøving
 
@@ -18,6 +19,8 @@ internal sealed interface Opptjeningsvurdering {
         val avgjørendeVilkårsvurdering: Vilkårsvurdering?
 
         val avgjørendeVilkårskode: Vilkårskode? get() = avgjørendeVilkårsvurdering?.vilkårskode
+
+        override val vurdertTidspunkt: Instant get() = vilkårsvurderinger.maxOf { it.vurdertTidspunkt }
 
         override fun prøvPåNyttMed(vilkårsvurdering: Vilkårsvurdering): VurdertISpVilkårsprøving =
             VurdertISpVilkårsprøving.med(
@@ -95,7 +98,7 @@ internal sealed interface Opptjeningsvurdering {
         override val skjæringstidspunkt: LocalDate,
         override val kategori: Kategori,
         override val erOk: Boolean,
-        val vurdertTidspunkt: Instant,
+        override val vurdertTidspunkt: Instant,
     ) : Opptjeningsvurdering {
         override fun prøvPåNyttMed(vilkårsvurdering: Vilkårsvurdering): VurdertISpVilkårsprøving =
             VurdertISpVilkårsprøving.med(

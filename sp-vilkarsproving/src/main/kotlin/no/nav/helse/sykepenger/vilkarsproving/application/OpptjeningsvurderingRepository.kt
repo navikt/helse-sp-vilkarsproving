@@ -12,5 +12,10 @@ internal interface OpptjeningsvurderingRepository {
         skjæringstidspunkt: LocalDate,
     ): Opptjeningsvurdering?
 
+    fun historikk(
+        fødselsnummer: String,
+        skjæringstidspunkt: LocalDate,
+    ): List<Opptjeningsvurdering>
+
     fun finn(opptjeningsvurderingId: OpptjeningsvurderingId): Opptjeningsvurdering?
 }

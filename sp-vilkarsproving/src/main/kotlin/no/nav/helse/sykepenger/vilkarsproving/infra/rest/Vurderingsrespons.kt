@@ -17,6 +17,18 @@ internal object Vurderingsrespons {
             skjæringstidspunkt = vurdering.skjæringstidspunkt,
             krav = listOf(vurdering.tilApi()),
         )
+
+    fun historikk(
+        skjæringstidspunkt: LocalDate,
+        vurderinger: List<Opptjeningsvurdering>,
+    ): ApiOpptjeningshistorikkResponse =
+        ApiOpptjeningshistorikkResponse(
+            skjæringstidspunkt = skjæringstidspunkt,
+            historikk =
+                vurderinger.map {
+                    ApiOpptjeningshistorikkInnslag(vurdertTidspunkt = it.vurdertTidspunkt, opptjeningsvurdering = it.tilApi())
+                },
+        )
 }
 
 private fun Opptjeningsvurdering.tilApi(): ApiOpptjeningsvurdering =
