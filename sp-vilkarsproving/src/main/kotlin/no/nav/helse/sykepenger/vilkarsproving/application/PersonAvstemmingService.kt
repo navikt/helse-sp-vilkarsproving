@@ -4,6 +4,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.tilOpptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
 import no.nav.sykepenger.libs.logging.loggInfo
+import no.nav.sykepenger.libs.logging.loggWarn
 
 internal class PersonAvstemmingService(
     private val transaksjonProvider: TransaksjonProvider<Transaksjonskontekst>,
@@ -16,7 +17,17 @@ internal class PersonAvstemmingService(
         }
 
         val spleisVurderinger = spleisClient.hentOpptjeningsvurderinger(fødselsnummer)
-        val vurderinger = spleisVurderinger.map { it.tilOpptjeningsvurdering(fødselsnummer) }
+        val vurderinger =
+            try {
+                spleisVurderinger.map { it.tilOpptjeningsvurdering(fødselsnummer) }
+            } catch (ex: IllegalStateException) {
+                loggWarn(
+                    "Ugyldige opptjeningsvurderinger i svaret fra Spleis",
+                    ex,
+                    "spleisRespons" to spleisVurderinger.toString(),
+                )
+                throw ex
+            }
 
         val (antallLagret, antallHoppetOver) =
             transaksjonProvider.transaksjon { kontekst ->
