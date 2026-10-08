@@ -28,7 +28,7 @@ internal class OpptjeningsvurderingResultatRiverTest {
                 this,
                 transaksjon,
                 object : ISpleisClient {
-                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> = emptyList()
+                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> = error("Spleis skal ikke kalles når lokal vurdering finnes")
                 },
             )
         }

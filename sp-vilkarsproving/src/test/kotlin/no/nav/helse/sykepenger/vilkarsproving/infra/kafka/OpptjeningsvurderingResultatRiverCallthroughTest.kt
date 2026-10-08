@@ -5,7 +5,11 @@ import no.nav.helse.februar
 import no.nav.helse.januar
 import no.nav.helse.somPeriode
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import org.intellij.lang.annotations.Language
@@ -22,6 +26,7 @@ class OpptjeningsvurderingResultatRiverCallthroughTest {
     private val vurderingIdSpleisSelvstendig = UUID.randomUUID()
     private val vurderingIdSpleisInfotrygd = UUID.randomUUID()
     private val fellesOpprettet = Instant.now()
+    private val ekstraSpleisvurderinger = mutableListOf<SpleisOpptjeningsvurdering>()
 
     private val rapid =
         TestRapid().apply {
@@ -61,7 +66,7 @@ class OpptjeningsvurderingResultatRiverCallthroughTest {
                                         opprettet = fellesOpprettet,
                                         skjæringstidspunkt = 1.februar,
                                     ),
-                                )
+                                ) + ekstraSpleisvurderinger
                             else -> emptyList()
                         }
                 },
@@ -113,6 +118,39 @@ class OpptjeningsvurderingResultatRiverCallthroughTest {
         assertEquals(1, rapid.inspektør.size)
         val løsning = rapid.inspektør.message(0)
         assertTrue(løsning.ok())
+    }
+
+    @Test
+    fun `lokal vurdering brukes framfor Spleis ved uenighet`() {
+        val lokal =
+            Opptjeningsvurdering
+                .avSaksbehandler(
+                    fødselsnummer = FØDSELSNUMMER,
+                    skjæringstidspunkt = 1.februar,
+                    vilkårsvurdering =
+                        Vilkårsvurdering.avSaksbehandler(
+                            vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+                            utfall = Utfall.IkkeOppfylt,
+                            saksbehandlerIdent = "Z999999",
+                            fritekstbegrunnelse = "",
+                        ),
+                ).also { transaksjon.opptjeningsvurderinger.lagre(it) }
+        ekstraSpleisvurderinger +=
+            SpleisOpptjeningsvurdering.SpleisArbeidstaker(
+                opptjeningsvurderingId = lokal.id,
+                opprettet = fellesOpprettet,
+                skjæringstidspunkt = 1.februar,
+                oppfylt = true,
+                antallDager = 31,
+                opptjeningsperiode = januar,
+                arbeidsforhold = listOf(),
+            )
+
+        rapid.sendTestMessage(
+            opptjeningsvurderingResultatBehov(fnr = FØDSELSNUMMER, opptjeningsvurderingId = lokal.id.value),
+        )
+        assertEquals(1, rapid.inspektør.size)
+        assertFalse(rapid.inspektør.message(0).ok())
     }
 
     @Test

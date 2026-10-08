@@ -59,42 +59,10 @@ internal open class OpptjeningsvurderingResultatRiver(
                         it.opptjeningsvurderinger.finn(opptjeningsvurderingId)
                     }
 
-                val lokalVurdering = opptjeningsvurdering?.erOk
-                val spleisVurdering =
-                    spleisClient
-                        .hentOpptjeningsvurderinger(fødselsnummer = fødselsnummer)
-                        .find { it.opptjeningsvurderingId == opptjeningsvurderingId }
-                        ?.let { vurdering ->
-                            when (vurdering) {
-                                is SpleisOpptjeningsvurdering.SpleisArbeidstaker -> vurdering.oppfylt
-
-                                is SpleisOpptjeningsvurdering.SpleisSelvstendig,
-                                is SpleisOpptjeningsvurdering.InfotrygdArbeidstaker,
-                                -> true
-                            }
-                        }
-
-                var utfall =
-                    lokalVurdering ?: spleisVurdering ?: error("Fant ikke vurdering med id $opptjeningsvurderingId")
-
-                if (lokalVurdering != null && spleisVurdering != null && lokalVurdering != spleisVurdering) {
-                    loggError(
-                        "Uoverensstemmelse mellom lokal vurdering og vurdering fra Spleis",
-                        "lokalVurdering" to lokalVurdering.toString(),
-                        "spleisVurdering" to spleisVurdering.toString(),
-                        "opptjeningsvurderingId" to opptjeningsvurderingId.toString(),
-                        "fødselsnummer" to fødselsnummer,
-                    )
-                    utfall = spleisVurdering
-                }
-                if (lokalVurdering != null && spleisVurdering != null && lokalVurdering == spleisVurdering) {
-                    loggInfo(
-                        "Lokal vurdering og vurdering fra Spleis er enige",
-                        "vurdering" to lokalVurdering.toString(),
-                        "opptjeningsvurderingId" to opptjeningsvurderingId.toString(),
-                        "fødselsnummer" to fødselsnummer,
-                    )
-                }
+                val utfall =
+                    opptjeningsvurdering?.erOk
+                        ?: hentVurderingFraSpleis(fødselsnummer, opptjeningsvurderingId)
+                        ?: error("Fant ikke vurdering med id $opptjeningsvurderingId")
 
                 packet["@løsning"] = mapOf(behovnavn to mapOf("ok" to utfall))
                 loggInfo(
@@ -107,4 +75,21 @@ internal open class OpptjeningsvurderingResultatRiver(
             }
         }
     }
+
+    private fun hentVurderingFraSpleis(
+        fødselsnummer: String,
+        opptjeningsvurderingId: OpptjeningsvurderingId,
+    ): Boolean? =
+        spleisClient
+            .hentOpptjeningsvurderinger(fødselsnummer = fødselsnummer)
+            .find { it.opptjeningsvurderingId == opptjeningsvurderingId }
+            ?.let { vurdering ->
+                when (vurdering) {
+                    is SpleisOpptjeningsvurdering.SpleisArbeidstaker -> vurdering.oppfylt
+
+                    is SpleisOpptjeningsvurdering.SpleisSelvstendig,
+                    is SpleisOpptjeningsvurdering.InfotrygdArbeidstaker,
+                    -> true
+                }
+            }
 }
