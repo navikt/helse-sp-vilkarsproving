@@ -204,6 +204,29 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
     }
 
     @Test
+    fun `historikk gir alle vurderinger på skjæringstidspunktet, nyeste først`() {
+        val eldst = vurderingMedVurdertTidspunkt(Instant.parse("2026-01-01T00:00:00Z"))
+        val nyest = vurderingMedVurdertTidspunkt(Instant.parse("2026-01-03T00:00:00Z"))
+        val infotrygd =
+            Opptjeningsvurdering.fraInfotrygd(
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                erOk = true,
+                vurdertTidspunkt = Instant.parse("2026-01-02T00:00:00Z"),
+            )
+        transaksjon { it.opptjeningsvurderinger.lagre(nyest) }
+        transaksjon { it.opptjeningsvurderinger.lagre(eldst) }
+        transaksjon { it.opptjeningsvurderinger.lagre(infotrygd) }
+        lagreVurdering(arbeidstakergrunnlag(), skjæringstidspunkt = 1.mars)
+
+        val historikk = transaksjon { it.opptjeningsvurderinger.historikk(FØDSELSNUMMER, 1.februar) }
+
+        assertEquals(listOf(nyest.id, infotrygd.id, eldst.id), historikk.map { it.id })
+        assertEquals(nyest.vilkårsvurderinger.map { it.id }, (historikk.first() as Opptjeningsvurdering.VurdertISpVilkårsprøving).vilkårsvurderinger.map { it.id })
+        assertTrue(transaksjon { it.opptjeningsvurderinger.historikk("12029240046", 1.februar) }.isEmpty())
+    }
+
+    @Test
     fun `samme vurdering kan ikke lagres to ganger`() {
         val vurdering = lagreVurdering(arbeidstakergrunnlag())
 

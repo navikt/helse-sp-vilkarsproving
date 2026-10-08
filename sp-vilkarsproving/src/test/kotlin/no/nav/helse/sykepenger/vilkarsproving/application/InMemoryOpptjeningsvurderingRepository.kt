@@ -20,5 +20,13 @@ internal class InMemoryOpptjeningsvurderingRepository : OpptjeningsvurderingRepo
         skjæringstidspunkt: LocalDate,
     ) = vurderinger.lastOrNull { it.fødselsnummer == fødselsnummer && it.skjæringstidspunkt == skjæringstidspunkt }
 
+    override fun historikk(
+        fødselsnummer: String,
+        skjæringstidspunkt: LocalDate,
+    ) = vurderinger
+        .filter { it.fødselsnummer == fødselsnummer && it.skjæringstidspunkt == skjæringstidspunkt }
+        .asReversed()
+        .sortedByDescending { it.vurdertTidspunkt }
+
     override fun finn(opptjeningsvurderingId: OpptjeningsvurderingId) = vurderinger.firstOrNull { it.id == opptjeningsvurderingId }
 }

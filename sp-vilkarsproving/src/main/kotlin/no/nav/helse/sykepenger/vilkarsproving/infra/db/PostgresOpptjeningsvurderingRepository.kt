@@ -172,6 +172,28 @@ internal class PostgresOpptjeningsvurderingRepository(
             )?.let(::hydrer)
     }
 
+    override fun historikk(
+        fødselsnummer: String,
+        skjæringstidspunkt: LocalDate,
+    ): List<Opptjeningsvurdering> {
+        @Language("PostgreSQL")
+        val sql = """
+            $SELECT_OPPTJENINGSVURDERING
+            where fødselsnummer = :fodselsnummer and skjæringstidspunkt = :skjaeringstidspunkt
+            order by vurdert_tidspunkt desc, opprettet desc
+        """
+        return session
+            .run(
+                queryOf(
+                    sql,
+                    mapOf(
+                        "fodselsnummer" to fødselsnummer,
+                        "skjaeringstidspunkt" to skjæringstidspunkt,
+                    ),
+                ).map(::tilOpptjeningsvurderingRad).asList,
+            ).map(::hydrer)
+    }
+
     override fun finn(opptjeningsvurderingId: OpptjeningsvurderingId): Opptjeningsvurdering? {
         @Language("PostgreSQL")
         val sql = """
