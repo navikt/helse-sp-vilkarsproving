@@ -1,13 +1,19 @@
 package no.nav.helse.sykepenger.vilkarsproving.application
 
+import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.tilOpptjeningsvurdering
+import no.nav.helse.til
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -51,6 +57,58 @@ internal class PersonAvstemmingServiceTest {
                 antallHoppetOver = 0,
             ),
             transaksjon.migreringslogg.alleNedlastinger.single(),
+        )
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "'', UKJENT_PRIVAT",
+        "'   ', UKJENT_PRIVAT",
+        "987654321, 987654321",
+    )
+    fun `lagrer arbeidsforhold fra spleis med UKJENT_PRIVAT bare når organisasjonsnummer er blankt`(
+        organisasjonsnummer: String,
+        forventetOrgnummer: String,
+    ) {
+        val ansattFom = LocalDate.of(2025, 12, 1)
+        val skjæringstidspunkt = LocalDate.of(2026, 1, 1)
+        spleisSvar =
+            listOf(
+                SpleisOpptjeningsvurdering.SpleisArbeidstaker(
+                    opptjeningsvurderingId = OpptjeningsvurderingId(UUID.randomUUID()),
+                    opprettet = Instant.now(),
+                    skjæringstidspunkt = skjæringstidspunkt,
+                    oppfylt = true,
+                    antallDager = 31,
+                    opptjeningsperiode = ansattFom til skjæringstidspunkt.minusDays(1),
+                    arbeidsforhold =
+                        listOf(
+                            SpleisOpptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold(
+                                organisasjonsnummer = organisasjonsnummer,
+                                ansettelsesperioder =
+                                    listOf(
+                                        SpleisOpptjeningsvurdering.SpleisArbeidstaker.Ansettelsesperiode(ansattFom, null),
+                                    ),
+                            ),
+                        ),
+                ),
+            )
+
+        assertEquals(1, service.lagreOpptjeningsvurderinger(FØDSELSNUMMER))
+        assertEquals(1, transaksjon.opptjeningsvurderinger.antallLagringer)
+        val lagret = transaksjon.opptjeningsvurderinger.alleVurderinger.single() as Opptjeningsvurdering.OverførtFraSpleis
+        val kilde = lagret.vilkårsvurderinger.single().kilde as Vurderingskilde.OverførtFraSpleis
+        val grunnlag = kilde.grunnlag as Opptjeningsgrunnlag.Arbeidstaker
+        assertEquals(
+            listOf(
+                Arbeidsforhold(
+                    orgnummer = forventetOrgnummer,
+                    ansattFom = ansattFom,
+                    ansattTom = null,
+                    type = Arbeidsforhold.Arbeidsforholdtype.UKJENT,
+                ),
+            ),
+            grunnlag.arbeidsforhold,
         )
     }
 

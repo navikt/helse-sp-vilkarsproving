@@ -60,7 +60,7 @@ internal fun SpleisOpptjeningsvurdering.tilOpptjeningsvurdering(fødselsnummer: 
 private fun SpleisOpptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold.tilDomene(): List<Arbeidsforhold> =
     ansettelsesperioder.map { periode ->
         Arbeidsforhold(
-            orgnummer = organisasjonsnummer,
+            orgnummer = organisasjonsnummer.ifBlank { "UKJENT_PRIVAT" },
             ansattFom = periode.fom,
             ansattTom = periode.tom,
             type = Arbeidsforhold.Arbeidsforholdtype.UKJENT,
