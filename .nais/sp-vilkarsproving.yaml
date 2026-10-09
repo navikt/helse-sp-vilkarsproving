@@ -34,8 +34,8 @@ spec:
     limits:
       memory: 512Mi
   replicas:
-    min: 1
-    max: 2
+    min: 4
+    max: 4
   strategy:
     rollingUpdate:
       maxSurge: 50%
