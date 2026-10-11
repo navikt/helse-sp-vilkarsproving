@@ -41,8 +41,6 @@ import no.nav.sykepenger.libs.logging.loggInfo
 
 private const val APP_NAVN = "sp-vilkarsproving"
 
-private fun erProdGcp(): Boolean = System.getenv()["NAIS_CLUSTER_NAME"] == "prod-gcp"
-
 data class AppKonfigurasjon(
     val appNavn: String,
     val azureAd: AzureAdConfig,
@@ -104,16 +102,14 @@ fun main() {
                 transaksjonProvider = transaksjonProvider,
                 spleisClient = spleisClient,
             )
-            if (!erProdGcp()) {
-                PersonAvstemmingRiver(
-                    rapidsConnection = this,
-                    personAvstemmingService =
-                        PersonAvstemmingService(
-                            transaksjonProvider = transaksjonProvider,
-                            spleisClient = spleisClient,
-                        ),
-                )
-            }
+            PersonAvstemmingRiver(
+                rapidsConnection = this,
+                personAvstemmingService =
+                    PersonAvstemmingService(
+                        transaksjonProvider = transaksjonProvider,
+                        spleisClient = spleisClient,
+                    ),
+            )
             register(
                 OutboxPubliseringsjobb(
                     rapidsConnection = this,
