@@ -6,6 +6,7 @@ import com.github.navikt.tbd_libs.personpseudoid.Identitetsnummer
 import kotliquery.Row
 import kotliquery.Session
 import kotliquery.queryOf
+import no.nav.helse.sykepenger.vilkarsproving.application.HandlingType
 import no.nav.helse.sykepenger.vilkarsproving.application.Outbox
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvolutt
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvoluttId
@@ -22,12 +23,22 @@ private val objectMapper = jacksonObjectMapper()
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
     JsonSubTypes.Type(value = OutboxMeldingDto.OpptjeningsvurderingEndret::class, name = "OPPTJENINGSVURDERING_ENDRET"),
+    JsonSubTypes.Type(value = OutboxMeldingDto.Saksbehandlerhandling::class, name = "SAKSBEHANDLERHANDLING"),
 )
 private sealed interface OutboxMeldingDto {
     data class OpptjeningsvurderingEndret(
         val skjæringstidspunkt: LocalDate,
         val opptjeningsvurderingId: UUID,
         val manuellVurdering: Boolean,
+    ) : OutboxMeldingDto
+
+    data class Saksbehandlerhandling(
+        val skjæringstidspunkt: LocalDate,
+        val saksbehandlerIdent: String,
+        val handlingId: UUID,
+        val handlingType: HandlingType,
+        val kreverTotrinnsvurdering: Boolean,
+        val tidspunkt: Instant,
     ) : OutboxMeldingDto
 }
 
@@ -39,6 +50,16 @@ private fun OutboxMelding.tilDto(): OutboxMeldingDto =
                 opptjeningsvurderingId = opptjeningsvurderingId,
                 manuellVurdering = manuellVurdering,
             )
+
+        is OutboxMelding.Saksbehandlerhandling ->
+            OutboxMeldingDto.Saksbehandlerhandling(
+                skjæringstidspunkt = skjæringstidspunkt,
+                saksbehandlerIdent = saksbehandlerIdent,
+                handlingId = handlingId,
+                handlingType = handlingType,
+                kreverTotrinnsvurdering = kreverTotrinnsvurdering,
+                tidspunkt = tidspunkt,
+            )
     }
 
 private fun OutboxMeldingDto.tilOutboxMelding(): OutboxMelding =
@@ -48,6 +69,16 @@ private fun OutboxMeldingDto.tilOutboxMelding(): OutboxMelding =
                 skjæringstidspunkt = skjæringstidspunkt,
                 opptjeningsvurderingId = opptjeningsvurderingId,
                 manuellVurdering = manuellVurdering,
+            )
+
+        is OutboxMeldingDto.Saksbehandlerhandling ->
+            OutboxMelding.Saksbehandlerhandling(
+                skjæringstidspunkt = skjæringstidspunkt,
+                saksbehandlerIdent = saksbehandlerIdent,
+                handlingId = handlingId,
+                handlingType = handlingType,
+                kreverTotrinnsvurdering = kreverTotrinnsvurdering,
+                tidspunkt = tidspunkt,
             )
     }
 
@@ -78,9 +109,9 @@ internal class PostgresOutbox(
             select id, melding, fodselsnummer
             from outbox
             where publisert_tidspunkt is null
-            order by opprettet
+            order by sekvensnummer
             limit :maksAntall
-            for update skip locked
+            for update
         """
         return session.run(
             queryOf(sql, mapOf("maksAntall" to maksAntall)).map(::tilUtgåendeLøsning).asList,

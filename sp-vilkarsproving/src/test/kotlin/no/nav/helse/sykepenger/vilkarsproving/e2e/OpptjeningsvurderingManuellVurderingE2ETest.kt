@@ -29,6 +29,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerF
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.leaderelection.LeaderElection
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.NavIdent
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
@@ -73,7 +74,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
             )
         }
 
-    private val outboxJobb = OutboxPubliseringsjobb(rapid, transaksjon)
+    private val outboxJobb = OutboxPubliseringsjobb(rapid, transaksjon, LeaderElection { true })
 
     private val saksbehandler = Saksbehandler(NavIdent("Z999999"), SaksbehandlerOid("oid"), "Test Testesen")
     private val identitetsnummer = Identitetsnummer(FØDSELSNUMMER)
@@ -203,7 +204,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
             val nyId = objectMapper.readTree(postRespons.bodyAsText())["opptjeningsvurderingId"].asString()
             assertNotEquals(automatiskId, nyId) { "Den manuelle vurderingen skal lage en ny opptjeningsvurdering, ikke skrive over den gamle" }
 
-            outboxJobb.kjørEnRunde()
+            outboxJobb.kjørEnRundeHvisLeader()
 
             dump("etter 4")
 
@@ -227,10 +228,15 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                     .map { it.asString() },
             )
 
-            // Den manuelle vurderingen skal ha publisert et event til utregningsappen om den nye opptjeningsvurderingen
-            assertEquals(4, rapid.inspektør.size)
-            val manuellVurderingEvent = rapid.inspektør.message(3)
-            assertEquals("endret_opptjeningsvurdering", manuellVurderingEvent.path("@event_name").asString())
+            // Den manuelle vurderingen skal ha publisert et event til utregningsappen om den nye opptjeningsvurderingen, i tillegg til et event som forteller om saksbehandlerendringen
+            assertEquals(5, rapid.inspektør.size)
+            val manuelleHendelser = (3..4).map { rapid.inspektør.message(it) }
+            assertEquals(
+                setOf("endret_opptjeningsvurdering", "saksbehandlerhandling"),
+                manuelleHendelser.map { it.path("@event_name").asString() }.toSet(),
+            )
+            val manuellVurderingEvent =
+                manuelleHendelser.single { it.path("@event_name").asString() == "endret_opptjeningsvurdering" }
             assertEquals(nyId, manuellVurderingEvent.path("opptjeningsvurderingId").asString())
             assertEquals(FØDSELSNUMMER, manuellVurderingEvent.path("fødselsnummer").asString())
             assertEquals("2018-02-01", manuellVurderingEvent.path("skjæringstidspunkt").asString())
@@ -238,14 +244,51 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
 
             // Steg 5: kjør OpptjeningsvurderingResultat-riveren på nytt, nå med den nye id-en — ok=true
             rapid.sendTestMessage(opptjeningsvurderingResultatBehov(UUID.fromString(nyId)), FØDSELSNUMMER)
-            assertEquals(5, rapid.inspektør.size)
+            assertEquals(6, rapid.inspektør.size)
             assertTrue(
                 rapid.inspektør
-                    .message(4)
+                    .message(5)
                     .path("@løsning")
                     .path("OpptjeningsvurderingResultat")
                     .path("ok")
                     .asBoolean(),
+            )
+        }
+
+    @Test
+    fun `publiserer saksbehandlerhandling før endret opptjeningsvurdering`() =
+        testApplication {
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+            application { settOppTestapp(pseudoIdProvider) }
+
+            @Language("JSON")
+            val manuellVurderingRequest = """
+            {
+              "skjæringstidspunkt": "2018-02-01",
+              "vilkårskode": "OPPTJENING_ARBEID_MINST_4_UKER",
+              "utfall": "OPPFYLT",
+              "fritekstbegrunnelse": "Manuell vurdering for test av eventrekkefølge",
+              "journalpostId": ["journalpost-1"]
+            }
+            """
+            val postRespons =
+                client.post("/api/personer/$pseudoId/vilkarsvurderinger/manuell") {
+                    contentType(ContentType.Application.Json)
+                    setBody(manuellVurderingRequest)
+                }
+            assertEquals(HttpStatusCode.OK, postRespons.status)
+
+            outboxJobb.kjørEnRundeHvisLeader()
+
+            assertEquals(
+                listOf("saksbehandlerhandling", "endret_opptjeningsvurdering"),
+                (0 until rapid.inspektør.size).map {
+                    rapid.inspektør
+                        .message(it)
+                        .path("@event_name")
+                        .asString()
+                },
             )
         }
 

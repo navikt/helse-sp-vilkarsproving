@@ -1,6 +1,7 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoId
+import no.nav.helse.sykepenger.vilkarsproving.application.HandlingType
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvolutt
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
@@ -12,6 +13,7 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.KallKontekst
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.PostBehandler
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestResponse
+import java.time.Instant
 
 internal class PostManuellVilkårsvurderingBehandler :
     PostBehandler<
@@ -68,6 +70,20 @@ internal class PostManuellVilkårsvurderingBehandler :
 
             kallKontekst.transaksjon.opptjeningsvurderinger.lagre(kravvurdering)
 
+            kallKontekst.transaksjon.outbox.leggTil(
+                OutboxKonvolutt.ny(
+                    melding =
+                        OutboxMelding.Saksbehandlerhandling(
+                            skjæringstidspunkt = request.skjæringstidspunkt,
+                            saksbehandlerIdent = kallKontekst.saksbehandler.navIdent.value,
+                            handlingId = kravvurdering.id.value,
+                            handlingType = HandlingType.MANUELT_VURDERT_OPPTJENING,
+                            kreverTotrinnsvurdering = true,
+                            tidspunkt = Instant.now(),
+                        ),
+                    identitetsnummer = identitetsnummer,
+                ),
+            )
             kallKontekst.transaksjon.outbox.leggTil(
                 OutboxKonvolutt.ny(
                     melding =

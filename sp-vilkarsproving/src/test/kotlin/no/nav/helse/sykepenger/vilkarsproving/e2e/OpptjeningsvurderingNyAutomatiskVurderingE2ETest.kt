@@ -31,6 +31,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerF
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostNyAutomatiskVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.leaderelection.LeaderElection
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.NavIdent
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
@@ -62,7 +63,12 @@ internal class OpptjeningsvurderingNyAutomatiskVurderingE2ETest : DatabaseTest()
             GrunnlagForNyArbeidstakerOpptjeningsvurderingRiver(this, transaksjon)
         }
 
-    private val outboxJobb = OutboxPubliseringsjobb(rapid, transaksjon)
+    private val outboxJobb =
+        OutboxPubliseringsjobb(
+            rapid,
+            transaksjon,
+            LeaderElection { true },
+        )
 
     private val saksbehandler = Saksbehandler(NavIdent("Z999999"), SaksbehandlerOid("oid"), "Test Testesen")
     private val identitetsnummer = Identitetsnummer(FØDSELSNUMMER)

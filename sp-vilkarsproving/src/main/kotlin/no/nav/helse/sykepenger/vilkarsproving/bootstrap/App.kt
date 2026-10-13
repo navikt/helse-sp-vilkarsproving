@@ -23,6 +23,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellVilkårsvurd
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostNyAutomatiskVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClient
+import no.nav.helse.sykepenger.vilkarsproving.leaderelection.NaisLeaderElection
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AzureAdConfig
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.TilgangsgrupperTilTilganger
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.configureJwtAuthentication
@@ -126,6 +127,11 @@ fun main() {
                 OutboxPubliseringsjobb(
                     rapidsConnection = this,
                     transaksjonProvider = transaksjonProvider,
+                    leaderElection =
+                        NaisLeaderElection(
+                            electorGetUrl = env.getValue("ELECTOR_GET_URL"),
+                            hostname = env.getValue("HOSTNAME"),
+                        ),
                 ),
             )
         }.start()
