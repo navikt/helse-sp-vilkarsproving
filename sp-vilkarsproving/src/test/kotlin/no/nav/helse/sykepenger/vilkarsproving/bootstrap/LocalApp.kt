@@ -47,6 +47,7 @@ fun main() {
                     endepunkter(
                         spleisClient = TomSpleisClient(),
                         transaksjonProvider = transaksjonProvider,
+                        publiser = { _, melding -> println("Publiserer (ikke koblet til Kafka lokalt): $melding") },
                     ),
             )
         }

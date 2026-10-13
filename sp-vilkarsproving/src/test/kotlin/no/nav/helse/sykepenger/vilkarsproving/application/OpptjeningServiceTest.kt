@@ -232,6 +232,122 @@ internal class OpptjeningServiceTest {
     }
 
     @Test
+    fun `ny vurdering uten eksisterende vurdering gjør ingenting`() {
+        val resultat = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar)
+
+        assertEquals(OpptjeningService.VurderOpptjeningPåNyttResultat.IngenVurderingFunnet, resultat)
+        assertTrue(prøvinger.allePrøvinger.isEmpty())
+        assertTrue(transaksjon.outbox.upubliserteMeldinger.isEmpty())
+    }
+
+    @Test
+    fun `ny vurdering av arbeidstaker starter ny prøving som venter på arbeidsforhold`() {
+        fullførtPrøving(1.februar)
+
+        val resultat = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar)
+
+        val venter = assertIs<OpptjeningService.VurderOpptjeningPåNyttResultat.VenterPåGrunnlag>(resultat)
+        val nyPrøving = prøvinger.allePrøvinger.last()
+        assertEquals(2, prøvinger.allePrøvinger.size)
+        assertEquals(nyPrøving.id, venter.opptjeningsprøvingId)
+        assertEquals(Grunnlagsbehov.Arbeidsforhold, nyPrøving.uteståendeBehov)
+        assertTrue(transaksjon.outbox.upubliserteMeldinger.isEmpty())
+    }
+
+    @Test
+    fun `ny vurdering av selvstendig næringsdrivende vurderes umiddelbart og varsler endring`() {
+        val eksisterende = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende) as HarVurdering
+
+        val resultat = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar)
+
+        val ny = assertIs<OpptjeningService.VurderOpptjeningPåNyttResultat.NyVurderingForetatt>(resultat)
+        assertNotEquals(eksisterende.opptjeningsvurderingId, ny.opptjeningsvurderingId)
+        assertEquals(ny.opptjeningsvurderingId, vurderinger.gjeldende(FØDSELSNUMMER, 1.februar)!!.id)
+        assertEquals(Kategori.SelvstendigNæringsdrivende, vurderinger.finn(ny.opptjeningsvurderingId)!!.kategori)
+        assertEquals(
+            OutboxMelding.OpptjeningsvurderingEndret(1.februar, ny.opptjeningsvurderingId.value, manuellVurdering = false),
+            transaksjon.outbox.upubliserteMeldinger
+                .single()
+                .melding,
+        )
+    }
+
+    @Test
+    fun `ny vurdering mens en prøving pågår avvises`() {
+        fullførtPrøving(1.februar)
+        service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar)
+
+        val resultat = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar)
+
+        assertEquals(OpptjeningService.VurderOpptjeningPåNyttResultat.PrøvingPågår, resultat)
+        assertEquals(2, prøvinger.allePrøvinger.size)
+        assertTrue(transaksjon.outbox.upubliserteMeldinger.isEmpty())
+    }
+
+    @Test
+    fun `grunnlag til ny vurdering fullfører prøvingen og varsler endring`() {
+        val gammel = fullførtPrøving(1.februar)
+        val venter = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar) as OpptjeningService.VurderOpptjeningPåNyttResultat.VenterPåGrunnlag
+
+        val resultat =
+            service.behandleGrunnlagForNyArbeidstakerOpptjeningsvurdering(
+                arbeidsforhold = listOf(arbeidsforhold(5.januar til 31.januar)),
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                opptjeningsprøvingId = venter.opptjeningsprøvingId,
+            )
+
+        val ny = assertIs<BehandleGrunnlagResultat.NyVurderingForetatt>(resultat)
+        assertNotEquals(gammel, ny.opptjeningsvurderingId)
+        assertTrue(prøvinger.allePrøvinger.all { it.erAvsluttet })
+        val vurdering = vurderinger.gjeldende(FØDSELSNUMMER, 1.februar)!!
+        assertEquals(ny.opptjeningsvurderingId, vurdering.id)
+        assertFalse(vurdering.erOk)
+        assertEquals(
+            OutboxMelding.OpptjeningsvurderingEndret(1.februar, ny.opptjeningsvurderingId.value, manuellVurdering = false),
+            transaksjon.outbox.upubliserteMeldinger
+                .last()
+                .melding,
+        )
+    }
+
+    @Test
+    fun `grunnlag til ny vurdering for en annen prøving enn den siste ignoreres`() {
+        fullførtPrøving(1.februar)
+        service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar)
+
+        val resultat =
+            service.behandleGrunnlagForNyArbeidstakerOpptjeningsvurdering(
+                arbeidsforhold = listOf(arbeidsforhold(1.januar til 31.januar)),
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                opptjeningsprøvingId = OpptjeningsprøvingId.ny(),
+            )
+
+        assertEquals(BehandleGrunnlagResultat.IngenPrøvingFunnet, resultat)
+        assertFalse(prøvinger.allePrøvinger.last().erAvsluttet)
+        assertTrue(transaksjon.outbox.upubliserteMeldinger.isEmpty())
+    }
+
+    @Test
+    fun `grunnlag til ny vurdering på allerede fullført prøving gjør ingenting`() {
+        fullførtPrøving(1.februar)
+        val venter = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar) as OpptjeningService.VurderOpptjeningPåNyttResultat.VenterPåGrunnlag
+        val behandle = {
+            service.behandleGrunnlagForNyArbeidstakerOpptjeningsvurdering(
+                arbeidsforhold = listOf(arbeidsforhold(1.januar til 31.januar)),
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                opptjeningsprøvingId = venter.opptjeningsprøvingId,
+            )
+        }
+        behandle()
+
+        assertEquals(BehandleGrunnlagResultat.AlleredeVurdert, behandle())
+        assertEquals(1, transaksjon.outbox.upubliserteMeldinger.size)
+    }
+
+    @Test
     fun `finner lagret opptjeningsvurdering`() {
         val opptjeningsvurderingId = fullførtPrøving(1.februar)
 

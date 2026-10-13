@@ -3,14 +3,12 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.kafka
 import com.github.navikt.tbd_libs.rapids_and_rivers.JsonMessage
 import com.github.navikt.tbd_libs.rapids_and_rivers.River
 import com.github.navikt.tbd_libs.rapids_and_rivers.asLocalDate
-import com.github.navikt.tbd_libs.rapids_and_rivers.asOptionalLocalDate
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
-import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
 import no.nav.sykepenger.libs.logging.MdcKey
 import no.nav.sykepenger.libs.logging.loggInfo
@@ -112,27 +110,5 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(
         }
     }
 
-    private fun JsonMessage.mapArbeidsforhold() = mapArbeidsforhold(this["@løsning.$behovKey"])
-
-    private fun mapArbeidsforhold(arbeidsforhold: JsonNode) =
-        arbeidsforhold
-            .filterNot { it["orgnummer"].asString().isBlank() }
-            .filter {
-                val til = it["ansattTil"].asOptionalLocalDate()
-                til == null || it["ansattSiden"].asLocalDate() <= til
-            }.map {
-                Arbeidsforhold(
-                    orgnummer = it["orgnummer"].asString(),
-                    ansattFom = it["ansattSiden"].asLocalDate(),
-                    ansattTom = it["ansattTil"].asOptionalLocalDate(),
-                    type =
-                        when (it["type"].asString()) {
-                            "FORENKLET_OPPGJØRSORDNING" -> Arbeidsforhold.Arbeidsforholdtype.FORENKLET_OPPGJØRSORDNING
-                            "FRILANSER" -> Arbeidsforhold.Arbeidsforholdtype.FRILANSER
-                            "MARITIMT" -> Arbeidsforhold.Arbeidsforholdtype.MARITIMT
-                            "ORDINÆRT" -> Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT
-                            else -> error("har ikke mappingregel for arbeidsforholdtype: ${it["type"].asString()}")
-                        },
-                )
-            }
+    private fun JsonMessage.mapArbeidsforhold() = this["@løsning.$behovKey"].tilArbeidsforhold()
 }

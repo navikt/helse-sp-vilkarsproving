@@ -4,6 +4,7 @@ import com.github.navikt.tbd_libs.access_token.TexasClient
 import com.github.navikt.tbd_libs.personpseudoid.ValkeyPersonPseudoIdProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.client.PopulasjonstilgangConfig
 import com.github.navikt.tbd_libs.populasjonstilgang.client.tilgangsmaskinenClient
+import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
 import no.nav.helse.rapids_rivers.RapidApplication
@@ -11,6 +12,7 @@ import no.nav.helse.sykepenger.vilkarsproving.application.PersonAvstemmingServic
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.PostgresTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver
+import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForNyArbeidstakerOpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingResultatRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OutboxPubliseringsjobb
@@ -18,6 +20,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.PersonAvstemmingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetOpptjeningshistorikkBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellVilkårsvurderingBehandler
+import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostNyAutomatiskVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AzureAdConfig
@@ -74,6 +77,7 @@ fun main() {
     val dataSource = konfigurasjon.database.dataSource()
     migrerSynkront(konfigurasjon.database)
     val transaksjonProvider = PostgresTransaksjonProvider(dataSource)
+    lateinit var rapidsConnection: RapidsConnection
 
     RapidApplication
         .create(env, builder = {
@@ -83,11 +87,19 @@ fun main() {
                     transaksjonProvider = transaksjonProvider,
                     spleisClient = spleisClient,
                     env = env,
+                    versjonAvKode = versjonAvKode,
+                    publiser = { key, melding -> rapidsConnection.publish(key, melding) },
                 )
             }
         })
         .apply {
+            rapidsConnection = this
             GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(
+                rapidsConnection = this,
+                transaksjonProvider = transaksjonProvider,
+                versjonAvKode = versjonAvKode,
+            )
+            GrunnlagForNyArbeidstakerOpptjeningsvurderingRiver(
                 rapidsConnection = this,
                 transaksjonProvider = transaksjonProvider,
                 versjonAvKode = versjonAvKode,
@@ -124,6 +136,8 @@ private fun Application.ktorApp(
     transaksjonProvider: TransaksjonProvider<Transaksjonskontekst>,
     spleisClient: ISpleisClient,
     env: Map<String, String>,
+    versjonAvKode: String,
+    publiser: (key: String, melding: String) -> Unit,
 ) {
     val texasClient = TexasClient.fromEnv()
     val restAdapter =
@@ -142,7 +156,7 @@ private fun Application.ktorApp(
         tilgangsgrupperTilTilganger = konfigurasjon.tilganger,
     )
     configureOpenApiPlugin(konfigurasjon.openApi)
-    configureRestRuting(restAdapter, endepunkter(spleisClient, transaksjonProvider))
+    configureRestRuting(restAdapter, endepunkter(spleisClient, transaksjonProvider, publiser, versjonAvKode))
     monitor.subscribe(ApplicationStarted) {
         loggInfo("Ktor-applikasjon startet", "appNavn" to konfigurasjon.appNavn)
     }
@@ -155,9 +169,12 @@ private fun Application.ktorApp(
 internal fun endepunkter(
     spleisClient: ISpleisClient,
     transaksjonProvider: TransaksjonProvider<Transaksjonskontekst>,
+    publiser: (key: String, melding: String) -> Unit,
+    versjonAvKode: String = "test",
 ): RestRuting<Transaksjonskontekst>.() -> Unit =
     {
         get(GetVilkårsvurderingerForPersonBehandler(PersonAvstemmingService(transaksjonProvider, spleisClient)))
         get(GetOpptjeningshistorikkBehandler(PersonAvstemmingService(transaksjonProvider, spleisClient)))
         post(PostManuellVilkårsvurderingBehandler())
+        post(PostNyAutomatiskVilkårsvurderingBehandler(publiser, versjonAvKode))
     }
