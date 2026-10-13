@@ -51,6 +51,7 @@ internal class PostNyAutomatiskVilkårsvurderingBehandler(
                 OpptjeningService(kallKontekst.transaksjon, versjonAvKode).vurderOpptjeningPåNytt(
                     fødselsnummer = identitetsnummer.value,
                     skjæringstidspunkt = request.skjæringstidspunkt,
+                    saksbehandlerIdent = kallKontekst.saksbehandler.navIdent.value,
                 )
 
             when (resultat) {
@@ -63,7 +64,12 @@ internal class PostNyAutomatiskVilkårsvurderingBehandler(
                     )
 
                 is VurderOpptjeningPåNyttResultat.VenterPåGrunnlag -> {
-                    beOmArbeidsforhold(identitetsnummer, request.skjæringstidspunkt, resultat.opptjeningsprøvingId)
+                    beOmArbeidsforhold(
+                        identitetsnummer = identitetsnummer,
+                        skjæringstidspunkt = request.skjæringstidspunkt,
+                        opptjeningsprøvingId = resultat.opptjeningsprøvingId,
+                        saksbehandlerIdent = kallKontekst.saksbehandler.navIdent.value,
+                    )
                     RestResponse.ok(ApiNyAutomatiskVilkårsvurderingResponse(status = ApiNyAutomatiskVilkårsvurderingStatus.VENTER_PÅ_GRUNNLAG))
                 }
 
@@ -80,6 +86,7 @@ internal class PostNyAutomatiskVilkårsvurderingBehandler(
         identitetsnummer: Identitetsnummer,
         skjæringstidspunkt: LocalDate,
         opptjeningsprøvingId: OpptjeningsprøvingId,
+        saksbehandlerIdent: String,
     ) {
         val behov =
             JsonMessage.newNeed(
@@ -89,6 +96,7 @@ internal class PostNyAutomatiskVilkårsvurderingBehandler(
                         "fødselsnummer" to identitetsnummer.value,
                         "skjæringstidspunkt" to skjæringstidspunkt.toString(),
                         "opptjeningsprøvingId" to opptjeningsprøvingId.toString(),
+                        "saksbehandlerIdent" to saksbehandlerIdent,
                     ),
             )
         loggInfo(

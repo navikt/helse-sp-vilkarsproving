@@ -52,6 +52,7 @@ internal sealed interface OutboxMelding {
 
 enum class HandlingType {
     MANUELT_VURDERT_OPPTJENING,
+    NY_AUTOMATISK_OPPTJENINGSVURDERING,
 }
 
 internal interface Outbox {

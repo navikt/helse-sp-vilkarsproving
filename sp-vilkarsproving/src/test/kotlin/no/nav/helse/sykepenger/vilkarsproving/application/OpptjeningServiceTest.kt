@@ -9,6 +9,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforho
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.Instant
 import java.time.LocalDate
 import kotlin.test.assertIs
 
@@ -233,7 +234,7 @@ internal class OpptjeningServiceTest {
 
     @Test
     fun `ny vurdering uten eksisterende vurdering gjør ingenting`() {
-        val resultat = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar)
+        val resultat = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar, SAKSBEHANDLER)
 
         assertEquals(OpptjeningService.VurderOpptjeningPåNyttResultat.IngenVurderingFunnet, resultat)
         assertTrue(prøvinger.allePrøvinger.isEmpty())
@@ -244,7 +245,7 @@ internal class OpptjeningServiceTest {
     fun `ny vurdering av arbeidstaker starter ny prøving som venter på arbeidsforhold`() {
         fullførtPrøving(1.februar)
 
-        val resultat = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar)
+        val resultat = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar, SAKSBEHANDLER)
 
         val venter = assertIs<OpptjeningService.VurderOpptjeningPåNyttResultat.VenterPåGrunnlag>(resultat)
         val nyPrøving = prøvinger.allePrøvinger.last()
@@ -258,26 +259,27 @@ internal class OpptjeningServiceTest {
     fun `ny vurdering av selvstendig næringsdrivende vurderes umiddelbart og varsler endring`() {
         val eksisterende = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende) as HarVurdering
 
-        val resultat = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar)
+        val resultat = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar, SAKSBEHANDLER)
 
         val ny = assertIs<OpptjeningService.VurderOpptjeningPåNyttResultat.NyVurderingForetatt>(resultat)
         assertNotEquals(eksisterende.opptjeningsvurderingId, ny.opptjeningsvurderingId)
         assertEquals(ny.opptjeningsvurderingId, vurderinger.gjeldende(FØDSELSNUMMER, 1.februar)!!.id)
         assertEquals(Kategori.SelvstendigNæringsdrivende, vurderinger.finn(ny.opptjeningsvurderingId)!!.kategori)
         assertEquals(
-            OutboxMelding.OpptjeningsvurderingEndret(1.februar, ny.opptjeningsvurderingId.value, manuellVurdering = false),
-            transaksjon.outbox.upubliserteMeldinger
-                .single()
-                .melding,
+            listOf(
+                saksbehandlerhandling(ny.opptjeningsvurderingId),
+                OutboxMelding.OpptjeningsvurderingEndret(1.februar, ny.opptjeningsvurderingId.value, manuellVurdering = false),
+            ),
+            transaksjon.outbox.upubliserteMeldinger.map { it.melding.utenTidspunkt() },
         )
     }
 
     @Test
     fun `ny vurdering mens en prøving pågår avvises`() {
         fullførtPrøving(1.februar)
-        service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar)
+        service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar, SAKSBEHANDLER)
 
-        val resultat = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar)
+        val resultat = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar, SAKSBEHANDLER)
 
         assertEquals(OpptjeningService.VurderOpptjeningPåNyttResultat.PrøvingPågår, resultat)
         assertEquals(2, prøvinger.allePrøvinger.size)
@@ -287,7 +289,7 @@ internal class OpptjeningServiceTest {
     @Test
     fun `grunnlag til ny vurdering fullfører prøvingen og varsler endring`() {
         val gammel = fullførtPrøving(1.februar)
-        val venter = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar) as OpptjeningService.VurderOpptjeningPåNyttResultat.VenterPåGrunnlag
+        val venter = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar, SAKSBEHANDLER) as OpptjeningService.VurderOpptjeningPåNyttResultat.VenterPåGrunnlag
 
         val resultat =
             service.behandleGrunnlagForNyArbeidstakerOpptjeningsvurdering(
@@ -295,6 +297,7 @@ internal class OpptjeningServiceTest {
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
                 opptjeningsprøvingId = venter.opptjeningsprøvingId,
+                saksbehandlerIdent = SAKSBEHANDLER,
             )
 
         val ny = assertIs<BehandleGrunnlagResultat.NyVurderingForetatt>(resultat)
@@ -304,17 +307,18 @@ internal class OpptjeningServiceTest {
         assertEquals(ny.opptjeningsvurderingId, vurdering.id)
         assertFalse(vurdering.erOk)
         assertEquals(
-            OutboxMelding.OpptjeningsvurderingEndret(1.februar, ny.opptjeningsvurderingId.value, manuellVurdering = false),
-            transaksjon.outbox.upubliserteMeldinger
-                .last()
-                .melding,
+            listOf(
+                saksbehandlerhandling(ny.opptjeningsvurderingId),
+                OutboxMelding.OpptjeningsvurderingEndret(1.februar, ny.opptjeningsvurderingId.value, manuellVurdering = false),
+            ),
+            transaksjon.outbox.upubliserteMeldinger.map { it.melding.utenTidspunkt() },
         )
     }
 
     @Test
     fun `grunnlag til ny vurdering for en annen prøving enn den siste ignoreres`() {
         fullførtPrøving(1.februar)
-        service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar)
+        service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar, SAKSBEHANDLER)
 
         val resultat =
             service.behandleGrunnlagForNyArbeidstakerOpptjeningsvurdering(
@@ -322,6 +326,7 @@ internal class OpptjeningServiceTest {
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
                 opptjeningsprøvingId = OpptjeningsprøvingId.ny(),
+                saksbehandlerIdent = SAKSBEHANDLER,
             )
 
         assertEquals(BehandleGrunnlagResultat.IngenPrøvingFunnet, resultat)
@@ -332,19 +337,20 @@ internal class OpptjeningServiceTest {
     @Test
     fun `grunnlag til ny vurdering på allerede fullført prøving gjør ingenting`() {
         fullførtPrøving(1.februar)
-        val venter = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar) as OpptjeningService.VurderOpptjeningPåNyttResultat.VenterPåGrunnlag
+        val venter = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar, SAKSBEHANDLER) as OpptjeningService.VurderOpptjeningPåNyttResultat.VenterPåGrunnlag
         val behandle = {
             service.behandleGrunnlagForNyArbeidstakerOpptjeningsvurdering(
                 arbeidsforhold = listOf(arbeidsforhold(1.januar til 31.januar)),
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
                 opptjeningsprøvingId = venter.opptjeningsprøvingId,
+                saksbehandlerIdent = SAKSBEHANDLER,
             )
         }
         behandle()
 
         assertEquals(BehandleGrunnlagResultat.AlleredeVurdert, behandle())
-        assertEquals(1, transaksjon.outbox.upubliserteMeldinger.size)
+        assertEquals(2, transaksjon.outbox.upubliserteMeldinger.size)
     }
 
     @Test
@@ -362,6 +368,22 @@ internal class OpptjeningServiceTest {
         assertEquals("Fant ikke opptjeningsvurdering med id $ukjentId", feil.message)
     }
 
+    private fun saksbehandlerhandling(opptjeningsvurderingId: OpptjeningsvurderingId) =
+        OutboxMelding.Saksbehandlerhandling(
+            skjæringstidspunkt = 1.februar,
+            saksbehandlerIdent = SAKSBEHANDLER,
+            handlingId = opptjeningsvurderingId.value,
+            handlingType = HandlingType.NY_AUTOMATISK_OPPTJENINGSVURDERING,
+            kreverTotrinnsvurdering = false,
+            tidspunkt = Instant.EPOCH,
+        )
+
+    private fun OutboxMelding.utenTidspunkt() =
+        when (this) {
+            is OutboxMelding.Saksbehandlerhandling -> copy(tidspunkt = Instant.EPOCH)
+            is OutboxMelding.OpptjeningsvurderingEndret -> this
+        }
+
     private fun fullførtPrøving(
         skjæringstidspunkt: LocalDate,
         fødselsnummer: String = FØDSELSNUMMER,
@@ -377,6 +399,7 @@ internal class OpptjeningServiceTest {
         const val FØDSELSNUMMER = "12029240045"
         const val ET_ANNET_FØDSELSNUMMER = "12029240046"
         const val ORGNUMMER = "987654321"
+        const val SAKSBEHANDLER = "Z999999"
 
         fun arbeidsforhold(
             ansettelseperiode: Periode,

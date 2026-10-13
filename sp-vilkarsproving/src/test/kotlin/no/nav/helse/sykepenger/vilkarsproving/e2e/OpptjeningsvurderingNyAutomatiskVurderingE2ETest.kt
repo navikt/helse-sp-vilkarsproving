@@ -162,6 +162,8 @@ internal class OpptjeningsvurderingNyAutomatiskVurderingE2ETest : DatabaseTest()
             assertEquals(FØDSELSNUMMER, arbeidsforholdbehov.path("fødselsnummer").asString())
             assertEquals("2018-02-01", arbeidsforholdbehov.path("skjæringstidspunkt").asString())
 
+            assertEquals("Z999999", arbeidsforholdbehov.path("saksbehandlerIdent").asString())
+
             // Mens prøvingen pågår kan det ikke startes enda en, og ingenting publiseres
             assertEquals(HttpStatusCode.Conflict, client.vurderPåNytt(pseudoId).status)
             outboxJobb.kjørEnRunde()
@@ -180,16 +182,25 @@ internal class OpptjeningsvurderingNyAutomatiskVurderingE2ETest : DatabaseTest()
             rapid.sendTestMessage(løsning.toString(), FØDSELSNUMMER)
             assertEquals(3, rapid.inspektør.size) { "Ny vurdering skal ikke svare på noe behov direkte" }
 
-            // Steg 5: endringen sendes til Spleis via outboxen
+            // Steg 5: saksbehandlerhandlingen sendes til Spesialist og endringen til Spleis via outboxen
             outboxJobb.kjørEnRunde()
-            assertEquals(4, rapid.inspektør.size)
-            val endretEvent = rapid.inspektør.message(3)
+            assertEquals(5, rapid.inspektør.size)
+            val saksbehandlerhandling = rapid.inspektør.message(3)
+            val endretEvent = rapid.inspektør.message(4)
             assertEquals("endret_opptjeningsvurdering", endretEvent.path("@event_name").asString())
             assertEquals(FØDSELSNUMMER, endretEvent.path("fødselsnummer").asString())
             assertEquals("2018-02-01", endretEvent.path("skjæringstidspunkt").asString())
             assertFalse(endretEvent.path("manuellVurdering").asBoolean())
             val nyId = endretEvent.path("opptjeningsvurderingId").asString()
             assertNotEquals(førsteId, nyId)
+
+            assertEquals("saksbehandlerhandling", saksbehandlerhandling.path("@event_name").asString())
+            assertEquals(FØDSELSNUMMER, saksbehandlerhandling.path("fødselsnummer").asString())
+            assertEquals("2018-02-01", saksbehandlerhandling.path("skjæringstidspunkt").asString())
+            assertEquals("Z999999", saksbehandlerhandling.path("saksbehandlerIdent").asString())
+            assertEquals("NY_AUTOMATISK_OPPTJENINGSVURDERING", saksbehandlerhandling.path("handlingType").asString())
+            assertEquals(nyId, saksbehandlerhandling.path("handlingId").asString())
+            assertFalse(saksbehandlerhandling.path("kreverTotrinnsvurdering").asBoolean())
 
             val getRespons = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$nyId")
             assertEquals(HttpStatusCode.OK, getRespons.status)

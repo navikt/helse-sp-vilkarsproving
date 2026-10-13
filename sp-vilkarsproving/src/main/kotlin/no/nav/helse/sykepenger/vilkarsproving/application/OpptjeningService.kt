@@ -15,6 +15,7 @@ import no.nav.sykepenger.libs.logging.MdcKey
 import no.nav.sykepenger.libs.logging.loggError
 import no.nav.sykepenger.libs.logging.loggInfo
 import no.nav.sykepenger.libs.logging.medMdc
+import java.time.Instant
 import java.time.LocalDate
 
 internal class OpptjeningService(
@@ -128,12 +129,14 @@ internal class OpptjeningService(
 
     /**
      * Starter en ny automatisk opptjeningsprøving for et skjæringstidspunkt som allerede er vurdert,
-     * og varsler Spleis via outboxen når den nye vurderingen er klar. Ved [VurderOpptjeningPåNyttResultat.VenterPåGrunnlag]
-     * er det kallerens ansvar å be om arbeidsforhold for prøvingen.
+     * og melder saksbehandlerhandlingen til Spesialist og endringen til Spleis via outboxen når den nye vurderingen er klar.
+     * Ved [VurderOpptjeningPåNyttResultat.VenterPåGrunnlag] er det kallerens ansvar å be om arbeidsforhold for prøvingen,
+     * og å ta med [saksbehandlerIdent] videre til [behandleGrunnlagForNyArbeidstakerOpptjeningsvurdering].
      */
     fun vurderOpptjeningPåNytt(
         fødselsnummer: String,
         skjæringstidspunkt: LocalDate,
+        saksbehandlerIdent: String,
     ): VurderOpptjeningPåNyttResultat =
         medMdc(
             MdcKey.IDENTITETSNUMMER to fødselsnummer,
@@ -169,7 +172,7 @@ internal class OpptjeningService(
                 return@medMdc VurderOpptjeningPåNyttResultat.VenterPåGrunnlag(prøving.id)
             }
 
-            lagreOgVarsleEndring(vurdering)
+            lagreOgMeldNyVurdering(vurdering, saksbehandlerIdent)
             loggInfo(
                 "Opptjening vurdert på nytt uten innhenting",
                 "opptjeningsprøvingId" to prøving.id.toString(),
@@ -198,6 +201,7 @@ internal class OpptjeningService(
         fødselsnummer: String,
         skjæringstidspunkt: LocalDate,
         opptjeningsprøvingId: OpptjeningsprøvingId,
+        saksbehandlerIdent: String,
     ): BehandleGrunnlagResultat =
         medMdc(
             MdcKey.IDENTITETSNUMMER to fødselsnummer,
@@ -227,7 +231,7 @@ internal class OpptjeningService(
 
             val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold), versjonAvKode)
             opptjeningsprøvingRepository.lagre(prøving)
-            lagreOgVarsleEndring(vurdering)
+            lagreOgMeldNyVurdering(vurdering, saksbehandlerIdent)
             loggInfo(
                 "Ny opptjeningsprøving fullført",
                 "opptjeningsprøvingId" to prøving.id.toString(),
@@ -237,8 +241,25 @@ internal class OpptjeningService(
             BehandleGrunnlagResultat.NyVurderingForetatt(fødselsnummer, skjæringstidspunkt, vurdering.id)
         }
 
-    private fun lagreOgVarsleEndring(vurdering: Opptjeningsvurdering) {
+    private fun lagreOgMeldNyVurdering(
+        vurdering: Opptjeningsvurdering,
+        saksbehandlerIdent: String,
+    ) {
         opptjeningsvurderingRepository.lagre(vurdering)
+        outbox.leggTil(
+            OutboxKonvolutt.ny(
+                melding =
+                    OutboxMelding.Saksbehandlerhandling(
+                        skjæringstidspunkt = vurdering.skjæringstidspunkt,
+                        saksbehandlerIdent = saksbehandlerIdent,
+                        handlingId = vurdering.id.value,
+                        handlingType = HandlingType.NY_AUTOMATISK_OPPTJENINGSVURDERING,
+                        kreverTotrinnsvurdering = false,
+                        tidspunkt = Instant.now(),
+                    ),
+                identitetsnummer = Identitetsnummer(vurdering.fødselsnummer),
+            ),
+        )
         outbox.leggTil(
             OutboxKonvolutt.ny(
                 melding =

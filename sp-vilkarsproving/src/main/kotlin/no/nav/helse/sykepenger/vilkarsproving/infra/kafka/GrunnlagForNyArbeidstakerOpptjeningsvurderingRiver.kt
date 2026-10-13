@@ -19,7 +19,7 @@ import tools.jackson.databind.JsonNode
 /**
  * Tar imot arbeidsforhold for en opptjeningsprøving som er startet på nytt via REST-APIet, se
  * [no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostNyAutomatiskVilkårsvurderingBehandler].
- * Endringen meldes til Spleis gjennom outboxen, ikke som løsning på et behov.
+ * Endringen meldes til Spleis og saksbehandlerhandlingen til Spesialist gjennom outboxen, ikke som løsning på et behov.
  */
 internal class GrunnlagForNyArbeidstakerOpptjeningsvurderingRiver(
     rapidsConnection: RapidsConnection,
@@ -37,6 +37,7 @@ internal class GrunnlagForNyArbeidstakerOpptjeningsvurderingRiver(
                     it.requireValue("@final", true)
                     it.requireKey("fødselsnummer")
                     it.requireKey("opptjeningsprøvingId")
+                    it.requireKey("saksbehandlerIdent")
                     it.forbid("opprinneligBehov")
                     it.requireKey("@løsning")
                 }
@@ -63,6 +64,7 @@ internal class GrunnlagForNyArbeidstakerOpptjeningsvurderingRiver(
         val skjæringstidspunkt = packet["skjæringstidspunkt"].asLocalDate()
         val fødselsnummer = packet["fødselsnummer"].asString()
         val opptjeningsprøvingId = OpptjeningsprøvingId(packet["opptjeningsprøvingId"].asUUID())
+        val saksbehandlerIdent = packet["saksbehandlerIdent"].asString()
 
         medMdc(
             MdcKey.IDENTITETSNUMMER to fødselsnummer,
@@ -79,6 +81,7 @@ internal class GrunnlagForNyArbeidstakerOpptjeningsvurderingRiver(
                     fødselsnummer = fødselsnummer,
                     skjæringstidspunkt = skjæringstidspunkt,
                     opptjeningsprøvingId = opptjeningsprøvingId,
+                    saksbehandlerIdent = saksbehandlerIdent,
                 )
             }
         }
