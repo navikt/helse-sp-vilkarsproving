@@ -27,8 +27,6 @@ internal class PostNyAutomatiskVilkårsvurderingBehandler(
     override val påkrevdTilgang = Tilgang.Skriv
     override val tag = "vilkarsvurderinger"
 
-    private fun erProdGcp(): Boolean = System.getenv()["NAIS_CLUSTER_NAME"] == "prod-gcp"
-
     override fun behandle(
         resource: ApiNyAutomatiskVilkårsvurderingResource,
         request: ApiNyAutomatiskVilkårsvurderingRequest,
@@ -43,10 +41,6 @@ internal class PostNyAutomatiskVilkårsvurderingBehandler(
             personIkkeFunnet = { ApiNyAutomatiskVilkårsvurderingFeil.PersonIkkeFunnet },
             manglerTilgang = { ApiNyAutomatiskVilkårsvurderingFeil.ManglerTilgang },
         ) { identitetsnummer ->
-            if (erProdGcp()) {
-                throw IllegalStateException("Ny automatisk vilkårsvurdering er ikke påskrudd i prod-gcp")
-            }
-
             val resultat =
                 OpptjeningService(kallKontekst.transaksjon, versjonAvKode).vurderOpptjeningPåNytt(
                     fødselsnummer = identitetsnummer.value,

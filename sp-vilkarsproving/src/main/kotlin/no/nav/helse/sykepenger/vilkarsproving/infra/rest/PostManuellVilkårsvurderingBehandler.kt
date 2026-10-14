@@ -26,8 +26,6 @@ internal class PostManuellVilkårsvurderingBehandler :
     override val påkrevdTilgang = Tilgang.Skriv
     override val tag = "vilkarsvurderinger"
 
-    private fun erProdGcp(): Boolean = System.getenv()["NAIS_CLUSTER_NAME"] == "prod-gcp"
-
     override fun behandle(
         resource: ApiManuellVilkårsvurderingResource,
         request: ApiManuellVilkårsvurderingRequest,
@@ -43,9 +41,6 @@ internal class PostManuellVilkårsvurderingBehandler :
             manglerTilgang = { ApiManuellVilkårsvurderingFeil.ManglerTilgang },
         ) { identitetsnummer ->
             val vilkårskode = request.vilkårskode.fraApi()
-            if (erProdGcp()) {
-                throw IllegalStateException("Manuell vilkårsvurdering er ikke påskrudd i prod-gcp")
-            }
 
             val vilkårsvurdering =
                 Vilkårsvurdering.avSaksbehandler(
