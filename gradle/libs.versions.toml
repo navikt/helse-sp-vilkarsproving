@@ -5,20 +5,20 @@ kotlinx-coroutines = "1.11.0"
 kotlin = "2.4.20"
 kotlinx-serialization-json = "1.11.0"
 ktor = "3.6.0"
-sykepenger-logging = "20261001.1823"
+sykepenger-logging = "20261013.1719"
 mockk = "1.14.11"
 smiley4-ktor-openapi-tools = "5.7.0"
 smiley4-schema-kenerator = "2.7.2"
-tbd-libs = "20261005.1432"
+tbd-libs = "20261013.1613"
 rapidsAndRivers = "2026091610031789545782"
-sykepengerGradlePlugins = "20261001.1830"
+sykepengerGradlePlugins = "20261013.1718"
 testcontainers = "2.0.5"
 
 [libraries]
 flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 hikaricp = "com.zaxxer:HikariCP:7.1.0"
 cloud-sql-postgres-socket-factory = "com.google.cloud.sql:postgres-socket-factory:1.30.0"
-httpclient5-fluent = "org.apache.httpcomponents.client5:httpclient5-fluent:5.6.4"
+httpclient5-fluent = "org.apache.httpcomponents.client5:httpclient5-fluent:5.6.5"
 kotliquery = "com.github.seratch:kotliquery:1.9.1"
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
