@@ -139,6 +139,13 @@ const NIVÅER = [
             'Fortsatt én rad, men skjemaet stiller spørsmålene som loven stiller: hvilken ytelse, om det er 28 dager til sammen, og bare ved foreldrepenger om de er opptjent på AAP og om medlemmet var yrkesaktiv før uttaket. Utfallet utledes av svarene. Under «Sporing» kan du velge om svarene lagres som én vurdering eller som én vurdering per punktum.',
     },
     {
+        id: '2L',
+        navn: 'Nivå 2 lett: Positive vilkår',
+        kort: 'Positive vilkår',
+        beskrivelse:
+            'Lettvektsvariant av nivå 2, bygget på forslaget til kodeverk. Hver vilkårskode er en positiv vei til innvilgelse, og opptjening er oppfylt når minst én vei er oppfylt. Saksbehandleren svarer på opptil tre faktaspørsmål i ett panel og velger aldri koder selv. Vi registrerer ikke hvilken ytelse det var. Vilkår 3 (foreldrepenger med yrkesaktivitet før uttak) vurderes bare når foreldrepenger opptjent på AAP er det som avgjør. Avslagshjemmelen utledes av hvilke vilkår som er vurdert.',
+    },
+    {
         id: '3',
         navn: 'Nivå 3: Én rad per punktum',
         kort: 'Én rad per punktum',
@@ -155,29 +162,29 @@ const NIVÅER = [
 ];
 
 const SPORINGSSPØRSMÅL = [
-    { spørsmål: 'Hvilket alternativ i § 8-2 ga opptjening?', svar: ['ja', 'ja', 'ja', 'ja'] },
-    { spørsmål: 'Hvilken ytelse ga opptjening?', svar: ['fritekst', 'ja', 'delvis', 'ja'] },
+    { spørsmål: 'Hvilket alternativ i § 8-2 ga opptjening?', svar: ['ja', 'ja', 'ja', 'ja', 'ja'] },
+    { spørsmål: 'Hvilken ytelse ga opptjening?', svar: ['fritekst', 'ja', 'fritekst', 'delvis', 'ja'] },
     {
         spørsmål: 'Ble andre punktum (foreldrepenger opptjent på AAP) kontrollert?',
-        svar: ['fritekst', 'ja', 'ja', 'ja'],
+        svar: ['fritekst', 'ja', 'delvis', 'ja', 'ja'],
     },
     {
         spørsmål: 'Ga tredje punktum (4 uker yrkesaktiv før uttak) retten?',
-        svar: ['fritekst', 'ja', 'ja', 'ja'],
+        svar: ['fritekst', 'ja', 'ja', 'ja', 'ja'],
     },
-    { spørsmål: 'Subsumsjon på punktumnivå', svar: ['nei', 'delvis', 'ja', 'ja'] },
-    { spørsmål: 'Hvilke perioder og hvor mange opptjeningsdager?', svar: ['nei', 'nei', 'nei', 'ja'] },
-    { spørsmål: 'Kan utfallet etterprøves maskinelt?', svar: ['nei', 'delvis', 'delvis', 'ja'] },
+    { spørsmål: 'Subsumsjon på punktumnivå', svar: ['nei', 'delvis', 'delvis', 'ja', 'ja'] },
+    { spørsmål: 'Hvilke perioder og hvor mange opptjeningsdager?', svar: ['nei', 'nei', 'nei', 'nei', 'ja'] },
+    { spørsmål: 'Kan utfallet etterprøves maskinelt?', svar: ['nei', 'delvis', 'delvis', 'delvis', 'ja'] },
 ];
 
 const SAMMENLIGNING = {
-    kolonner: ['Nivå 1', 'Nivå 2', 'Nivå 3', 'Nivå 4'],
+    kolonner: ['Nivå 1', 'Nivå 2', 'Nivå 2 lett', 'Nivå 3', 'Nivå 4'],
     rader: [
-        ['Nye vilkårskoder', '1', '1 (eller 3)', '3', '1 + periodegrunnlag'],
-        ['Endring i Speil', 'Ny rad, samme skjema', 'Ny rad, nytt skjema', '3 rader med avhengigheter', 'Ny rad, periodeskjema og tidslinje'],
-        ['Endring i sp-vilkarsproving', 'Ny Vilkårskode', 'Svar på Saksbehandler-kilden', 'Ny avgjørende-logikk på tvers av rader', 'Nytt grunnlag og regelmotor for sammenlegging'],
-        ['Klikk for en vanlig sak', '2–3', '3–4', '3–6', '6+'],
-        ['Risiko for feil utfall', 'Høy', 'Lav', 'Middels', 'Lav'],
-        ['Sporing', 'Fritekst', 'God', 'Svært god', 'Full'],
+        ['Nye vilkårskoder', '1', '1 (eller 3)', '2', '3', '1 + periodegrunnlag'],
+        ['Endring i Speil', 'Ny rad, samme skjema', 'Ny rad, nytt skjema', 'Ny rad, 1–3 faktaspørsmål', '3 rader med avhengigheter', 'Ny rad, periodeskjema og tidslinje'],
+        ['Endring i sp-vilkarsproving', 'Ny Vilkårskode', 'Svar på Saksbehandler-kilden', '2 nye Vilkårskoder, avslagshjemmel utledes', 'Ny avgjørende-logikk på tvers av rader', 'Nytt grunnlag og regelmotor for sammenlegging'],
+        ['Klikk for en vanlig sak', '2–3', '3–4', '2–4', '3–6', '6+'],
+        ['Risiko for feil utfall', 'Høy', 'Lav', 'Lav', 'Middels', 'Lav'],
+        ['Sporing', 'Fritekst', 'God', 'God', 'Svært god', 'Full'],
     ],
 };

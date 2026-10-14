@@ -78,6 +78,18 @@ function nyeVurderinger(nivå, scenario, vurderinger, lagringsmodell) {
         return liste;
     }
 
+    if (nivå === '2L') {
+        const v = vurderinger.LIKESTILT;
+        if (!v) return [];
+        const { svar } = v;
+        const kilde = saksbehandlerkilde(v);
+        const liste = [vurdering('LETT2', svar.arbeidOgYtelser === 'JA' ? 'OPPFYLT' : 'IKKE_OPPFYLT', kilde)];
+        if (svar.fpAapGirFireUker === 'JA') {
+            liste.push(vurdering('LETT3', svar.yrkesaktivFørUttak === 'JA' ? 'OPPFYLT' : 'IKKE_OPPFYLT', kilde));
+        }
+        return liste;
+    }
+
     if (nivå === '3') {
         return nivå3SynligeRader(vurderinger)
             .filter((nøkkel) => vurderinger[nøkkel])
@@ -125,10 +137,12 @@ function sporingsobjekt(nivå, scenario, vurderinger, lagringsmodell) {
     if (resultat.avgjørende === 'HOVEDREGEL') {
         avgjørendeVilkårskode = VILKÅR.HOVEDREGEL.vilkårskode;
     } else if (resultat.utfall === 'OPPFYLT') {
-        avgjørendeVilkårskode =
-            nivå === '2' && lagringsmodell === 'punktum'
-                ? VILKÅR[resultat.likestilt.punktum].vilkårskode
-                : VILKÅR[resultat.avgjørende].vilkårskode;
+        if (nivå === '2L') avgjørendeVilkårskode = VILKÅR[resultat.likestilt.kode].vilkårskode;
+        else
+            avgjørendeVilkårskode =
+                nivå === '2' && lagringsmodell === 'punktum'
+                    ? VILKÅR[resultat.likestilt.punktum].vilkårskode
+                    : VILKÅR[resultat.avgjørende].vilkårskode;
     }
     return {
         skjæringstidspunkt: SKJÆRINGSTIDSPUNKT,

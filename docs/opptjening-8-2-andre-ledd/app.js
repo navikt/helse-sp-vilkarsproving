@@ -28,7 +28,7 @@ function fasitsammenligning(resultat) {
         <h3 class="aksel-heading aksel-heading--xsmall">Resultat mot fasit</h3>
         <dl class="opplysningsliste aksel-body-short aksel-body-short--small">
             <dt>Fasit</dt><dd>${utfallstekst(s.fasit.utfall)} – ${esc(LOVREFERANSER[s.fasit.punktum].tekst)}</dd>
-            <dt>Skissen gir</dt><dd>${utfallstekst(resultat.utfall)}${likestilt ? ` – ${esc(LOVREFERANSER[likestilt.punktum].tekst)}` : ''}</dd>
+            <dt>Skissen gir</dt><dd>${utfallstekst(resultat.utfall)}${likestilt ? ` – ${esc(likestilt.hjemmeltekst ?? LOVREFERANSER[likestilt.punktum].tekst)}` : ''}</dd>
         </dl>
         <div>${merke}</div>
         <div class="vstack gap-4">
@@ -39,12 +39,12 @@ function fasitsammenligning(resultat) {
 }
 
 function etterkantkort() {
-    const indeks = Number(state.nivå) - 1;
+    const indeks = NIVÅER.findIndex((n) => n.id === state.nivå);
     const rader = SPORINGSSPØRSMÅL.map((r) => `<tr><td>${esc(r.spørsmål)}</td><td>${svarmerke(r.svar[indeks])}</td></tr>`).join('');
     return `<div class="kort vstack gap-12">
         <h3 class="aksel-heading aksel-heading--xsmall">Hva kan vi svare på i etterkant?</h3>
         <table class="tabell aksel-body-short aksel-body-short--small">
-            <thead><tr><th scope="col">Spørsmål</th><th scope="col">Nivå ${state.nivå}</th></tr></thead>
+            <thead><tr><th scope="col">Spørsmål</th><th scope="col">${esc(SAMMENLIGNING.kolonner[indeks])}</th></tr></thead>
             <tbody>${rader}</tbody>
         </table>
     </div>`;
@@ -117,7 +117,7 @@ function renderSammenligning() {
     const sporing = SPORINGSSPØRSMÅL.map((r) => `<tr><th scope="row">${esc(r.spørsmål)}</th>${r.svar.map((s) => `<td>${svarmerke(s)}</td>`).join('')}</tr>`);
     document.getElementById('sammenligning').innerHTML = `<div class="kort tabellramme">
         <table class="tabell aksel-body-short aksel-body-short--small">
-            <caption class="visuelt-skjult">Sammenligning av de fire nivåene</caption>
+            <caption class="visuelt-skjult">Sammenligning av nivåene</caption>
             <thead>${hode}</thead>
             <tbody>${[...faste, ...sporing].join('')}</tbody>
         </table>
@@ -170,6 +170,10 @@ function ryddUtkast(nivå, nøkkel, utkast) {
             delete utkast.yrkesaktiv;
         }
         if (utkast.fpAap !== 'JA') delete utkast.yrkesaktiv;
+    }
+    if (nivå === '2L') {
+        if (utkast.arbeidOgYtelser !== 'NEI') delete utkast.fpAapGirFireUker;
+        if (utkast.fpAapGirFireUker !== 'JA') delete utkast.yrkesaktivFørUttak;
     }
     if (nivå === '3' && nøkkel === 'L2P1' && utkast.utfall !== 'OPPFYLT') delete utkast.ytelser;
     if (nivå === '4') {
@@ -262,7 +266,7 @@ function håndterEndring(event) {
     const verdi = event.target.value;
     if (felt === 'scenario') {
         state.scenarioId = verdi;
-        state.vurderinger = { 1: {}, 2: {}, 3: {}, 4: {} };
+        state.vurderinger = { 1: {}, 2: {}, '2L': {}, 3: {}, 4: {} };
         state.aktiv = null;
         state.utkast = {};
         state.feil = {};

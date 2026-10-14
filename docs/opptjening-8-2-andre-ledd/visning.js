@@ -7,7 +7,7 @@ const state = {
     utkast: {},
     feil: {},
     lagringsmodell: 'punktum',
-    vurderinger: { 1: {}, 2: {}, 3: {}, 4: {} },
+    vurderinger: { 1: {}, 2: {}, '2L': {}, 3: {}, 4: {} },
     lesmer: {},
 };
 
@@ -170,6 +170,18 @@ function likestiltDetaljer(nivå, lagret) {
             ['Begrunnelse', svar.begrunnelse],
         ]);
     }
+    if (nivå === '2L') {
+        const utledet = utledLett(svar);
+        return detaljliste([
+            ['Arbeid og/eller ytelser i 4 uker', jaNeiTekst(svar.arbeidOgYtelser)],
+            ['FP opptjent på AAP ville gitt 4 uker', svar.fpAapGirFireUker ? jaNeiTekst(svar.fpAapGirFireUker) : null],
+            ['Yrkesaktiv 4 uker før FP-uttaket', svar.yrkesaktivFørUttak ? jaNeiTekst(svar.yrkesaktivFørUttak) : null],
+            ['Vilkår 2', utfallstekst(svar.arbeidOgYtelser === 'JA' ? 'OPPFYLT' : 'IKKE_OPPFYLT')],
+            ['Vilkår 3', svar.fpAapGirFireUker === 'JA' ? utfallstekst(svar.yrkesaktivFørUttak === 'JA' ? 'OPPFYLT' : 'IKKE_OPPFYLT') : 'Ikke vurdert'],
+            ['Hjemmel', `${utledet.hjemmeltekst} (kombinasjon ${utledet.kombinasjon})`],
+            ['Begrunnelse', svar.begrunnelse],
+        ]);
+    }
     const utledet = utledNivå4(scenario(), svar);
     const perioder = svar.perioder
         .map((p) => `${YTELSER[p.type].navn} ${datoNorsk(p.fom)}–${datoNorsk(p.tom)}${p.type === 'FORELDREPENGER' && p.opptjentPåAap === 'JA' ? ' (opptjent på AAP)' : ''}`)
@@ -192,6 +204,7 @@ function likestiltRader(resultat) {
         if (resultat.avgjørende === 'LIKESTILT') tags.push(tag('Avgjørende vilkår'));
         return vilkårsrad({
             nøkkel: 'LIKESTILT',
+            navn: nivå === '2L' ? 'Arbeid og likestilte ytelser' : undefined,
             utfall: lagret?.utfall,
             tags,
             detaljer: lagret ? likestiltDetaljer(nivå, lagret) : '',
@@ -238,10 +251,52 @@ function utledetBoks(utledet, tomTekst) {
     if (!utledet) return `<div class="utledet aksel-body-short aksel-body-short--small">${esc(tomTekst)}</div>`;
     return `<div class="utledet vstack gap-4" aria-live="polite">
         <p class="aksel-label aksel-label--small">Utfall: ${esc(utfallstekst(utledet.utfall))}</p>
-        <p class="aksel-body-short aksel-body-short--small">Hjemmel: ${esc(LOVREFERANSER[utledet.punktum].tekst)}${
+        <p class="aksel-body-short aksel-body-short--small">Hjemmel: ${esc(utledet.hjemmeltekst ?? LOVREFERANSER[utledet.punktum].tekst)}${
             utledet.dager !== undefined ? ` · ${utledet.dager} opptjeningsdager` : ''
-        }</p>
+        }${utledet.kombinasjon ? ` · kombinasjon ${utledet.kombinasjon}` : ''}</p>
     </div>`;
+}
+
+function lettSkjema() {
+    const u = state.utkast;
+    const spørsmål3 =
+        u.arbeidOgYtelser === 'NEI'
+            ? radiogruppe({
+                  id: 'fpAapGirFireUker',
+                  felt: 'fpAapGirFireUker',
+                  legend: '3. Ville det blitt 4 uker hvis foreldrepenger opptjent på AAP var regnet med?',
+                  beskrivelse: 'Svarer du nei, blir vilkår 3 ikke vurdert, og saken får avslag.',
+                  valg: JA_NEI,
+                  verdi: u.fpAapGirFireUker,
+                  feil: state.feil.fpAapGirFireUker,
+              })
+            : '';
+    const spørsmål4 =
+        u.fpAapGirFireUker === 'JA'
+            ? radiogruppe({
+                  id: 'yrkesaktivFørUttak',
+                  felt: 'yrkesaktivFørUttak',
+                  legend: '4. Var søkeren yrkesaktiv, eller mottok ytelse etter kapittel 8, 9 eller 14, i minst 4 uker før uttaket av foreldrepenger startet?',
+                  beskrivelse: 'Vilkår 3, andre ledd tredje punktum. Dagpenger teller ikke.',
+                  valg: JA_NEI,
+                  verdi: u.yrkesaktivFørUttak,
+                  feil: state.feil.yrkesaktivFørUttak,
+              })
+            : '';
+    const oppfølging = spørsmål3 || spørsmål4 ? `<div class="underspørsmål vstack gap-20">${spørsmål3}${spørsmål4}</div>` : '';
+    return `<p class="aksel-body-short aksel-body-short--small">Spørsmål 1 (vilkår 1) er raden «Arbeid i minst 4 uker».</p>
+    ${radiogruppe({
+        id: 'arbeidOgYtelser',
+        felt: 'arbeidOgYtelser',
+        legend: '2. Har søkeren hatt arbeid og/eller ytelser etter kapittel 4, 8, 9 eller 14 i minst 4 uker umiddelbart før arbeidsuførheten?',
+        beskrivelse: 'Vilkår 2. Foreldrepenger opptjent på AAP skal ikke regnes med her.',
+        valg: JA_NEI,
+        verdi: u.arbeidOgYtelser,
+        feil: state.feil.arbeidOgYtelser,
+    })}
+    ${oppfølging}
+    ${utledetBoks(utledLett(u), 'Svar på spørsmålene for å se utfallet.')}
+    ${begrunnelseOgKnapper()}`;
 }
 
 function enkeltSkjema(nøkkel) {
@@ -384,6 +439,7 @@ function nivå4Skjema() {
 function skjema() {
     const nøkkel = state.aktiv;
     if (nøkkel === 'LIKESTILT' && state.nivå === '2') return nivå2Skjema();
+    if (nøkkel === 'LIKESTILT' && state.nivå === '2L') return lettSkjema();
     if (nøkkel === 'LIKESTILT' && state.nivå === '4') return nivå4Skjema();
     return enkeltSkjema(nøkkel);
 }

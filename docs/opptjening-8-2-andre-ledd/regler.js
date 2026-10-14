@@ -34,6 +34,23 @@ const VILKÅR = {
             'Vurder om søkeren var sammenhengende yrkesaktiv, eller mottok ytelse etter kapittel 8, 9 eller 14, i minst 4 uker umiddelbart før uttaket av foreldrepenger startet',
         lovreferanse: 'L2P3',
     },
+    LETT2: {
+        vilkårskode: 'OPPTJENING_ARBEID_OG_LIKESTILTE_YTELSER_MINST_4_UKER',
+        navn: 'Arbeid og likestilte ytelser i minst 4 uker',
+        lovreferanse: 'L2P1',
+    },
+    LETT3: {
+        vilkårskode: 'OPPTJENING_FORELDREPENGER_MED_YRKESAKTIVITET_FØR_UTTAK',
+        navn: 'Foreldrepenger med yrkesaktivitet før uttak',
+        lovreferanse: 'L2P3',
+    },
+};
+
+const LETT_HJEMLER = {
+    B: '§ 8-2 andre ledd første punktum',
+    C: '§ 8-2 andre ledd tredje punktum',
+    D: '§ 8-2 første ledd og andre ledd første punktum',
+    E: '§ 8-2 andre ledd andre punktum, jf. tredje punktum',
 };
 
 const DAG_MS = 24 * 60 * 60 * 1000;
@@ -106,6 +123,21 @@ function utledNivå2(svar) {
         : { utfall: 'IKKE_OPPFYLT', punktum: 'L2P2', anvendt };
 }
 
+function lettResultat(kombinasjon, utfall, punktum, kode) {
+    return { utfall, punktum, kode, kombinasjon, hjemmeltekst: LETT_HJEMLER[kombinasjon], anvendt: [] };
+}
+
+function utledLett(svar) {
+    if (!svar.arbeidOgYtelser) return null;
+    if (svar.arbeidOgYtelser === 'JA') return lettResultat('B', 'OPPFYLT', 'L2P1', 'LETT2');
+    if (!svar.fpAapGirFireUker) return null;
+    if (svar.fpAapGirFireUker === 'NEI') return lettResultat('D', 'IKKE_OPPFYLT', 'L2P1', null);
+    if (!svar.yrkesaktivFørUttak) return null;
+    return svar.yrkesaktivFørUttak === 'JA'
+        ? lettResultat('C', 'OPPFYLT', 'L2P3', 'LETT3')
+        : lettResultat('E', 'IKKE_OPPFYLT', 'L2P2', null);
+}
+
 function utledNivå4(scenario, svar) {
     const perioder = svar.perioder ?? [];
     if (perioder.length === 0) return null;
@@ -127,6 +159,7 @@ function likestiltResultat(nivå, scenario, vurderinger) {
         return v ? { utfall: v.utfall, punktum: 'L2', anvendt: ['L2'] } : null;
     }
     if (nivå === '2') return vurderinger.LIKESTILT ? utledNivå2(vurderinger.LIKESTILT.svar) : null;
+    if (nivå === '2L') return vurderinger.LIKESTILT ? utledLett(vurderinger.LIKESTILT.svar) : null;
     if (nivå === '4') return vurderinger.LIKESTILT ? utledNivå4(scenario, vurderinger.LIKESTILT.svar) : null;
 
     const a = vurderinger.L2P1;
@@ -184,6 +217,11 @@ function validerSkjema(nivå, nøkkel, svar, scenario) {
             if (svar.fpAap === 'JA' && !svar.yrkesaktiv) feil.yrkesaktiv = 'Svar ja eller nei';
         }
     }
+    if (nivå === '2L' && nøkkel === 'LIKESTILT') {
+        if (!svar.arbeidOgYtelser) feil.arbeidOgYtelser = 'Svar ja eller nei';
+        if (svar.arbeidOgYtelser === 'NEI' && !svar.fpAapGirFireUker) feil.fpAapGirFireUker = 'Svar ja eller nei';
+        if (svar.fpAapGirFireUker === 'JA' && !svar.yrkesaktivFørUttak) feil.yrkesaktivFørUttak = 'Svar ja eller nei';
+    }
     if (nivå === '4' && nøkkel === 'LIKESTILT') {
         const perioder = svar.perioder ?? [];
         if (perioder.length === 0) feil.perioder = 'Legg til minst én periode';
@@ -204,6 +242,7 @@ function validerSkjema(nivå, nøkkel, svar, scenario) {
 
 function utfallForLagring(nivå, nøkkel, svar, scenario) {
     if (nøkkel === 'LIKESTILT' && nivå === '2') return utledNivå2(svar)?.utfall;
+    if (nøkkel === 'LIKESTILT' && nivå === '2L') return utledLett(svar)?.utfall;
     if (nøkkel === 'LIKESTILT' && nivå === '4') return utledNivå4(scenario, svar)?.utfall;
     return svar.utfall;
 }
