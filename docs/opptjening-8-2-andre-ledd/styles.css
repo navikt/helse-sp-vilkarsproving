@@ -1,0 +1,342 @@
+body {
+    background: var(--ax-bg-neutral-soft);
+    color: var(--ax-text-neutral);
+}
+
+.side {
+    max-width: 90rem;
+    margin: 0 auto;
+    padding: var(--ax-space-40) var(--ax-space-24) var(--ax-space-64);
+    display: flex;
+    flex-direction: column;
+    gap: var(--ax-space-48);
+}
+
+.ingress {
+    max-width: 48rem;
+}
+
+.punktliste {
+    max-width: 60rem;
+    margin: 0;
+    padding-left: var(--ax-space-24);
+    display: flex;
+    flex-direction: column;
+    gap: var(--ax-space-8);
+}
+
+code {
+    font-size: 0.9em;
+    background: var(--ax-bg-neutral-moderate);
+    padding: 0 var(--ax-space-4);
+    border-radius: var(--ax-radius-4);
+}
+
+.vstack {
+    display: flex;
+    flex-direction: column;
+}
+
+.hstack {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.nowrap {
+    flex-wrap: nowrap;
+}
+
+.align-start {
+    align-items: flex-start;
+}
+
+.spacer {
+    flex: 1;
+}
+
+.gap-0 { gap: 0; }
+.gap-2 { gap: var(--ax-space-2); }
+.gap-4 { gap: var(--ax-space-4); }
+.gap-8 { gap: var(--ax-space-8); }
+.gap-12 { gap: var(--ax-space-12); }
+.gap-16 { gap: var(--ax-space-16); }
+.gap-20 { gap: var(--ax-space-20); }
+.gap-24 { gap: var(--ax-space-24); }
+.gap-32 { gap: var(--ax-space-32); }
+
+.kort {
+    background: var(--ax-bg-default);
+    border: 1px solid var(--ax-border-neutral-subtle);
+    border-radius: var(--ax-radius-12);
+    padding: var(--ax-space-20) var(--ax-space-24);
+}
+
+.saksopplysninger {
+    display: grid;
+    grid-template-columns: minmax(16rem, 22rem) 1fr;
+    gap: var(--ax-space-24);
+}
+
+@media (max-width: 60rem) {
+    .saksopplysninger {
+        grid-template-columns: 1fr;
+    }
+}
+
+.opplysningsliste {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: var(--ax-space-24);
+    row-gap: var(--ax-space-4);
+}
+
+.opplysningsliste dt {
+    color: var(--ax-text-neutral-subtle);
+}
+
+.opplysningsliste dd {
+    margin: 0;
+}
+
+.nivabeskrivelse {
+    max-width: 60rem;
+    padding-top: var(--ax-space-16);
+}
+
+/* Speil-flaten etterligner Inngangsvilkår.tsx */
+.speil-flate {
+    background: var(--ax-bg-default);
+    border: 1px solid var(--ax-border-neutral-subtle);
+    border-radius: var(--ax-radius-8);
+    padding: var(--ax-space-32) var(--ax-space-24) var(--ax-space-64);
+    overflow-x: auto;
+}
+
+.vilkarskolonne {
+    min-width: 41rem;
+    flex: 0 1 41rem;
+}
+
+.vilkarsgruppe {
+    border-bottom: 1px solid var(--ax-border-neutral-strong);
+    padding-bottom: var(--ax-space-16);
+}
+
+.vilkarsliste {
+    list-style: none;
+    margin: 0 0 0 var(--ax-space-16);
+    padding: 0;
+    border-top: 1px solid var(--ax-border-neutral-subtle);
+}
+
+.vilkarsrad {
+    padding: var(--ax-space-16) var(--ax-space-32) var(--ax-space-16) var(--ax-space-16);
+    margin-right: -3px;
+    position: relative;
+    z-index: 1;
+}
+
+.vilkarsrad:not(:last-child) {
+    border-bottom: 1px solid var(--ax-border-neutral-subtle);
+}
+
+.vilkarsrad--aktiv {
+    background: var(--ax-bg-accent-soft);
+}
+
+.vilkarsrad--under {
+    margin-left: var(--ax-space-32);
+    border-left: 2px solid var(--ax-border-neutral-subtle);
+}
+
+.ikonplass {
+    width: 1.5rem;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--ax-text-neutral);
+}
+
+.ikon-oppfylt {
+    color: var(--ax-text-success-decoration);
+}
+
+.ikon-ikke-vurdert {
+    color: var(--ax-text-warning-decoration);
+}
+
+.detaljer {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto auto;
+    width: fit-content;
+    column-gap: var(--ax-space-24);
+    row-gap: var(--ax-space-4);
+}
+
+.detaljer dt {
+    color: var(--ax-text-neutral-subtle);
+}
+
+.detaljer dd {
+    margin: 0;
+}
+
+.vurderingskant {
+    align-self: stretch;
+    border-right: 3px solid var(--ax-border-accent-strong);
+}
+
+.vurderingspanel {
+    width: 32.5rem;
+    min-width: 32.5rem;
+    align-self: stretch;
+    background: var(--ax-bg-accent-soft);
+    padding: var(--ax-space-32) var(--ax-space-32) var(--ax-space-64);
+}
+
+.vurderingspanel textarea {
+    min-height: 5rem;
+}
+
+.underspørsmål {
+    margin-left: var(--ax-space-24);
+    padding-left: var(--ax-space-16);
+    border-left: 2px solid var(--ax-border-accent);
+}
+
+.utledet {
+    background: var(--ax-bg-default);
+    border: 1px solid var(--ax-border-neutral-subtle);
+    border-radius: var(--ax-radius-8);
+    padding: var(--ax-space-12) var(--ax-space-16);
+}
+
+.periodekort {
+    background: var(--ax-bg-default);
+    border: 1px solid var(--ax-border-neutral-subtle);
+    border-radius: var(--ax-radius-8);
+    padding: var(--ax-space-12) var(--ax-space-16);
+}
+
+.periodefelter {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--ax-space-12);
+}
+
+.periodefelter .hel {
+    grid-column: 1 / -1;
+}
+
+/* Tidslinje i nivå 4 */
+.tidslinje {
+    display: grid;
+    grid-template-columns: repeat(56, 1fr);
+    gap: 1px;
+    height: 1.5rem;
+}
+
+.tidslinje span {
+    border-radius: var(--ax-radius-2);
+}
+
+.dag-arbeid { background: var(--ax-bg-success-moderate); }
+.dag-ytelse { background: var(--ax-bg-accent-moderate); }
+.dag-ikke-tellende { background: var(--ax-bg-danger-moderate); }
+.dag-ingen { background: var(--ax-bg-neutral-moderate); }
+.dag-utenfor { outline: 2px solid var(--ax-border-neutral-strong); outline-offset: -2px; }
+
+.tegnforklaring {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ax-space-12);
+}
+
+.tegnforklaring span::before {
+    content: '';
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    margin-right: var(--ax-space-4);
+    border-radius: var(--ax-radius-2);
+    vertical-align: middle;
+}
+
+.tegnforklaring .dag-arbeid::before { background: var(--ax-bg-success-moderate); }
+.tegnforklaring .dag-ytelse::before { background: var(--ax-bg-accent-moderate); }
+.tegnforklaring .dag-ikke-tellende::before { background: var(--ax-bg-danger-moderate); }
+.tegnforklaring .dag-ingen::before { background: var(--ax-bg-neutral-moderate); }
+.tegnforklaring .dag-arbeid,
+.tegnforklaring .dag-ytelse,
+.tegnforklaring .dag-ikke-tellende,
+.tegnforklaring .dag-ingen {
+    background: none;
+}
+
+/* Sporing under skissen */
+.sporing {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: var(--ax-space-24);
+}
+
+@media (max-width: 70rem) {
+    .sporing {
+        grid-template-columns: 1fr;
+    }
+}
+
+.json {
+    margin: 0;
+    padding: var(--ax-space-16);
+    background: var(--ax-bg-neutral-soft);
+    border-radius: var(--ax-radius-8);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: var(--ax-font-size-small);
+    line-height: 1.45;
+    overflow: auto;
+    max-height: 32rem;
+}
+
+.tabell {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tabell th,
+.tabell td {
+    text-align: left;
+    vertical-align: top;
+    padding: var(--ax-space-8) var(--ax-space-12);
+    border-bottom: 1px solid var(--ax-border-neutral-subtle);
+}
+
+.tabell thead th {
+    border-bottom: 2px solid var(--ax-border-neutral-strong);
+}
+
+.tabell tbody th {
+    font-weight: var(--ax-font-weight-bold);
+}
+
+.tabellramme {
+    overflow-x: auto;
+}
+
+.visuelt-skjult {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}

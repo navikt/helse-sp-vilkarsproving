@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="nb">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Mockup – manuell vurdering av § 8-2 andre ledd (likestilte ytelser)</title>
+        <link rel="preload" href="https://cdn.nav.no/aksel/@navikt/ds-css/8.17.2/index.min.css" as="style" />
+        <link rel="stylesheet" href="https://cdn.nav.no/aksel/@navikt/ds-css/8.17.2/index.min.css" />
+        <link rel="stylesheet" href="styles.css" />
+        <script src="data.js" defer></script>
+        <script src="aksel.js" defer></script>
+        <script src="regler.js" defer></script>
+        <script src="sporing.js" defer></script>
+        <script src="visning.js" defer></script>
+        <script src="app.js" defer></script>
+    </head>
+    <body>
+        <main class="side">
+            <header class="vstack gap-8">
+                <p class="aksel-body-short aksel-body-short--small aksel-typo--color-subtle">
+                    sp-vilkarsproving · skisse · ikke produksjonskode
+                </p>
+                <h1 class="aksel-heading aksel-heading--large">Manuell vurdering av § 8-2 andre ledd</h1>
+                <p class="aksel-body-long ingress">
+                    Opptjening etter likestilte ytelser: dagpenger, sykepenger, ytelser etter kapittel 9 og
+                    foreldre- og svangerskapspenger. Skissen viser fire nivåer av hvor fint vi bryter vilkåret ned,
+                    og hva hvert nivå gir oss av sporing i etterkant.
+                </p>
+                <div id="lovtekst"></div>
+            </header>
+
+            <section class="vstack gap-16" aria-labelledby="tanker-tittel">
+                <h2 id="tanker-tittel" class="aksel-heading aksel-heading--medium">Utgangspunkt</h2>
+                <ul class="aksel-body-long punktliste">
+                    <li>
+                        Andre ledd er et <strong>alternativ</strong> til hovedregelen i første ledd. Den kommer derfor
+                        som en egen rad ved siden av «Arbeid i minst 4 uker» under Opptjeningstid. Opptjeningen er
+                        oppfylt hvis ett av alternativene er oppfylt, og det oppfylte alternativet blir
+                        <em>avgjørende vilkår</em>, slik <code>avgjørendeVilkårsvurdering()</code> virker i dag.
+                    </li>
+                    <li>
+                        Arbeid og likestilt ytelse kan <strong>legges sammen</strong>, for eksempel 2 uker arbeid og 2
+                        uker pleiepenger. Alternativet bør derfor vurdere helheten: arbeid og likestilte perioder
+                        sammenlagt minst 28 dager, ikke bare ytelsen alene.
+                    </li>
+                    <li>
+                        Andre og tredje punktum gjelder bare <strong>foreldrepenger</strong>. Andre punktum er et
+                        unntak fra første punktum (foreldrepenger opptjent på AAP teller ikke), og tredje punktum er et
+                        unntak fra unntaket (de teller likevel hvis medlemmet var yrkesaktiv i 4 uker før uttaket).
+                    </li>
+                    <li>
+                        Tredje punktum nevner bare ytelser etter kapittel 8, 9 og 14. Dagpenger (kapittel 4) gjør
+                        altså ikke at unntaket slår inn. Svangerskapspenger må dessuten være opptjent ved
+                        yrkesaktivitet.
+                    </li>
+                    <li>
+                        <code>Lovreferanse</code> har allerede ledd og punktum. Spørsmålet er derfor hvilket nivå vi
+                        lagrer på: hele andre ledd, eller det punktumet som faktisk bar utfallet.
+                    </li>
+                </ul>
+            </section>
+
+            <section class="vstack gap-16" aria-labelledby="mockup-tittel">
+                <h2 id="mockup-tittel" class="aksel-heading aksel-heading--medium">Prøv nivåene</h2>
+                <p class="aksel-body-long">
+                    Velg en sak og et nivå, klikk «Vurder vilkår» og fyll ut skjemaet. Under skissen ser du hva som
+                    ville blitt lagret, og om resultatet stemmer med fasiten for saken.
+                </p>
+                <div id="scenariovelger"></div>
+                <div id="nivafaner"></div>
+                <div id="mockup"></div>
+            </section>
+
+            <section class="vstack gap-16" aria-labelledby="sammenligning-tittel">
+                <h2 id="sammenligning-tittel" class="aksel-heading aksel-heading--medium">Sammenligning</h2>
+                <div id="sammenligning"></div>
+            </section>
+
+            <section class="vstack gap-16" aria-labelledby="anbefaling-tittel">
+                <h2 id="anbefaling-tittel" class="aksel-heading aksel-heading--medium">Mitt forslag</h2>
+                <div class="aksel-body-long vstack gap-12">
+                    <p>
+                        <strong>Skjema som nivå 2, lagring som nivå 3.</strong> Saksbehandleren svarer på noen få
+                        styrte spørsmål i ett panel på raden «Likestilt ytelse». Backend lagrer én vilkårsvurdering per
+                        punktum som faktisk ble vurdert, hver med sin egen vilkårskode og lovreferanse. Velg nivå 2 og
+                        «Én vurdering per punktum» under «Sporing» for å se hvordan det ser ut.
+                    </p>
+                    <p>
+                        <strong>Ja, vi bør spore de 4 ukene med arbeid før foreldrepengeuttaket.</strong> Når
+                        foreldrepengene er opptjent på AAP, er det tredje punktum som gir retten til sykepenger. Hvis vi
+                        bare lagrer «andre ledd: oppfylt», ser vedtaket ut som en feil bruk av andre punktum. Det går
+                        ikke å etterprøve, og det kan ikke telles i statistikk eller subsumsjoner. Det samme gjelder
+                        motsatt vei: når foreldrepengene <em>ikke</em> er opptjent på AAP, er det verdt å spore at andre
+                        punktum faktisk ble kontrollert.
+                    </p>
+                    <p>
+                        Dette passer med domenet slik det er i dag. Det blir nye <code>Vilkårskode</code>-verdier med
+                        hver sin <code>Lovreferanse</code>, og <code>avgjørendeVilkårsvurdering()</code> utvides til å
+                        velge hovedregelen eller det punktumet i andre ledd som bar utfallet. Skjemaet holder antall
+                        klikk nede, fordi spørsmålene om AAP og arbeid før uttaket bare vises når foreldrepenger er
+                        valgt.
+                    </p>
+                    <p>
+                        Nivå 4 (perioder og tidslinje) er der vi bør ende når vi kan hente ytelser automatisk fra
+                        Infotrygd, fpsak, Arena/dagpenger og k9. Da blir saksbehandlerens rolle å bekrefte eller
+                        korrigere grunnlaget, ikke å registrere det selv.
+                    </p>
+                </div>
+            </section>
+
+            <section class="vstack gap-16" aria-labelledby="sporsmal-tittel">
+                <h2 id="sporsmal-tittel" class="aksel-heading aksel-heading--medium">Åpne spørsmål</h2>
+                <ul class="aksel-body-long punktliste">
+                    <li>
+                        Skal arbeid og ytelse som legges sammen vurderes i raden «Likestilt ytelse», eller trenger vi
+                        et tredje alternativ, «Kombinasjon»? Skissen legger det i «Likestilt ytelse».
+                    </li>
+                    <li>
+                        Hvis foreldrepenger opptjent på AAP bare dekker en del av perioden, og en annen ytelse
+                        (f.eks. sykepenger) dekker resten: skal vi registrere hvilke ytelser som teller, eller holder
+                        det med ett samlet svar?
+                    </li>
+                    <li>
+                        Hvor henter saksbehandleren opplysningen om at foreldrepengene er opptjent på AAP? Fra fpsak?
+                        Bør vi lagre hvor opplysningen kommer fra, f.eks. som journalpost-ID eller saksnummer?
+                    </li>
+                    <li>
+                        Skal andre og tredje punktum vises som rader med status «Ikke aktuelt» når det ikke er
+                        foreldrepenger i saken, eller skjules de helt (slik skissen gjør)?
+                    </li>
+                    <li>
+                        Kravet om at sykepengekravet må være satt fram etter 31.12.2017 er så godt som alltid oppfylt.
+                        Skissen modellerer det ikke.
+                    </li>
+                    <li>
+                        Vurderingen «Ikke oppfylt» kan ikke lagres manuelt i Speil i dag. Skissen tillater det, fordi
+                        andre punktum i praksis bare gir avslag.
+                    </li>
+                </ul>
+            </section>
+        </main>
+    </body>
+</html>
