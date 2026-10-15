@@ -164,8 +164,9 @@ function lukkSkjema() {
 
 function ryddUtkast(nivå, nøkkel, utkast) {
     if (nivå === '2') {
+        if (utkast.sammenlagt !== 'JA') delete utkast.ytelser;
         const harFp = (utkast.ytelser ?? []).includes('FORELDREPENGER');
-        if (utkast.sammenlagt !== 'JA' || !harFp) {
+        if (!harFp) {
             delete utkast.fpAap;
             delete utkast.yrkesaktiv;
         }

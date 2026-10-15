@@ -112,6 +112,7 @@ function utledNivå2(svar) {
     const anvendt = ['L2P1'];
     if (!svar.sammenlagt) return null;
     if (svar.sammenlagt === 'NEI') return { utfall: 'IKKE_OPPFYLT', punktum: 'L2P1', anvendt };
+    if (!(svar.ytelser ?? []).length) return null;
     if (!(svar.ytelser ?? []).includes('FORELDREPENGER')) return { utfall: 'OPPFYLT', punktum: 'L2P1', anvendt };
     anvendt.push('L2P2');
     if (!svar.fpAap) return null;
@@ -210,8 +211,8 @@ function validerSkjema(nivå, nøkkel, svar, scenario) {
         feil.ytelser = 'Velg minst én ytelse';
     }
     if (nivå === '2' && nøkkel === 'LIKESTILT') {
-        if (!(svar.ytelser ?? []).length) feil.ytelser = 'Velg minst én ytelse';
         if (!svar.sammenlagt) feil.sammenlagt = 'Svar ja eller nei';
+        if (svar.sammenlagt === 'JA' && !(svar.ytelser ?? []).length) feil.ytelser = 'Velg minst én ytelse';
         if (svar.sammenlagt === 'JA' && (svar.ytelser ?? []).includes('FORELDREPENGER')) {
             if (!svar.fpAap) feil.fpAap = 'Svar ja eller nei';
             if (svar.fpAap === 'JA' && !svar.yrkesaktiv) feil.yrkesaktiv = 'Svar ja eller nei';

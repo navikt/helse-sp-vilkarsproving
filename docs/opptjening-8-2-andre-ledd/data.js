@@ -136,7 +136,7 @@ const NIVÅER = [
         navn: 'Nivå 2: Én rad, styrte spørsmål',
         kort: 'Styrte spørsmål',
         beskrivelse:
-            'Fortsatt én rad, men skjemaet stiller spørsmålene som loven stiller: hvilken ytelse, om det er 28 dager til sammen, og bare ved foreldrepenger om de er opptjent på AAP og om medlemmet var yrkesaktiv før uttaket. Utfallet utledes av svarene. Under «Sporing» kan du velge om svarene lagres som én vurdering eller som én vurdering per punktum.',
+            'Fortsatt én rad, men skjemaet stiller spørsmålene som loven stiller: om det er 28 dager til sammen, og ved ja hvilke ytelser det gjelder. Bare ved foreldrepenger spør det om de er opptjent på AAP og om medlemmet var yrkesaktiv før uttaket. Utfallet utledes av svarene. Under «Sporing» kan du velge om svarene lagres som én vurdering eller som én vurdering per punktum.',
     },
     {
         id: '2L',

@@ -162,7 +162,7 @@ function likestiltDetaljer(nivå, lagret) {
     if (nivå === '2') {
         const utledet = utledNivå2(svar);
         return detaljliste([
-            ['Ytelse', ytelsesnavn(svar.ytelser)],
+            ['Ytelse', svar.ytelser ? ytelsesnavn(svar.ytelser) : null],
             ['Minst 4 uker sammenlagt', jaNeiTekst(svar.sammenlagt)],
             ['Foreldrepenger opptjent på AAP', svar.fpAap ? jaNeiTekst(svar.fpAap) : null],
             ['Yrkesaktiv 4 uker før uttak', svar.yrkesaktiv ? jaNeiTekst(svar.yrkesaktiv) : null],
@@ -331,20 +331,32 @@ function enkeltSkjema(nøkkel) {
 function nivå2Skjema() {
     const u = state.utkast;
     const harFp = (u.ytelser ?? []).includes('FORELDREPENGER');
-    let fpSpørsmål = '';
-    if (u.sammenlagt === 'JA' && harFp) {
-        fpSpørsmål = `<div class="underspørsmål vstack gap-20">
-            ${radiogruppe({
-                id: 'fpAap',
-                felt: 'fpAap',
-                legend: 'Er foreldrepengene opptjent på grunnlag av arbeidsavklaringspenger?',
-                beskrivelse: 'Andre punktum. Se opptjeningen i fpsak.',
-                valg: JA_NEI,
-                verdi: u.fpAap,
-                feil: state.feil.fpAap,
+    let underspørsmål = '';
+    if (u.sammenlagt === 'JA') {
+        underspørsmål = `<div class="underspørsmål vstack gap-20">
+            ${avkrysningsgruppe({
+                id: 'ytelser',
+                felt: 'ytelser',
+                legend: 'Hvilke likestilte ytelser har søkeren mottatt?',
+                valg: ytelsesvalg(),
+                verdier: u.ytelser ?? [],
+                feil: state.feil.ytelser,
             })}
             ${
-                u.fpAap === 'JA'
+                harFp
+                    ? radiogruppe({
+                          id: 'fpAap',
+                          felt: 'fpAap',
+                          legend: 'Er foreldrepengene opptjent på grunnlag av arbeidsavklaringspenger?',
+                          beskrivelse: 'Andre punktum. Se opptjeningen i fpsak.',
+                          valg: JA_NEI,
+                          verdi: u.fpAap,
+                          feil: state.feil.fpAap,
+                      })
+                    : ''
+            }
+            ${
+                harFp && u.fpAap === 'JA'
                     ? radiogruppe({
                           id: 'yrkesaktiv',
                           felt: 'yrkesaktiv',
@@ -358,15 +370,7 @@ function nivå2Skjema() {
             }
         </div>`;
     }
-    return `${avkrysningsgruppe({
-        id: 'ytelser',
-        felt: 'ytelser',
-        legend: 'Hvilke likestilte ytelser har søkeren mottatt?',
-        valg: ytelsesvalg(),
-        verdier: u.ytelser ?? [],
-        feil: state.feil.ytelser,
-    })}
-    ${radiogruppe({
+    return `${radiogruppe({
         id: 'sammenlagt',
         felt: 'sammenlagt',
         legend: 'Har søkeren hatt arbeid og/eller likestilt ytelse i minst 4 uker umiddelbart før arbeidsuførheten?',
@@ -375,7 +379,7 @@ function nivå2Skjema() {
         verdi: u.sammenlagt,
         feil: state.feil.sammenlagt,
     })}
-    ${fpSpørsmål}
+    ${underspørsmål}
     ${utledetBoks(utledNivå2(u), 'Svar på spørsmålene for å se utfallet.')}
     ${begrunnelseOgKnapper()}`;
 }
