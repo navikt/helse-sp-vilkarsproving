@@ -47,7 +47,7 @@ tbd-libs-naisful-postgres = {module = "com.github.navikt.tbd-libs:naisful-postgr
 tbd-libs-person-pseudo-id = {module = "com.github.navikt.tbd-libs:person-pseudo-id", version.ref = "tbd-libs"}
 tbd-libs-populasjonstilgangskontroll-provider-api = {module = "com.github.navikt.tbd-libs:populasjonstilgangskontroll-provider-api", version.ref = "tbd-libs"}
 tbd-libs-populasjonstilgangskontroll-provider-tilgangsmaskinen = {module = "com.github.navikt.tbd-libs:populasjonstilgangskontroll-provider-tilgangsmaskinen", version.ref = "tbd-libs"}
-postgresql = "org.postgresql:postgresql:42.7.13"
+postgresql = "org.postgresql:postgresql:42.7.14"
 rapids-and-rivers = {module = "com.github.navikt:rapids-and-rivers", version.ref = "rapidsAndRivers"}
 rapids-and-rivers-test = {module = "com.github.navikt.rapids-and-rivers:rapids-and-rivers-test", version.ref = "rapidsAndRivers"}
 testcontainers-postgres = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
