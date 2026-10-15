@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import tools.jackson.databind.introspect.DefaultAccessorNamingStrategy
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Instant
 import java.time.LocalDate
 import java.util.*
@@ -77,6 +80,37 @@ class ApiDiskriminatorTest {
                 opptjeningsdager = 0,
             ),
             ApiVurderingsgrunnlag.SelvstendigNæringsdrivende(),
+        )
+    }
+
+    @Test
+    fun `ApiVisningsfelt - navn i JsonSubTypes stemmer med faktisk type`() {
+        verifiserDiskriminator(
+            ApiVisningsfelt::class.java,
+            ApiVisningsfelt.Tekst(tittel = "Vilkår", tekst = "Oppfylt"),
+            ApiVisningsfelt.Liste(tittel = "Journalposter", elementer = listOf("1", "2")),
+        )
+    }
+
+    @Test
+    fun `ApiSaksbehandlerhandlingVisningResponse serialiseres med typefelt`() {
+        val response =
+            ApiSaksbehandlerhandlingVisningResponse(
+                felter =
+                    listOf(
+                        ApiVisningsfelt.Tekst(tittel = "Vilkår", tekst = "Oppfylt"),
+                        ApiVisningsfelt.Liste(tittel = "Journalposter", elementer = listOf("1", "2")),
+                    ),
+            )
+        val jsonMapper =
+            jacksonObjectMapper()
+                .rebuild<JsonMapper, JsonMapper.Builder>()
+                .accessorNaming(DefaultAccessorNamingStrategy.Provider().withFirstCharAcceptance(true, true))
+                .build()
+
+        assertEquals(
+            """{"felter":[{"type":"TEKST","tittel":"Vilkår","tekst":"Oppfylt"},{"type":"LISTE","tittel":"Journalposter","elementer":["1","2"]}]}""",
+            jsonMapper.writeValueAsString(response),
         )
     }
 

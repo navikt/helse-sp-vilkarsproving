@@ -62,6 +62,7 @@ class VilkårsvurderingerForPersonOpenApiTest {
             )
         routing {
             get(GetVilkårsvurderingerForPersonBehandler(spleisService), restAdapter)
+            get(GetSaksbehandlerhandlingVisningBehandler(), restAdapter)
         }
     }
 
@@ -79,6 +80,9 @@ class VilkårsvurderingerForPersonOpenApiTest {
             assertTrue(spec.contains("/api/personer/{personId}/vilkarsvurderinger")) { "Forventet at ruten var dokumentert: $spec" }
             assertTrue(spec.contains("opptjeningsvurderingId")) { "Forventet query-parameteret opptjeningsvurderingId i spec-en: $spec" }
             assertTrue(spec.contains("\"format\" : \"uuid\"")) { "Forventet at UUID-parametrene var typet med format uuid: $spec" }
+            assertTrue(spec.contains("/api/personer/{personId}/saksbehandlerhandlinger/{handlingId}/visning")) {
+                "Forventet at visningsruta var dokumentert: $spec"
+            }
         }
 
     /**
@@ -107,6 +111,8 @@ class VilkårsvurderingerForPersonOpenApiTest {
                 "ApiVurderingskilde.Saksbehandler" to "kildetype",
                 "ApiVurderingsgrunnlag.Arbeidsforhold" to "grunnlagstype",
                 "ApiVurderingsgrunnlag.SelvstendigNæringsdrivende" to "grunnlagstype",
+                "ApiVisningsfelt.Tekst" to "type",
+                "ApiVisningsfelt.Liste" to "type",
             ).forEach { (skjema, diskriminator) ->
                 assertTrue(schemas[skjema]?.get("properties")?.has(diskriminator) == true) {
                     "Forventet diskriminatoren $diskriminator i skjemaet $skjema: ${schemas[skjema]}"

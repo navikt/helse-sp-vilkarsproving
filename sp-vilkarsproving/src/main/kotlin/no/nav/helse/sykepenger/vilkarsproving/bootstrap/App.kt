@@ -18,6 +18,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRi
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OutboxPubliseringsjobb
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.PersonAvstemmingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetOpptjeningshistorikkBehandler
+import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetSaksbehandlerhandlingVisningBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostNyAutomatiskVilkårsvurderingBehandler
@@ -181,6 +182,8 @@ internal fun endepunkter(
     {
         get(GetVilkårsvurderingerForPersonBehandler(PersonAvstemmingService(transaksjonProvider, spleisClient)))
         get(GetOpptjeningshistorikkBehandler(PersonAvstemmingService(transaksjonProvider, spleisClient)))
+        get(GetSaksbehandlerhandlingVisningBehandler())
+
         post(PostManuellVilkårsvurderingBehandler())
         post(PostNyAutomatiskVilkårsvurderingBehandler(publiser, versjonAvKode))
     }
