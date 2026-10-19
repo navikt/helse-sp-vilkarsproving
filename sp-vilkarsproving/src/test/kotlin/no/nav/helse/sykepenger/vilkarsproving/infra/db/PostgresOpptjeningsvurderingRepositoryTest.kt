@@ -5,6 +5,7 @@ import no.nav.helse.januar
 import no.nav.helse.mars
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kategori
+import no.nav.helse.sykepenger.vilkarsproving.domain.LikestiltYtelse
 import no.nav.helse.sykepenger.vilkarsproving.domain.Lovreferanse
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
@@ -110,6 +111,43 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         assertNull(lagret.avgjørendeVilkårskode)
         assertNull(lagret.avgjørendeVilkårsvurdering)
         assertFalse(lagret.erOk)
+    }
+
+    @Test
+    fun `vurderinger etter andre ledd lagres og hentes tilbake med ytelsene`() {
+        val kilde =
+            Vurderingskilde.Saksbehandler(
+                ident = "A123456",
+                fritekstbegrunnelse = "Foreldrepenger opptjent på AAP, men yrkesaktiv før uttak",
+                journalpostId = emptyList(),
+                ytelser = listOf(LikestiltYtelse.FORELDREPENGER),
+            )
+        val vilkårsvurderinger =
+            listOf(
+                Vilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER to Utfall.Oppfylt,
+                Vilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP to Utfall.IkkeOppfylt,
+                Vilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER to Utfall.Oppfylt,
+            ).map { (vilkårskode, utfall) ->
+                Vilkårsvurdering
+                    .avSaksbehandler(vilkårskode, utfall, kilde.ident, kilde.fritekstbegrunnelse)
+                    .copy(kilde = kilde)
+            }
+        val vurdering =
+            Opptjeningsvurdering.VurdertISpVilkårsprøving.med(
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                kategori = Kategori.Arbeidstaker,
+                vilkårsvurderinger = vilkårsvurderinger,
+            )
+        transaksjon { it.opptjeningsvurderinger.lagre(vurdering) }
+
+        val lagret = transaksjon { it.opptjeningsvurderinger.finn(vurdering.id) } as Opptjeningsvurdering.VurdertISpVilkårsprøving
+
+        assertEquals(
+            vilkårsvurderinger.map { it.vilkårskode to it.lovreferanse }.toSet(),
+            lagret.vilkårsvurderinger.map { it.vilkårskode to it.lovreferanse }.toSet(),
+        )
+        lagret.vilkårsvurderinger.forEach { assertEquals(kilde, it.kilde) }
     }
 
     @Test

@@ -136,6 +136,33 @@ internal sealed interface Opptjeningsvurdering {
             return forrigeVurdering.prøvPåNyttMed(vilkårsvurdering)
         }
 
+        /**
+         * Alle tidligere vurderinger etter andre ledd ([Vilkårskode.andreAvsnitt]) i [forrigeVurdering] erstattes,
+         * ikke bare de med samme vilkårskode, ellers blir f.eks. en gammel vurdering av tredje punktum liggende igjen.
+         */
+        fun avSaksbehandlerEtterAndreAvsnitt(
+            fødselsnummer: String,
+            skjæringstidspunkt: LocalDate,
+            vilkårsvurderinger: List<Vilkårsvurdering>,
+            forrigeVurdering: Opptjeningsvurdering? = null,
+        ): VurdertISpVilkårsprøving {
+            require(vilkårsvurderinger.isNotEmpty()) { "Mangler vilkårsvurderinger etter § 8-2 andre ledd" }
+            require(vilkårsvurderinger.all { it.vilkårskode in Vilkårskode.andreAvsnitt }) {
+                "Bare vilkårsvurderinger etter § 8-2 andre ledd kan legges til her"
+            }
+            val beholdte =
+                when (forrigeVurdering) {
+                    is MedVilkårsvurderinger -> forrigeVurdering.vilkårsvurderinger.filterNot { it.vilkårskode in Vilkårskode.andreAvsnitt }
+                    is OverførtFraInfotrygd, null -> emptyList()
+                }
+            return VurdertISpVilkårsprøving.med(
+                fødselsnummer = fødselsnummer,
+                skjæringstidspunkt = skjæringstidspunkt,
+                kategori = forrigeVurdering?.kategori ?: Kategori.Arbeidstaker,
+                vilkårsvurderinger = beholdte + vilkårsvurderinger,
+            )
+        }
+
         fun fraInfotrygd(
             id: OpptjeningsvurderingId = OpptjeningsvurderingId.ny(),
             fødselsnummer: String,

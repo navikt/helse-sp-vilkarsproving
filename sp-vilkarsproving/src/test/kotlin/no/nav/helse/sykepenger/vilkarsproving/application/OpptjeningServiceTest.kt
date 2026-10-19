@@ -316,6 +316,37 @@ internal class OpptjeningServiceTest {
     }
 
     @Test
+    fun `ny automatisk vurdering forkaster manuelle vurderinger etter andre ledd`() {
+        val automatisk = vurderinger.finn(fullførtPrøving(1.februar)) as Opptjeningsvurdering.VurdertISpVilkårsprøving
+        val andreLedd =
+            Vilkårsvurdering
+                .avSaksbehandler(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER, Utfall.Oppfylt, SAKSBEHANDLER, "sykepenger rett før")
+                .copy(vurdertTidspunkt = Instant.now().plusSeconds(1))
+        val manuell =
+            Opptjeningsvurdering.VurdertISpVilkårsprøving.med(
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                kategori = Kategori.Arbeidstaker,
+                vilkårsvurderinger = automatisk.vilkårsvurderinger + andreLedd,
+            )
+        vurderinger.lagre(manuell)
+        assertEquals(manuell.id, vurderinger.gjeldende(FØDSELSNUMMER, 1.februar)!!.id)
+
+        val venter = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar, SAKSBEHANDLER) as OpptjeningService.VurderOpptjeningPåNyttResultat.VenterPåGrunnlag
+        service.behandleGrunnlagForNyArbeidstakerOpptjeningsvurdering(
+            arbeidsforhold = listOf(arbeidsforhold(5.januar til 31.januar)),
+            fødselsnummer = FØDSELSNUMMER,
+            skjæringstidspunkt = 1.februar,
+            opptjeningsprøvingId = venter.opptjeningsprøvingId,
+            saksbehandlerIdent = SAKSBEHANDLER,
+        )
+
+        val ny = vurderinger.gjeldende(FØDSELSNUMMER, 1.februar) as Opptjeningsvurdering.VurdertISpVilkårsprøving
+        assertNotEquals(manuell.id, ny.id)
+        assertEquals(listOf(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER), ny.vilkårsvurderinger.map { it.vilkårskode })
+    }
+
+    @Test
     fun `grunnlag til ny vurdering for en annen prøving enn den siste ignoreres`() {
         fullførtPrøving(1.februar)
         service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar, SAKSBEHANDLER)

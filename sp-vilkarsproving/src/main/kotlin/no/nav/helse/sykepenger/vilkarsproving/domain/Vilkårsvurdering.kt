@@ -16,10 +16,20 @@ internal data class Vilkårsvurdering(
     companion object {
         fun List<Vilkårsvurdering>.finn(vilkårskode: Vilkårskode): Vilkårsvurdering? = this.find { it.vilkårskode == vilkårskode }
 
+        // Scenario A–E: se docs/opptjening-8-2-kodeverk.md
         fun List<Vilkårsvurdering>.avgjørendeVilkårsvurdering(): Vilkårsvurdering? {
-            val hovedregel = this.finn(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER) ?: return null
-            if (hovedregel.erOppfylt()) return hovedregel
-            return null
+            val hovedregel = this.finn(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER)
+            if (hovedregel?.erOppfylt() == true) return hovedregel
+
+            val førstePunktum = this.finn(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER)
+            if (førstePunktum?.erOppfylt() != true) return null
+
+            // Andre punktum begrenser første punktum: foreldrepenger opptjent på AAP gir ikke rett alene
+            val andrePunktum = this.finn(Vilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP)
+            if (andrePunktum == null || andrePunktum.erOppfylt()) return førstePunktum
+
+            // Tredje punktum er unntaket fra andre punktum
+            return this.finn(Vilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER)?.takeIf { it.erOppfylt() }
         }
 
         internal fun automatisk(

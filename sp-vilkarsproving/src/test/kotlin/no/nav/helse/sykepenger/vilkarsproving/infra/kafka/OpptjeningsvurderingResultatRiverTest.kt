@@ -181,8 +181,9 @@ internal class OpptjeningsvurderingResultatRiverTest {
     private companion object {
         const val FØDSELSNUMMER = "12029240045"
 
+        // Andre ledd avgjøres av kombinasjonen av punktum, se scenarioene i VilkårsvurderingTest
         @JvmStatic
-        fun opptjeningsVilkårskoder(): Stream<Vilkårskode> = Vilkårskode.entries.stream()
+        fun opptjeningsVilkårskoder(): Stream<Vilkårskode> = Vilkårskode.entries.filterNot { it in Vilkårskode.andreAvsnitt }.stream()
 
         @Language("JSON")
         fun opptjeningsvurderingResultatBehov(opptjeningsvurderingId: UUID) =

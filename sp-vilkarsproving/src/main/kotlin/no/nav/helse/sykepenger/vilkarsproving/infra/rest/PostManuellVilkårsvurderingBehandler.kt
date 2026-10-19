@@ -40,7 +40,9 @@ internal class PostManuellVilkårsvurderingBehandler :
             personIkkeFunnet = { ApiManuellVilkårsvurderingFeil.PersonIkkeFunnet },
             manglerTilgang = { ApiManuellVilkårsvurderingFeil.ManglerTilgang },
         ) { identitetsnummer ->
-            val vilkårskode = request.vilkårskode.fraApi()
+            val vilkårskode =
+                request.vilkårskode.fraApi()
+                    ?: return@medPerson RestResponse.feil(ApiManuellVilkårsvurderingFeil.VilkårskodeStøttesIkke)
 
             val vilkårsvurdering =
                 Vilkårsvurdering.avSaksbehandler(
@@ -96,9 +98,14 @@ internal class PostManuellVilkårsvurderingBehandler :
     }
 }
 
-private fun ApiVilkårskode.fraApi(): Vilkårskode =
+// Vilkårene i § 8-2 andre ledd vurderes samlet gjennom PostManuellLikestiltYtelseVurderingBehandler
+private fun ApiVilkårskode.fraApi(): Vilkårskode? =
     when (this) {
         ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER -> Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER
+        ApiVilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER,
+        ApiVilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP,
+        ApiVilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER,
+        -> null
     }
 
 private fun ApiUtfall.fraApi(): Utfall =

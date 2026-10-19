@@ -2,6 +2,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
+import no.nav.helse.sykepenger.vilkarsproving.domain.LikestiltYtelse
 import no.nav.helse.sykepenger.vilkarsproving.domain.Lovreferanse
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
@@ -111,6 +112,36 @@ internal class LagringsjsonTest {
     }
 
     @Test
+    fun `saksbehandlerkilde med likestilte ytelser lagres på avtalt format`() {
+        val kilde =
+            Vurderingskilde.Saksbehandler(
+                ident = "A123456",
+                fritekstbegrunnelse = "dagpenger rett før",
+                journalpostId = emptyList(),
+                ytelser = listOf(LikestiltYtelse.DAGPENGER, LikestiltYtelse.FORELDREPENGER),
+            )
+
+        assertEquals(
+            """{"type":"SAKSBEHANDLER","ident":"A123456","fritekstbegrunnelse":"dagpenger rett før",""" +
+                """"journalpostId":[],"ytelser":["DAGPENGER","FORELDREPENGER"]}""",
+            Vurderingskildejson.tilJson(kilde),
+        )
+        assertEquals(kilde, mapFremOgTilbake(kilde))
+    }
+
+    @Test
+    fun `alle likestilte ytelser tåler en rundtur`() {
+        val kilde =
+            Vurderingskilde.Saksbehandler(
+                ident = "A123456",
+                fritekstbegrunnelse = "",
+                journalpostId = emptyList(),
+                ytelser = LikestiltYtelse.entries,
+            )
+        assertEquals(kilde, mapFremOgTilbake(kilde))
+    }
+
+    @Test
     fun `saksbehandlerkilde uten journalpostId i lagret json faller tilbake til tomt array`() {
         val kilde =
             Vurderingskildejson.fraJson(
@@ -156,8 +187,8 @@ internal class LagringsjsonTest {
         val json = """{"type":"SAKSBEHANDLER","ident":"A123456","fritekstbegrunnelse":"","vurdertAv":"noe vi ikke kjenner"}"""
 
         assertEquals(
-            Vurderingskilde.Saksbehandler(ident = "A123456", fritekstbegrunnelse = "", journalpostId = emptyList()),
             Vurderingskildejson.fraJson(json),
+            Vurderingskilde.Saksbehandler(ident = "A123456", fritekstbegrunnelse = "", journalpostId = emptyList()),
         )
     }
 

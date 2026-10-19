@@ -4,19 +4,13 @@ import com.github.navikt.tbd_libs.personpseudoid.Identitetsnummer
 import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
 import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
-import io.ktor.client.request.get
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.contentType
-import io.ktor.server.application.Application
-import io.ktor.server.application.ApplicationCallPipeline
-import io.ktor.server.application.call
-import io.ktor.server.auth.authentication
-import io.ktor.server.routing.routing
-import io.ktor.server.testing.testApplication
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.routing.*
+import io.ktor.server.testing.*
 import no.nav.helse.sykepenger.vilkarsproving.application.PersonAvstemmingService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.infra.db.Database
@@ -26,16 +20,11 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRe
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OutboxPubliseringsjobb
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
+import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellLikestiltYtelseVurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.leaderelection.LeaderElection
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.NavIdent
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerOid
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerPrincipal
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
+import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.*
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureResources
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestAdapter
@@ -43,13 +32,10 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.get
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.post
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures.InMemoryPersonPseudoIdProvider
 import org.intellij.lang.annotations.Language
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import tools.jackson.module.kotlin.jacksonObjectMapper
-import java.util.UUID
+import java.util.*
 
 internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
     /** Sett til `true` for å dumpe innholdet i databasetabellene mellom hvert steg, se [dump]. */
@@ -57,7 +43,13 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
 
     private fun dump(steg: String) {
         if (!dump) return
-        Database.dump("opptjeningsproving", "opptjeningsvurdering", "vilkarsvurdering", "opptjeningsvurdering_vilkarsvurdering", overskrift = steg)
+        Database.dump(
+            "opptjeningsproving",
+            "opptjeningsvurdering",
+            "vilkarsvurdering",
+            "opptjeningsvurdering_vilkarsvurdering",
+            overskrift = steg
+        )
     }
 
     private val transaksjon = Database.transaksjonProvider
@@ -69,12 +61,13 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                 this,
                 transaksjon,
                 object : ISpleisClient {
-                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> = emptyList()
+                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> =
+                        emptyList()
                 },
             )
         }
 
-    private val outboxJobb = OutboxPubliseringsjobb(rapid, transaksjon, LeaderElection { true })
+    private val outboxJobb = OutboxPubliseringsjobb(rapid, transaksjon, { true })
 
     private val saksbehandler = Saksbehandler(NavIdent("Z999999"), SaksbehandlerOid("oid"), "Test Testesen")
     private val identitetsnummer = Identitetsnummer(FØDSELSNUMMER)
@@ -122,13 +115,15 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                     PersonAvstemmingService(
                         transaksjon,
                         object : ISpleisClient {
-                            override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> = emptyList()
+                            override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> =
+                                emptyList()
                         },
                     ),
                 ),
                 restAdapter,
             )
             post(PostManuellVilkårsvurderingBehandler(), restAdapter)
+            post(PostManuellLikestiltYtelseVurderingBehandler(), restAdapter)
         }
     }
 
@@ -164,7 +159,8 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                     .asString()
 
             // Steg 2: REST-API-et er enig med automatikken — ikke rett til sykepenger
-            val getRespons = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$automatiskId")
+            val getRespons =
+                client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$automatiskId")
             assertEquals(HttpStatusCode.OK, getRespons.status)
             val getResponsBody = getRespons.bodyAsText()
             val getJson = objectMapper.readTree(getResponsBody)
@@ -202,14 +198,18 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                 }
             assertEquals(HttpStatusCode.OK, postRespons.status)
             val nyId = objectMapper.readTree(postRespons.bodyAsText())["opptjeningsvurderingId"].asString()
-            assertNotEquals(automatiskId, nyId) { "Den manuelle vurderingen skal lage en ny opptjeningsvurdering, ikke skrive over den gamle" }
+            assertNotEquals(
+                automatiskId,
+                nyId
+            ) { "Den manuelle vurderingen skal lage en ny opptjeningsvurdering, ikke skrive over den gamle" }
 
             outboxJobb.kjørEnRundeHvisLeader()
 
             dump("etter 4")
 
             // Den nye vurderingen skal vise helheten: den automatiske 4-ukers-vurderingen er med, den manuelle vurderingen er avgjørende
-            val getEtterManuellVurdering = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$nyId")
+            val getEtterManuellVurdering =
+                client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$nyId")
             assertEquals(HttpStatusCode.OK, getEtterManuellVurdering.status)
             val nyOpptjeningsvurdering = objectMapper.readTree(getEtterManuellVurdering.bodyAsText())["krav"].single()
             assertTrue(nyOpptjeningsvurdering["opptjeningOk"].asBoolean())
@@ -289,6 +289,76 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                         .path("@event_name")
                         .asString()
                 },
+            )
+        }
+
+    @Test
+    fun `foreldrepenger opptjent på AAP med yrkesaktivitet før uttak gir rett etter tredje punktum`() =
+        testApplication {
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+            application { settOppTestapp(pseudoIdProvider) }
+
+            // Automatisk vurdering med for kort opptjening (27 dager, krever 28)
+            val behovId = UUID.randomUUID()
+            rapid.sendTestMessage(opptjeningsvurderingBehov(behovId, "Arbeidstaker"), FØDSELSNUMMER)
+            rapid.sendTestMessage(
+                arbeidsforholdløsning(behovId, arbeidsforhold(ansattSiden = "2018-01-05", ansattTil = "2018-01-31")),
+                FØDSELSNUMMER,
+            )
+
+            @Language("JSON")
+            val request = """
+            {
+              "skjæringstidspunkt": "2018-02-01",
+              "sammenlagtMinst4Uker": true,
+              "ytelser": ["FORELDREPENGER"],
+              "foreldrepengerOpptjentPåAap": true,
+              "yrkesaktivMinst4UkerFørUttak": true,
+              "fritekstbegrunnelse": "Foreldrepenger opptjent på AAP, men yrkesaktiv i 4 uker før uttaket",
+              "journalpostId": []
+            }
+            """
+            val postRespons =
+                client.post("/api/personer/$pseudoId/vilkarsvurderinger/manuell/likestilte-ytelser") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+            assertEquals(HttpStatusCode.OK, postRespons.status)
+            val nyId = objectMapper.readTree(postRespons.bodyAsText())["opptjeningsvurderingId"].asString()
+
+            val krav =
+                objectMapper
+                    .readTree(
+                        client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$nyId")
+                            .bodyAsText()
+                    )["krav"]
+                    .single()
+            assertTrue(krav["opptjeningOk"].asBoolean())
+            assertEquals(
+                "OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER",
+                krav["avgjørendeVilkårskode"].asString()
+            )
+            assertEquals(
+                mapOf(
+                    "OPPTJENING_ARBEID_MINST_4_UKER" to "IKKE_OPPFYLT",
+                    "OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER" to "OPPFYLT",
+                    "OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP" to "IKKE_OPPFYLT",
+                    "OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER" to "OPPFYLT",
+                ),
+                krav["vurderinger"].toList().associate { it["vilkårskode"].asString() to it["utfall"].asString() },
+            )
+
+            outboxJobb.kjørEnRundeHvisLeader()
+            val antallFør = rapid.inspektør.size
+            rapid.sendTestMessage(opptjeningsvurderingResultatBehov(UUID.fromString(nyId)), FØDSELSNUMMER)
+            assertTrue(
+                rapid.inspektør
+                    .message(antallFør)
+                    .path("@løsning")
+                    .path("OpptjeningsvurderingResultat")
+                    .path("ok")
+                    .asBoolean(),
             )
         }
 

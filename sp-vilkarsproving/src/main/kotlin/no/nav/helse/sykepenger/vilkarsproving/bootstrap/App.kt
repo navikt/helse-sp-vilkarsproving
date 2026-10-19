@@ -20,6 +20,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.PersonAvstemmingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetOpptjeningshistorikkBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetSaksbehandlerhandlingVisningBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
+import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellLikestiltYtelseVurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostNyAutomatiskVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
@@ -185,5 +186,6 @@ internal fun endepunkter(
         get(GetSaksbehandlerhandlingVisningBehandler())
 
         post(PostManuellVilkårsvurderingBehandler())
+        post(PostManuellLikestiltYtelseVurderingBehandler())
         post(PostNyAutomatiskVilkårsvurderingBehandler(publiser, versjonAvKode))
     }

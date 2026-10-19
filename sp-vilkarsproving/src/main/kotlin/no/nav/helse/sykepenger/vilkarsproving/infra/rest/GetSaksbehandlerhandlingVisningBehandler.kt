@@ -2,6 +2,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoId
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
+import no.nav.helse.sykepenger.vilkarsproving.domain.LikestiltYtelse
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
@@ -49,29 +50,48 @@ internal class GetSaksbehandlerhandlingVisningBehandler :
                     ?.takeIf { it.fødselsnummer == identitetsnummer.value }
                     ?: return@medPerson ikkeFunnet
 
-            val manuellVurdering = vurdering.nyesteManuelleVilkårsvurdering() ?: return@medPerson ikkeFunnet
+            val manuellHandling = vurdering.nyesteManuelleHandling() ?: return@medPerson ikkeFunnet
 
-            RestResponse.ok(ApiSaksbehandlerhandlingVisningResponse(felter = manuellVurdering.tilVisningsfelter()))
+            RestResponse.ok(ApiSaksbehandlerhandlingVisningResponse(felter = manuellHandling.tilVisningsfelter()))
         }
     }
 }
 
 // Tidligere manuelle vurderinger følger med inn i en ny opptjeningsvurdering, så den nyeste er den denne handlingen laget.
-private fun Opptjeningsvurdering.nyesteManuelleVilkårsvurdering(): ManuellVilkårsvurdering? =
-    (this as? Opptjeningsvurdering.MedVilkårsvurderinger)
-        ?.vilkårsvurderinger
-        ?.mapNotNull { vurdering -> (vurdering.kilde as? Vurderingskilde.Saksbehandler)?.let { ManuellVilkårsvurdering(vurdering, it) } }
-        ?.maxByOrNull { it.vilkårsvurdering.vurdertTidspunkt }
+// Vurderinger etter § 8-2 andre ledd lages sammen i én handling, med samme tidspunkt og samme kilde.
+private fun Opptjeningsvurdering.nyesteManuelleHandling(): ManuellHandling? {
+    val manuelle =
+        (this as? Opptjeningsvurdering.MedVilkårsvurderinger)
+            ?.vilkårsvurderinger
+            ?.mapNotNull { vurdering -> (vurdering.kilde as? Vurderingskilde.Saksbehandler)?.let { vurdering to it } }
+            ?: return null
+    val (nyeste, kilde) = manuelle.maxByOrNull { (vurdering, _) -> vurdering.vurdertTidspunkt } ?: return null
+    val vurderinger =
+        manuelle
+            .filter { (vurdering, k) -> vurdering.vurdertTidspunkt == nyeste.vurdertTidspunkt && k == kilde }
+            .map { (vurdering, _) -> vurdering }
+    return ManuellHandling(vurderinger, kilde)
+}
 
-private data class ManuellVilkårsvurdering(
-    val vilkårsvurdering: Vilkårsvurdering,
+private data class ManuellHandling(
+    val vilkårsvurderinger: List<Vilkårsvurdering>,
     val kilde: Vurderingskilde.Saksbehandler,
 )
 
-private fun ManuellVilkårsvurdering.tilVisningsfelter(): List<ApiVisningsfelt> =
+private fun ManuellHandling.tilVisningsfelter(): List<ApiVisningsfelt> =
     buildList {
-        add(ApiVisningsfelt.Tekst(tittel = "Vilkår", tekst = vilkårsvurdering.vilkårskode.visningsnavn()))
-        add(ApiVisningsfelt.Tekst(tittel = "Utfall", tekst = vilkårsvurdering.utfall.visningsnavn()))
+        val enkelt = vilkårsvurderinger.singleOrNull()
+        if (enkelt != null) {
+            add(ApiVisningsfelt.Tekst(tittel = "Vilkår", tekst = enkelt.vilkårskode.visningsnavn()))
+            add(ApiVisningsfelt.Tekst(tittel = "Utfall", tekst = enkelt.utfall.visningsnavn()))
+        } else {
+            vilkårsvurderinger.sortedBy { it.vilkårskode.ordinal }.forEach { vurdering ->
+                add(ApiVisningsfelt.Tekst(tittel = vurdering.vilkårskode.visningsnavn(), tekst = vurdering.utfall.visningsnavn()))
+            }
+        }
+        if (kilde.ytelser.isNotEmpty()) {
+            add(ApiVisningsfelt.Liste(tittel = "Likestilte ytelser", elementer = kilde.ytelser.map { it.visningsnavn() }))
+        }
         add(ApiVisningsfelt.Tekst(tittel = "Begrunnelse", tekst = kilde.fritekstbegrunnelse))
         if (kilde.journalpostId.isNotEmpty()) {
             add(ApiVisningsfelt.Liste(tittel = "Journalposter", elementer = kilde.journalpostId))
@@ -81,6 +101,18 @@ private fun ManuellVilkårsvurdering.tilVisningsfelter(): List<ApiVisningsfelt> 
 private fun Vilkårskode.visningsnavn(): String =
     when (this) {
         Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER -> "Arbeid i minst 4 uker"
+        Vilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER -> "Likestilt ytelse i minst 4 uker"
+        Vilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP -> "Foreldrepenger ikke opptjent på AAP"
+        Vilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER -> "Yrkesaktiv i minst 4 uker før uttak av foreldrepenger"
+    }
+
+private fun LikestiltYtelse.visningsnavn(): String =
+    when (this) {
+        LikestiltYtelse.DAGPENGER -> "Dagpenger"
+        LikestiltYtelse.SYKEPENGER -> "Sykepenger"
+        LikestiltYtelse.KAPITTEL_9 -> "Pleie-, omsorgs- eller opplæringspenger"
+        LikestiltYtelse.FORELDREPENGER -> "Foreldrepenger"
+        LikestiltYtelse.SVANGERSKAPSPENGER -> "Svangerskapspenger"
     }
 
 private fun Utfall.visningsnavn(): String =

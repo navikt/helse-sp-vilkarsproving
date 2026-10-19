@@ -103,6 +103,18 @@ internal enum class ApiKravkode {
 @Serializable
 internal enum class ApiVilkårskode {
     OPPTJENING_ARBEID_MINST_4_UKER,
+    OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER,
+    OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP,
+    OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER,
+}
+
+@Serializable
+internal enum class ApiLikestiltYtelse {
+    DAGPENGER,
+    SYKEPENGER,
+    KAPITTEL_9,
+    FORELDREPENGER,
+    SVANGERSKAPSPENGER,
 }
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "kildetype", visible = true)
@@ -128,6 +140,7 @@ internal sealed interface ApiVurderingskilde {
         val ident: String,
         val fritekstbegrunnelse: String,
         val journalpostId: List<String> = emptyList(),
+        val ytelser: List<ApiLikestiltYtelse> = emptyList(),
     ) : ApiVurderingskilde {
         override val kildetype: ApiKildetype = ApiKildetype.SAKSBEHANDLER
     }

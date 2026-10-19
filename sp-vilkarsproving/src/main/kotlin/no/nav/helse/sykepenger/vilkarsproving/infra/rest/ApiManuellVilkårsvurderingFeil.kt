@@ -8,4 +8,5 @@ internal enum class ApiManuellVilkårsvurderingFeil(
 ) : ApiErrorCode {
     PersonIkkeFunnet(404, "Person ikke funnet"),
     ManglerTilgang(403, "Mangler tilgang"),
+    VilkårskodeStøttesIkke(400, "Vilkårskoden kan ikke vurderes manuelt med dette endepunktet"),
 }

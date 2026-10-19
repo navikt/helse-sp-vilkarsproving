@@ -80,6 +80,44 @@ internal class VurderingsresponsTest {
     }
 
     @Test
+    fun `vurdering etter andre ledd har egen lovreferanse og viser ytelsene`() {
+        val vilkårsvurdering =
+            Vilkårsvurdering
+                .avSaksbehandler(
+                    vilkårskode = Vilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER,
+                    utfall = Utfall.Oppfylt,
+                    saksbehandlerIdent = "Z999999",
+                    fritekstbegrunnelse = "Yrkesaktiv før uttaket",
+                ).let { it.copy(kilde = (it.kilde as Vurderingskilde.Saksbehandler).copy(ytelser = listOf(LikestiltYtelse.FORELDREPENGER))) }
+        val vurdering =
+            Opptjeningsvurdering.avSaksbehandler(
+                fødselsnummer = "12345678901",
+                skjæringstidspunkt = 1.februar,
+                vilkårsvurdering = vilkårsvurdering,
+            )
+
+        val api = Vurderingsrespons.fra(vurdering).enesteVurdering()
+        val kilde = api.kilde as ApiVurderingskilde.Saksbehandler
+
+        assertEquals(ApiVilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER, api.vilkårskode)
+        assertEquals(ApiLovreferanse("folketrygdloven", "8-2", 2, 3, null, 1.januar(2018)), api.lovreferanse)
+        assertEquals(listOf(ApiLikestiltYtelse.FORELDREPENGER), kilde.ytelser)
+    }
+
+    @Test
+    fun `alle vilkårskoder kan vises i API-et`() {
+        Vilkårskode.entries.forEach { vilkårskode ->
+            val vurdering =
+                Opptjeningsvurdering.avSaksbehandler(
+                    fødselsnummer = "12345678901",
+                    skjæringstidspunkt = 1.februar,
+                    vilkårsvurdering = Vilkårsvurdering.avSaksbehandler(vilkårskode, Utfall.Oppfylt, "Z999999", ""),
+                )
+            assertEquals(vilkårskode.name, Vurderingsrespons.fra(vurdering).enesteVurdering().vilkårskode.name)
+        }
+    }
+
+    @Test
     fun `unntaksvilkår er en helt vanlig vilkårsvurdering`() {
         val vilkårsvurdering =
             Vilkårsvurdering.avSaksbehandler(

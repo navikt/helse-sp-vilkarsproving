@@ -108,6 +108,51 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
         }
 
     @Test
+    fun `viser alle vurderingene etter andre ledd fra samme handling`() =
+        testApplication {
+            val tidspunkt = Instant.parse("2024-01-10T10:00:00Z")
+            val kilde =
+                Vurderingskilde.Saksbehandler(
+                    ident = "Z999999",
+                    fritekstbegrunnelse = "FP på AAP, men yrkesaktiv før uttak",
+                    journalpostId = emptyList(),
+                    ytelser = listOf(LikestiltYtelse.SYKEPENGER, LikestiltYtelse.FORELDREPENGER),
+                )
+            val hovedregel =
+                Vilkårsvurdering
+                    .avSaksbehandler(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, Utfall.IkkeOppfylt, "Z1", "eldre")
+                    .copy(vurdertTidspunkt = tidspunkt.minusSeconds(60))
+            val andreLedd =
+                listOf(
+                    Vilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER to Utfall.Oppfylt,
+                    Vilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER to Utfall.Oppfylt,
+                    Vilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP to Utfall.IkkeOppfylt,
+                ).map { (vilkårskode, utfall) ->
+                    Vilkårsvurdering
+                        .avSaksbehandler(vilkårskode, utfall, kilde.ident, kilde.fritekstbegrunnelse)
+                        .copy(vurdertTidspunkt = tidspunkt, kilde = kilde)
+                }
+            val vurdering =
+                Opptjeningsvurdering.VurdertISpVilkårsprøving.med(
+                    fødselsnummer = identitetsnummer.value,
+                    skjæringstidspunkt = skjæringstidspunkt,
+                    kategori = Kategori.Arbeidstaker,
+                    vilkårsvurderinger = listOf(hovedregel) + andreLedd,
+                )
+            val pseudoId = settOpp(lagret = listOf(vurdering))
+
+            val felter = client.get(url(pseudoId, vurdering.id.value)).json()["felter"]
+
+            assertEquals(5, felter.size())
+            assertTekst(felter[0], "Likestilt ytelse i minst 4 uker", "Oppfylt")
+            assertTekst(felter[1], "Foreldrepenger ikke opptjent på AAP", "Ikke oppfylt")
+            assertTekst(felter[2], "Yrkesaktiv i minst 4 uker før uttak av foreldrepenger", "Oppfylt")
+            assertEquals("Likestilte ytelser", felter[3]["tittel"].asString())
+            assertEquals(listOf("Sykepenger", "Foreldrepenger"), felter[3]["elementer"].values().map { it.asString() })
+            assertTekst(felter[4], "Begrunnelse", "FP på AAP, men yrkesaktiv før uttak")
+        }
+
+    @Test
     fun `ukjent id gir 404`() =
         testApplication {
             val pseudoId = settOpp()

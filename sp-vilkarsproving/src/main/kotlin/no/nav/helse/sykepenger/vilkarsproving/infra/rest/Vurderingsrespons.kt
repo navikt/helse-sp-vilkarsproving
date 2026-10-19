@@ -2,6 +2,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import no.nav.helse.Periode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
+import no.nav.helse.sykepenger.vilkarsproving.domain.LikestiltYtelse
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
@@ -88,6 +89,19 @@ private fun Utfall.tilApi(): ApiUtfall =
 private fun Vilkårskode.tilApi(): ApiVilkårskode =
     when (this) {
         Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER -> ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER
+        Vilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER -> ApiVilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER
+        Vilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP -> ApiVilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP
+        Vilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER ->
+            ApiVilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER
+    }
+
+internal fun LikestiltYtelse.tilApi(): ApiLikestiltYtelse =
+    when (this) {
+        LikestiltYtelse.DAGPENGER -> ApiLikestiltYtelse.DAGPENGER
+        LikestiltYtelse.SYKEPENGER -> ApiLikestiltYtelse.SYKEPENGER
+        LikestiltYtelse.KAPITTEL_9 -> ApiLikestiltYtelse.KAPITTEL_9
+        LikestiltYtelse.FORELDREPENGER -> ApiLikestiltYtelse.FORELDREPENGER
+        LikestiltYtelse.SVANGERSKAPSPENGER -> ApiLikestiltYtelse.SVANGERSKAPSPENGER
     }
 
 private fun Vurderingskilde.tilApi(): ApiVurderingskilde =
@@ -99,7 +113,12 @@ private fun Vurderingskilde.tilApi(): ApiVurderingskilde =
             )
 
         is Vurderingskilde.Saksbehandler ->
-            ApiVurderingskilde.Saksbehandler(ident = ident, fritekstbegrunnelse = fritekstbegrunnelse, journalpostId = journalpostId)
+            ApiVurderingskilde.Saksbehandler(
+                ident = ident,
+                fritekstbegrunnelse = fritekstbegrunnelse,
+                journalpostId = journalpostId,
+                ytelser = ytelser.map { it.tilApi() },
+            )
 
         is Vurderingskilde.OverførtFraSpleis ->
             ApiVurderingskilde.OverførtFraSpleis(grunnlag = grunnlag.tilApi(utledetFakta))

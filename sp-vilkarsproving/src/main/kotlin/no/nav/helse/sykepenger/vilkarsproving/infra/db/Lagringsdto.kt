@@ -1,5 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import java.time.LocalDate
@@ -65,12 +66,23 @@ internal sealed interface VurderingskildeDto {
         val ident: String,
         val fritekstbegrunnelse: String,
         val journalpostId: List<String> = emptyList(),
+        // Utelates når tom, slik at lagringsformatet for vurderinger uten likestilte ytelser er uendret
+        @get:JsonInclude(JsonInclude.Include.NON_EMPTY)
+        val ytelser: List<LikestiltYtelseDto> = emptyList(),
     ) : VurderingskildeDto
 
     data class OverførtFraSpleis(
         val grunnlag: OpptjeningsgrunnlagDto,
         val utledet: UtledetDto,
     ) : VurderingskildeDto
+}
+
+internal enum class LikestiltYtelseDto {
+    DAGPENGER,
+    SYKEPENGER,
+    KAPITTEL_9,
+    FORELDREPENGER,
+    SVANGERSKAPSPENGER,
 }
 
 internal data class LovreferanseDto(
