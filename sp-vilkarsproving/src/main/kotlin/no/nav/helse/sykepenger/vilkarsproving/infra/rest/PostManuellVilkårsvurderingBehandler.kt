@@ -1,25 +1,18 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoId
-import no.nav.helse.sykepenger.vilkarsproving.application.HandlingType
-import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvolutt
-import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.KallKontekst
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.PostBehandler
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestResponse
-import java.time.Instant
 
+// Utgående: erstattet av PostManuellArbeidMinstFireUkerVurderingBehandler. Fjernes når speil har tatt i bruk det nye endepunktet.
 internal class PostManuellVilkårsvurderingBehandler :
     PostBehandler<
         ApiManuellVilkårsvurderingResource,
         ApiManuellVilkårsvurderingRequest,
-        ApiManuellVilkårsvurderingResponse,
+        ApiManuellOpptjeningsvurderingResponse,
         ApiManuellVilkårsvurderingFeil,
         Transaksjonskontekst,
     > {
@@ -30,7 +23,7 @@ internal class PostManuellVilkårsvurderingBehandler :
         resource: ApiManuellVilkårsvurderingResource,
         request: ApiManuellVilkårsvurderingRequest,
         kallKontekst: KallKontekst<Transaksjonskontekst>,
-    ): RestResponse<ApiManuellVilkårsvurderingResponse, ApiManuellVilkårsvurderingFeil> {
+    ): RestResponse<ApiManuellOpptjeningsvurderingResponse, ApiManuellVilkårsvurderingFeil> {
         val personPseudoId =
             PersonPseudoId.fraString(resource.personId)
                 ?: return RestResponse.feil(ApiManuellVilkårsvurderingFeil.PersonIkkeFunnet)
@@ -40,76 +33,20 @@ internal class PostManuellVilkårsvurderingBehandler :
             personIkkeFunnet = { ApiManuellVilkårsvurderingFeil.PersonIkkeFunnet },
             manglerTilgang = { ApiManuellVilkårsvurderingFeil.ManglerTilgang },
         ) { identitetsnummer ->
-            val vilkårskode =
-                request.vilkårskode.fraApi()
-                    ?: return@medPerson RestResponse.feil(ApiManuellVilkårsvurderingFeil.VilkårskodeStøttesIkke)
+            if (request.vilkårskode != ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER) {
+                return@medPerson RestResponse.feil(ApiManuellVilkårsvurderingFeil.VilkårskodeStøttesIkke)
+            }
 
-            val vilkårsvurdering =
-                Vilkårsvurdering.avSaksbehandler(
-                    vilkårskode = vilkårskode,
+            val opptjeningsvurderingId =
+                lagreManuellVurderingAvArbeidMinstFireUker(
+                    kallKontekst = kallKontekst,
+                    identitetsnummer = identitetsnummer,
+                    skjæringstidspunkt = request.skjæringstidspunkt,
                     utfall = request.utfall.fraApi(),
-                    saksbehandlerIdent = kallKontekst.saksbehandler.navIdent.value,
                     fritekstbegrunnelse = request.fritekstbegrunnelse,
                     journalpostId = request.journalpostId,
                 )
-
-            val kravvurdering =
-                Opptjeningsvurdering.avSaksbehandler(
-                    fødselsnummer = identitetsnummer.value,
-                    skjæringstidspunkt = request.skjæringstidspunkt,
-                    vilkårsvurdering = vilkårsvurdering,
-                    forrigeVurdering =
-                        kallKontekst.transaksjon.opptjeningsvurderinger.gjeldende(
-                            fødselsnummer = identitetsnummer.value,
-                            skjæringstidspunkt = request.skjæringstidspunkt,
-                        ),
-                )
-
-            kallKontekst.transaksjon.opptjeningsvurderinger.lagre(kravvurdering)
-
-            kallKontekst.transaksjon.outbox.leggTil(
-                OutboxKonvolutt.ny(
-                    melding =
-                        OutboxMelding.Saksbehandlerhandling(
-                            skjæringstidspunkt = request.skjæringstidspunkt,
-                            saksbehandlerIdent = kallKontekst.saksbehandler.navIdent.value,
-                            handlingId = kravvurdering.id.value,
-                            handlingType = HandlingType.MANUELT_VURDERT_OPPTJENING,
-                            kreverTotrinnsvurdering = true,
-                            tidspunkt = Instant.now(),
-                        ),
-                    identitetsnummer = identitetsnummer,
-                ),
-            )
-            kallKontekst.transaksjon.outbox.leggTil(
-                OutboxKonvolutt.ny(
-                    melding =
-                        OutboxMelding.OpptjeningsvurderingEndret(
-                            skjæringstidspunkt = request.skjæringstidspunkt,
-                            opptjeningsvurderingId = kravvurdering.id.value,
-                            manuellVurdering = true,
-                        ),
-                    identitetsnummer = identitetsnummer,
-                ),
-            )
-
-            RestResponse.ok(ApiManuellVilkårsvurderingResponse(opptjeningsvurderingId = kravvurdering.id.value))
+            RestResponse.ok(ApiManuellOpptjeningsvurderingResponse(opptjeningsvurderingId = opptjeningsvurderingId))
         }
     }
 }
-
-// Vilkårene i § 8-2 andre ledd vurderes samlet gjennom PostManuellLikestiltYtelseVurderingBehandler
-private fun ApiVilkårskode.fraApi(): Vilkårskode? =
-    when (this) {
-        ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER -> Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER
-        ApiVilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER,
-        ApiVilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP,
-        ApiVilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER,
-        -> null
-    }
-
-private fun ApiUtfall.fraApi(): Utfall =
-    when (this) {
-        ApiUtfall.OPPFYLT -> Utfall.Oppfylt
-        ApiUtfall.IKKE_OPPFYLT -> Utfall.IkkeOppfylt
-    }

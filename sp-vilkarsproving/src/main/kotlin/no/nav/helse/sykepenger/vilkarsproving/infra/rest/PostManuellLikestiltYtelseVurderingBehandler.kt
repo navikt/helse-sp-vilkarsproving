@@ -23,7 +23,7 @@ internal class PostManuellLikestiltYtelseVurderingBehandler :
     PostBehandler<
         ApiManuellLikestiltYtelseVurderingResource,
         ApiManuellLikestiltYtelseVurderingRequest,
-        ApiManuellVilkårsvurderingResponse,
+        ApiManuellOpptjeningsvurderingResponse,
         ApiManuellLikestiltYtelseVurderingFeil,
         Transaksjonskontekst,
     > {
@@ -34,7 +34,7 @@ internal class PostManuellLikestiltYtelseVurderingBehandler :
         resource: ApiManuellLikestiltYtelseVurderingResource,
         request: ApiManuellLikestiltYtelseVurderingRequest,
         kallKontekst: KallKontekst<Transaksjonskontekst>,
-    ): RestResponse<ApiManuellVilkårsvurderingResponse, ApiManuellLikestiltYtelseVurderingFeil> {
+    ): RestResponse<ApiManuellOpptjeningsvurderingResponse, ApiManuellLikestiltYtelseVurderingFeil> {
         if (erProdGcp()) {
             throw IllegalStateException("Manuell vurdering av likestilte ytelser er ikke påskrudd i prod-gcp")
         }
@@ -102,7 +102,7 @@ internal class PostManuellLikestiltYtelseVurderingBehandler :
                 ),
             )
 
-            RestResponse.ok(ApiManuellVilkårsvurderingResponse(opptjeningsvurderingId = opptjeningsvurdering.id.value))
+            RestResponse.ok(ApiManuellOpptjeningsvurderingResponse(opptjeningsvurderingId = opptjeningsvurdering.id.value))
         }
     }
 }

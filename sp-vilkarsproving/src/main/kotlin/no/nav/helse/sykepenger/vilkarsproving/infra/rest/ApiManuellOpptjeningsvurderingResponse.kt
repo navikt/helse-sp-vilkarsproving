@@ -7,6 +7,6 @@ import kotlinx.serialization.UseContextualSerialization
 import java.util.UUID
 
 @Serializable
-internal data class ApiManuellVilkårsvurderingResponse(
+internal data class ApiManuellOpptjeningsvurderingResponse(
     val opptjeningsvurderingId: UUID,
 )

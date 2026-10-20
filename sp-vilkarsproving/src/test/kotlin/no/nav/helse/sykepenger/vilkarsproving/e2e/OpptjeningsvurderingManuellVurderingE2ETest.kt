@@ -20,6 +20,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRe
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OutboxPubliseringsjobb
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
+import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellArbeidMinstFireUkerVurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellLikestiltYtelseVurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
@@ -123,6 +124,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                 restAdapter,
             )
             post(PostManuellVilkårsvurderingBehandler(), restAdapter)
+            post(PostManuellArbeidMinstFireUkerVurderingBehandler(), restAdapter)
             post(PostManuellLikestiltYtelseVurderingBehandler(), restAdapter)
         }
     }
@@ -185,14 +187,13 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
             val manuellVurderingRequest = """
             {
               "skjæringstidspunkt": "2018-02-01",
-              "vilkårskode": "OPPTJENING_ARBEID_MINST_4_UKER",
               "utfall": "OPPFYLT",
               "fritekstbegrunnelse": "Mangelfulle opplysninger i registeret, har likevel tilstrekkelig opptjening",
               "journalpostId": ["journalpost-1", "journalpost-2"]
             }
             """
             val postRespons =
-                client.post("/api/personer/$pseudoId/vilkarsvurderinger/manuell") {
+                client.post("/api/personer/$pseudoId/vilkarsvurderinger/manuell/arbeid-minst-fire-uker") {
                     contentType(ContentType.Application.Json)
                     setBody(manuellVurderingRequest)
                 }
@@ -266,14 +267,13 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
             val manuellVurderingRequest = """
             {
               "skjæringstidspunkt": "2018-02-01",
-              "vilkårskode": "OPPTJENING_ARBEID_MINST_4_UKER",
               "utfall": "OPPFYLT",
               "fritekstbegrunnelse": "Manuell vurdering for test av eventrekkefølge",
               "journalpostId": ["journalpost-1"]
             }
             """
             val postRespons =
-                client.post("/api/personer/$pseudoId/vilkarsvurderinger/manuell") {
+                client.post("/api/personer/$pseudoId/vilkarsvurderinger/manuell/arbeid-minst-fire-uker") {
                     contentType(ContentType.Application.Json)
                     setBody(manuellVurderingRequest)
                 }
@@ -290,6 +290,36 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                         .asString()
                 },
             )
+        }
+
+    @Test
+    fun `det utgående endepunktet for manuell vilkårsvurdering lagrer fortsatt vurderingen`() =
+        testApplication {
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+            application { settOppTestapp(pseudoIdProvider) }
+
+            @Language("JSON")
+            val manuellVurderingRequest = """
+            {
+              "skjæringstidspunkt": "2018-02-01",
+              "vilkårskode": "OPPTJENING_ARBEID_MINST_4_UKER",
+              "utfall": "OPPFYLT",
+              "fritekstbegrunnelse": "Manuell vurdering via utgående endepunkt",
+              "journalpostId": []
+            }
+            """
+            val postRespons =
+                client.post("/api/personer/$pseudoId/vilkarsvurderinger/manuell") {
+                    contentType(ContentType.Application.Json)
+                    setBody(manuellVurderingRequest)
+                }
+            assertEquals(HttpStatusCode.OK, postRespons.status)
+            val nyId = objectMapper.readTree(postRespons.bodyAsText())["opptjeningsvurderingId"].asString()
+
+            val getRespons = client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$nyId")
+            assertEquals(HttpStatusCode.OK, getRespons.status)
+            assertTrue(objectMapper.readTree(getRespons.bodyAsText())["krav"].single()["opptjeningOk"].asBoolean())
         }
 
     @Test
