@@ -22,7 +22,6 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetSaksbehandlerhandlin
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellArbeidMinstFireUkerVurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellLikestiltYtelseVurderingBehandler
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostNyAutomatiskVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClient
@@ -186,7 +185,6 @@ internal fun endepunkter(
         get(GetOpptjeningshistorikkBehandler(PersonAvstemmingService(transaksjonProvider, spleisClient)))
         get(GetSaksbehandlerhandlingVisningBehandler())
 
-        post(PostManuellVilkårsvurderingBehandler())
         post(PostManuellArbeidMinstFireUkerVurderingBehandler())
         post(PostManuellLikestiltYtelseVurderingBehandler())
         post(PostNyAutomatiskVilkårsvurderingBehandler(publiser, versjonAvKode))
