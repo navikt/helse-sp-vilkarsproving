@@ -44,6 +44,7 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestRuting
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.configureRestRuting
 import no.nav.sykepenger.libs.logging.loggInfo
+import kotlin.time.Duration.Companion.seconds
 
 private const val APP_NAVN = "sp-vilkarsproving"
 
@@ -125,15 +126,18 @@ fun main() {
                         spleisClient = spleisClient,
                     ),
             )
+            val leaderElection =
+                NaisLeaderElection(
+                    electorSseUrl = env.getValue("ELECTOR_SSE_URL"),
+                    hostname = env.getValue("HOSTNAME"),
+                    ventetidFørNyTilkobling = 5.seconds,
+                )
+            register(leaderElection)
             register(
                 OutboxPubliseringsjobb(
                     rapidsConnection = this,
                     transaksjonProvider = transaksjonProvider,
-                    leaderElection =
-                        NaisLeaderElection(
-                            electorGetUrl = env.getValue("ELECTOR_GET_URL"),
-                            hostname = env.getValue("HOSTNAME"),
-                        ),
+                    leaderElection = leaderElection,
                 ),
             )
         }.start()
