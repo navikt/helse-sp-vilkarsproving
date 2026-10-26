@@ -6,8 +6,10 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsaktivitet.FORELD
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsaktivitet.SYKEPENGER
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall.IkkeOppfylt
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall.Oppfylt
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering.Companion.avgjørendeVilkårsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering.Companion.opptjeningErOppfylt
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.Instant
 
@@ -16,14 +18,14 @@ internal class ManuellOpptjeningsvurderingTest {
     fun `bare arbeid gir første ledd oppfylt og ingenting etter andre ledd (scenario A)`() {
         val vurderinger = vurder(svar(minst4Uker = true, setOf(ARBEID)))
         assertEquals(listOf(L1 to Oppfylt), vurderinger.koderOgUtfall())
-        assertEquals(L1, vurderinger.avgjørendeVilkårsvurdering()?.vilkårskode)
+        assertTrue(vurderinger.opptjeningErOppfylt())
     }
 
     @Test
     fun `likestilt ytelse gir første ledd ikke oppfylt og første punktum oppfylt (scenario B)`() {
         val vurderinger = vurder(svar(minst4Uker = true, setOf(SYKEPENGER)))
         assertEquals(listOf(L1 to IkkeOppfylt, L2P1 to Oppfylt), vurderinger.koderOgUtfall())
-        assertEquals(L2P1, vurderinger.avgjørendeVilkårsvurdering()?.vilkårskode)
+        assertTrue(vurderinger.opptjeningErOppfylt())
     }
 
     @Test
@@ -36,7 +38,7 @@ internal class ManuellOpptjeningsvurderingTest {
     fun `foreldrepenger opptjent ved arbeid gir første og andre punktum oppfylt`() {
         val vurderinger = vurder(svar(minst4Uker = true, setOf(FORELDREPENGER), fpAap = false))
         assertEquals(listOf(L1 to IkkeOppfylt, L2P1 to Oppfylt, L2P2 to Oppfylt), vurderinger.koderOgUtfall())
-        assertEquals(L2P1, vurderinger.avgjørendeVilkårsvurdering()?.vilkårskode)
+        assertTrue(vurderinger.opptjeningErOppfylt())
     }
 
     @Test
@@ -46,7 +48,7 @@ internal class ManuellOpptjeningsvurderingTest {
             listOf(L1 to IkkeOppfylt, L2P1 to Oppfylt, L2P2 to IkkeOppfylt, L2P3 to Oppfylt),
             vurderinger.koderOgUtfall(),
         )
-        assertEquals(L2P3, vurderinger.avgjørendeVilkårsvurdering()?.vilkårskode)
+        assertTrue(vurderinger.opptjeningErOppfylt())
     }
 
     @Test
@@ -56,14 +58,14 @@ internal class ManuellOpptjeningsvurderingTest {
             listOf(L1 to IkkeOppfylt, L2P1 to Oppfylt, L2P2 to IkkeOppfylt, L2P3 to IkkeOppfylt),
             vurderinger.koderOgUtfall(),
         )
-        assertEquals(null, vurderinger.avgjørendeVilkårsvurdering())
+        assertFalse(vurderinger.opptjeningErOppfylt())
     }
 
     @Test
     fun `ikke minst 4 uker gir første ledd og første punktum ikke oppfylt (scenario D)`() {
         val vurderinger = vurder(svar(minst4Uker = false, emptySet()))
         assertEquals(listOf(L1 to IkkeOppfylt, L2P1 to IkkeOppfylt), vurderinger.koderOgUtfall())
-        assertEquals(null, vurderinger.avgjørendeVilkårsvurdering())
+        assertFalse(vurderinger.opptjeningErOppfylt())
     }
 
     @Test

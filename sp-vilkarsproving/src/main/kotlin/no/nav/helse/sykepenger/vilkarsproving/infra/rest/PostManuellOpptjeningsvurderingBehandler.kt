@@ -71,7 +71,7 @@ internal class PostManuellOpptjeningsvurderingBehandler(
                 }
 
             val opptjeningsvurdering =
-                Opptjeningsvurdering.avSaksbehandlerErstattAlle(
+                Opptjeningsvurdering.avSaksbehandler(
                     fødselsnummer = identitetsnummer.value,
                     skjæringstidspunkt = request.skjæringstidspunkt,
                     vilkårsvurderinger = vilkårsvurderinger,

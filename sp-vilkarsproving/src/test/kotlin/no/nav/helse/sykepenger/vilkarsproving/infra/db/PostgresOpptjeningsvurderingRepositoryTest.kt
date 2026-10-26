@@ -16,6 +16,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.avSaksbehandler
 import no.nav.helse.sykepenger.vilkarsproving.domain.VilkårsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vurderingskilde
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -46,8 +47,6 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         assertEquals(1.februar, lagret.skjæringstidspunkt)
         assertEquals(Kategori.Arbeidstaker, lagret.kategori)
         assertEquals(vurdering.erOk, lagret.erOk)
-        assertEquals(vurdering.avgjørendeVilkårskode, lagret.avgjørendeVilkårskode)
-        assertEquals(vurdering.vilkårsvurderinger.single().id, lagret.avgjørendeVilkårsvurdering?.id)
 
         val vilkårsvurdering = lagret.vilkårsvurderinger.single()
         val kilde = vilkårsvurdering.kilde as Vurderingskilde.Automatisk
@@ -73,8 +72,6 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         val kilde = vilkårsvurdering.kilde as Vurderingskilde.Automatisk
 
         assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, kilde.grunnlag)
-        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, lagret.avgjørendeVilkårskode)
-        assertEquals(vurdering.vilkårsvurderinger.single().id, lagret.avgjørendeVilkårsvurdering?.id)
         assertEquals(Lovreferanse.`§ 8-2 første avsnitt, første setning`(), vilkårsvurdering.lovreferanse)
     }
 
@@ -92,7 +89,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                vilkårsvurdering = vilkårsvurdering,
+                vilkårsvurderinger = listOf(vilkårsvurdering),
             )
         transaksjon { it.opptjeningsvurderinger.lagre(vurdering) }
 
@@ -106,10 +103,6 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         assertEquals(Opptjeningsvurderingskilde.VURDERT_I_SP_VILKARSPROVING, lagretVilkårsvurdering.vurderingskilde)
         assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER.lovreferanse, vilkårsvurdering.lovreferanse)
         assertEquals(vilkårsvurdering.lovreferanse, lagretVilkårsvurdering.lovreferanse)
-        // Hovedregelen alene er ikke oppfylt, og det finnes ingen unntaksvilkår i denne vurderingen, så
-        // avgjørendeVilkårskode()-regelen gir null (se Vilkårsvurdering.avgjørendeVilkårskode()).
-        assertNull(lagret.avgjørendeVilkårskode)
-        assertNull(lagret.avgjørendeVilkårsvurdering)
         assertFalse(lagret.erOk)
     }
 
@@ -195,7 +188,6 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
 
         assertTrue(lagret.erOk)
         assertEquals(Kategori.Arbeidstaker, lagret.kategori)
-        assertEquals(vurdering.vilkårsvurderinger.single().id, lagret.avgjørendeVilkårsvurdering?.id)
         assertEquals(Opptjeningsvurderingskilde.OVERFORT_FRA_SPLEIS, lagret.vilkårsvurderinger.single().vurderingskilde)
     }
 
@@ -223,10 +215,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         val gjeldende = transaksjon { it.opptjeningsvurderinger.gjeldende(FØDSELSNUMMER, 1.februar) }!!
 
         assertEquals(første.id, gjeldende.id)
-        assertEquals(
-            første.vilkårsvurderinger.first().id,
-            (gjeldende as Opptjeningsvurdering.VurdertISpVilkårsprøving).avgjørendeVilkårsvurdering?.id,
-        )
+        assertEquals(Instant.parse("2026-01-03T00:00:00Z"), gjeldende.vurdertTidspunkt)
     }
 
     @Test
@@ -298,7 +287,6 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
             fødselsnummer = FØDSELSNUMMER,
             skjæringstidspunkt = 1.februar,
             vilkårsvurderinger = vilkårsvurderinger,
-            avgjørendeVilkårsvurdering = vilkårsvurderinger.first(),
             erOk = true,
         )
     }

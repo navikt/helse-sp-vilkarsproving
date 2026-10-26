@@ -10,6 +10,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.avSaksbehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import org.intellij.lang.annotations.Language
@@ -127,12 +128,14 @@ class OpptjeningsvurderingResultatRiverCallthroughTest {
                 .avSaksbehandler(
                     fødselsnummer = FØDSELSNUMMER,
                     skjæringstidspunkt = 1.februar,
-                    vilkårsvurdering =
-                        Vilkårsvurdering.avSaksbehandler(
-                            vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
-                            utfall = Utfall.IkkeOppfylt,
-                            saksbehandlerIdent = "Z999999",
-                            fritekstbegrunnelse = "",
+                    vilkårsvurderinger =
+                        listOf(
+                            Vilkårsvurdering.avSaksbehandler(
+                                vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+                                utfall = Utfall.IkkeOppfylt,
+                                saksbehandlerIdent = "Z999999",
+                                fritekstbegrunnelse = "",
+                            ),
                         ),
                 ).also { transaksjon.opptjeningsvurderinger.lagre(it) }
         ekstraSpleisvurderinger +=

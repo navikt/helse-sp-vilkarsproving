@@ -21,8 +21,6 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRe
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OutboxPubliseringsjobb
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellArbeidMinstFireUkerVurderingBehandler
-import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellLikestiltYtelseVurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellOpptjeningsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
@@ -125,8 +123,6 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                 ),
                 restAdapter,
             )
-            post(PostManuellArbeidMinstFireUkerVurderingBehandler(), restAdapter)
-            post(PostManuellLikestiltYtelseVurderingBehandler(), restAdapter)
             post(PostManuellOpptjeningsvurderingBehandler(), restAdapter)
         }
     }
@@ -184,21 +180,13 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                     .asBoolean(),
             )
 
-            // Steg 4: saksbehandler vurderer manuelt — opptjening er OK likevel, pga. likestilt ytelse
-            @Language("JSON")
-            val manuellVurderingRequest = """
-            {
-              "skjæringstidspunkt": "2018-02-01",
-              "utfall": "OPPFYLT",
-              "fritekstbegrunnelse": "Mangelfulle opplysninger i registeret, har likevel tilstrekkelig opptjening",
-              "journalpostId": ["journalpost-1", "journalpost-2"]
-            }
-            """
+            // Steg 4: saksbehandler vurderer manuelt — opptjening er OK likevel, arbeidet har vart i minst 4 uker
             val postRespons =
-                client.post("/api/personer/$pseudoId/vilkarsvurderinger/manuell/arbeid-minst-fire-uker") {
-                    contentType(ContentType.Application.Json)
-                    setBody(manuellVurderingRequest)
-                }
+                postSamletVurdering(
+                    pseudoId,
+                    opptjeningsaktiviteter = """["ARBEID"]""",
+                    journalpostId = """["journalpost-1", "journalpost-2"]""",
+                )
             assertEquals(HttpStatusCode.OK, postRespons.status)
             val nyId = objectMapper.readTree(postRespons.bodyAsText())["opptjeningsvurderingId"].asString()
             assertNotEquals(
@@ -210,13 +198,12 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
 
             dump("etter 4")
 
-            // Den nye vurderingen skal vise helheten: den automatiske 4-ukers-vurderingen er med, den manuelle vurderingen er avgjørende
+            // Den manuelle vurderingen erstatter den automatiske
             val getEtterManuellVurdering =
                 client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$nyId")
             assertEquals(HttpStatusCode.OK, getEtterManuellVurdering.status)
             val nyOpptjeningsvurdering = objectMapper.readTree(getEtterManuellVurdering.bodyAsText())["krav"].single()
             assertTrue(nyOpptjeningsvurdering["opptjeningOk"].asBoolean())
-            assertEquals("OPPTJENING_ARBEID_MINST_4_UKER", nyOpptjeningsvurdering["avgjørendeVilkårskode"].asString())
             assertEquals(
                 listOf("OPPTJENING_ARBEID_MINST_4_UKER"),
                 nyOpptjeningsvurdering["vurderinger"].toList().map { it["vilkårskode"].asString() },
@@ -265,20 +252,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
             val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
             application { settOppTestapp(pseudoIdProvider) }
 
-            @Language("JSON")
-            val manuellVurderingRequest = """
-            {
-              "skjæringstidspunkt": "2018-02-01",
-              "utfall": "OPPFYLT",
-              "fritekstbegrunnelse": "Manuell vurdering for test av eventrekkefølge",
-              "journalpostId": ["journalpost-1"]
-            }
-            """
-            val postRespons =
-                client.post("/api/personer/$pseudoId/vilkarsvurderinger/manuell/arbeid-minst-fire-uker") {
-                    contentType(ContentType.Application.Json)
-                    setBody(manuellVurderingRequest)
-                }
+            val postRespons = postSamletVurdering(pseudoId, opptjeningsaktiviteter = """["ARBEID"]""")
             assertEquals(HttpStatusCode.OK, postRespons.status)
 
             outboxJobb.kjørEnRundeHvisLeader()
@@ -309,23 +283,13 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                 FØDSELSNUMMER,
             )
 
-            @Language("JSON")
-            val request = """
-            {
-              "skjæringstidspunkt": "2018-02-01",
-              "sammenlagtMinst4Uker": true,
-              "ytelser": ["FORELDREPENGER"],
-              "foreldrepengerOpptjentPåAap": true,
-              "yrkesaktivMinst4UkerFørUttak": true,
-              "fritekstbegrunnelse": "Foreldrepenger opptjent på AAP, men yrkesaktiv i 4 uker før uttaket",
-              "journalpostId": []
-            }
-            """
             val postRespons =
-                client.post("/api/personer/$pseudoId/vilkarsvurderinger/manuell/likestilte-ytelser") {
-                    contentType(ContentType.Application.Json)
-                    setBody(request)
-                }
+                postSamletVurdering(
+                    pseudoId,
+                    opptjeningsaktiviteter = """["FORELDREPENGER"]""",
+                    foreldrepengerOpptjentPåAap = "true",
+                    yrkesaktiv = "true",
+                )
             assertEquals(HttpStatusCode.OK, postRespons.status)
             val nyId = objectMapper.readTree(postRespons.bodyAsText())["opptjeningsvurderingId"].asString()
 
@@ -337,10 +301,6 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                     )["krav"]
                     .single()
             assertTrue(krav["opptjeningOk"].asBoolean())
-            assertEquals(
-                "OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER",
-                krav["avgjørendeVilkårskode"].asString()
-            )
             assertEquals(
                 mapOf(
                     "OPPTJENING_ARBEID_MINST_4_UKER" to "IKKE_OPPFYLT",
@@ -400,7 +360,6 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
             assertEquals(HttpStatusCode.OK, andreRespons.status)
             val krav = hentKrav(pseudoId, andreRespons)
             assertTrue(krav["opptjeningOk"].asBoolean())
-            assertEquals("OPPTJENING_ARBEID_MINST_4_UKER", krav["avgjørendeVilkårskode"].asString())
             assertEquals(
                 mapOf("OPPTJENING_ARBEID_MINST_4_UKER" to "OPPFYLT"),
                 krav["vurderinger"].toList().associate { it["vilkårskode"].asString() to it["utfall"].asString() },
@@ -429,6 +388,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
         opptjeningsaktiviteter: String,
         foreldrepengerOpptjentPåAap: String = "null",
         yrkesaktiv: String = "null",
+        journalpostId: String = "[]",
     ): HttpResponse {
         @Language("JSON")
         val request = """
@@ -439,7 +399,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
           "foreldrepengerOpptjentPåAap": $foreldrepengerOpptjentPåAap,
           "yrkesaktivMinst4UkerFørUttak": $yrkesaktiv,
           "fritekstbegrunnelse": "Samlet vurdering",
-          "journalpostId": []
+          "journalpostId": $journalpostId
         }
         """
         return client.post("/api/personer/$pseudoId/vilkarsvurderinger/manuell/opptjening") {

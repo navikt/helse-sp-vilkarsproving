@@ -32,17 +32,6 @@ internal class VurderingsresponsTest {
     }
 
     @Test
-    fun `opptjeningsvurderingen peker på vilkaaret som avgjorde det`() {
-        val respons = Vurderingsrespons.fra(automatiskArbeidstakervurdering(4.januar til 31.januar))
-        val krav = respons.krav.single() as ApiOpptjeningsvurdering.VurdertISpVilkarproving
-
-        assertEquals(ApiKravkode.OPPTJENING, krav.kravkode)
-        assertTrue(krav.opptjeningOk)
-        assertEquals(ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, krav.avgjørendeVilkårskode)
-        assertEquals(listOf(krav.avgjørendeVilkårskode), krav.vurderinger.map { it.vilkårskode })
-    }
-
-    @Test
     fun `vilkaarskode og utfall er to uavhengige akser`() {
         val forKortOpptjening = automatiskArbeidstakervurdering(29.januar til 31.januar)
 
@@ -67,7 +56,7 @@ internal class VurderingsresponsTest {
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
-                vilkårsvurdering = vilkårsvurdering,
+                vilkårsvurderinger = listOf(vilkårsvurdering),
             )
 
         val api = Vurderingsrespons.fra(vurdering).enesteVurdering()
@@ -93,7 +82,7 @@ internal class VurderingsresponsTest {
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
-                vilkårsvurdering = vilkårsvurdering,
+                vilkårsvurderinger = listOf(vilkårsvurdering),
             )
 
         val api = Vurderingsrespons.fra(vurdering).enesteVurdering()
@@ -111,7 +100,7 @@ internal class VurderingsresponsTest {
                 Opptjeningsvurdering.avSaksbehandler(
                     fødselsnummer = "12345678901",
                     skjæringstidspunkt = 1.februar,
-                    vilkårsvurdering = Vilkårsvurdering.avSaksbehandler(vilkårskode, Utfall.Oppfylt, "Z999999", ""),
+                    vilkårsvurderinger = listOf(Vilkårsvurdering.avSaksbehandler(vilkårskode, Utfall.Oppfylt, "Z999999", "")),
                 )
             assertEquals(vilkårskode.name, Vurderingsrespons.fra(vurdering).enesteVurdering().vilkårskode.name)
         }
@@ -130,7 +119,7 @@ internal class VurderingsresponsTest {
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = "12345678901",
                 skjæringstidspunkt = 1.februar,
-                vilkårsvurdering = vilkårsvurdering,
+                vilkårsvurderinger = listOf(vilkårsvurdering),
             )
 
         val api = Vurderingsrespons.fra(vurdering).enesteVurdering()

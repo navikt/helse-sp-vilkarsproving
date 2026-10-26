@@ -20,7 +20,6 @@ class ApiDiskriminatorTest {
                 id = UUID.randomUUID(),
                 kravkode = ApiKravkode.OPPTJENING,
                 opptjeningOk = true,
-                avgjørendeVilkårskode = ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                 vurderinger =
                     listOf(
                         ApiVilkårsvurdering(
@@ -41,7 +40,6 @@ class ApiDiskriminatorTest {
                 id = UUID.randomUUID(),
                 kravkode = ApiKravkode.OPPTJENING,
                 opptjeningOk = true,
-                avgjørendeVilkårskode = ApiVilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                 vurderinger = emptyList(),
             ),
             ApiOpptjeningsvurdering.OverførtFraInfotrygd(

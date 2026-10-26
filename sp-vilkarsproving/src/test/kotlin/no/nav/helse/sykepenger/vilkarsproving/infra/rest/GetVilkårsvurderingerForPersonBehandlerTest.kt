@@ -236,7 +236,6 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             assertEquals("OPPTJENING", krav["kravkode"].asString())
             assertEquals(true, krav["opptjeningOk"].asBoolean())
             assertEquals("VURDERT_I_SP_VILKARSPROVING", krav["kravkilde"].asString())
-            assertEquals("OPPTJENING_ARBEID_MINST_4_UKER", krav["avgjørendeVilkårskode"].asString())
 
             val vilkårsvurdering = krav["vurderinger"].single()
             assertEquals("OPPTJENING_ARBEID_MINST_4_UKER", vilkårsvurdering["vilkårskode"].asString())
@@ -252,7 +251,7 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
         }
 
     @Test
-    fun `infotrygdkrav sendes uten enkeltvurderinger og uten avgjørende vilkår`() =
+    fun `infotrygdkrav sendes uten enkeltvurderinger`() =
         testApplication {
             val transaksjonProvider = InMemoryTransaksjonProvider()
             val vurdering =
@@ -279,7 +278,6 @@ class GetVilkårsvurderingerForPersonBehandlerTest {
             assertEquals("OVERFOERT_FRA_INFOTRYGD", krav["kravkilde"].asString())
             assertEquals(true, krav["opptjeningOk"].asBoolean())
             assertFalse(krav.has("vurderinger")) { "Infotrygd-kravet skal ikke ha enkeltvurderinger: $krav" }
-            assertFalse(krav.has("avgjørendeVilkårskode")) { "Vi kjenner ikke det avgjørende vilkåret: $krav" }
         }
 
     /**

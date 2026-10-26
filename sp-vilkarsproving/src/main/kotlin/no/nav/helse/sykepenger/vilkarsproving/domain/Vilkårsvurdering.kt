@@ -17,19 +17,16 @@ internal data class Vilkårsvurdering(
         fun List<Vilkårsvurdering>.finn(vilkårskode: Vilkårskode): Vilkårsvurdering? = this.find { it.vilkårskode == vilkårskode }
 
         // Scenario A–E: se docs/opptjening-8-2-kodeverk.md
-        fun List<Vilkårsvurdering>.avgjørendeVilkårsvurdering(): Vilkårsvurdering? {
-            val hovedregel = this.finn(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER)
-            if (hovedregel?.erOppfylt() == true) return hovedregel
-
-            val førstePunktum = this.finn(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER)
-            if (førstePunktum?.erOppfylt() != true) return null
+        fun List<Vilkårsvurdering>.opptjeningErOppfylt(): Boolean {
+            if (this.finn(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER)?.erOppfylt() == true) return true
+            if (this.finn(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER)?.erOppfylt() != true) return false
 
             // Andre punktum begrenser første punktum: foreldrepenger opptjent på AAP gir ikke rett alene
             val andrePunktum = this.finn(Vilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP)
-            if (andrePunktum == null || andrePunktum.erOppfylt()) return førstePunktum
+            if (andrePunktum == null || andrePunktum.erOppfylt()) return true
 
             // Tredje punktum er unntaket fra andre punktum
-            return this.finn(Vilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER)?.takeIf { it.erOppfylt() }
+            return this.finn(Vilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER)?.erOppfylt() == true
         }
 
         internal fun automatisk(
@@ -46,22 +43,6 @@ internal data class Vilkårsvurdering(
             kilde = Vurderingskilde.Automatisk(opptjeningsprøvingId, grunnlag, vilkårsutfall.utledetFakta, versjonAvKildekode),
             vurderingskilde = Opptjeningsvurderingskilde.VURDERT_I_SP_VILKARSPROVING,
             lovreferanse = vilkårsutfall.lovreferanse,
-        )
-
-        fun avSaksbehandler(
-            vilkårskode: Vilkårskode,
-            utfall: Utfall,
-            saksbehandlerIdent: String,
-            fritekstbegrunnelse: String,
-            journalpostId: List<String> = emptyList(),
-        ) = Vilkårsvurdering(
-            id = VilkårsvurderingId.ny(),
-            vilkårskode = vilkårskode,
-            utfall = utfall,
-            vurdertTidspunkt = Instant.now(),
-            kilde = Vurderingskilde.Saksbehandler(saksbehandlerIdent, fritekstbegrunnelse, journalpostId),
-            vurderingskilde = Opptjeningsvurderingskilde.VURDERT_I_SP_VILKARSPROVING,
-            lovreferanse = vilkårskode.lovreferanse,
         )
 
         fun overførtFraSpleis(

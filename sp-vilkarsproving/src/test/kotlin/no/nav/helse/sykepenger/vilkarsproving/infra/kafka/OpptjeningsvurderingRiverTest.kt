@@ -4,26 +4,16 @@ import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
 import no.nav.helse.februar
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
-import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
+import no.nav.helse.sykepenger.vilkarsproving.domain.*
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype.ORDINÆRT
-import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
-import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER
 import no.nav.helse.til
 import org.intellij.lang.annotations.Language
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertInstanceOf
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import tools.jackson.databind.node.ObjectNode
 import tools.jackson.module.kotlin.jacksonObjectMapper
-import java.util.UUID
+import java.util.*
 
 internal class OpptjeningsvurderingRiverTest {
     private val transaksjon = InMemoryTransaksjonProvider()
@@ -82,7 +72,7 @@ internal class OpptjeningsvurderingRiverTest {
             )
 
         val vurdering = vurderinger.finn(opptjeningsvurderingId) as Opptjeningsvurdering.VurdertISpVilkårsprøving
-        assertEquals(OPPTJENING_ARBEID_MINST_4_UKER, vurdering.avgjørendeVilkårskode)
+        assertTrue(vurdering.erOk)
         assertTrue(prøvinger.allePrøvinger.single().erAvsluttet)
     }
 
@@ -114,7 +104,10 @@ internal class OpptjeningsvurderingRiverTest {
         val utgående = rapid.inspektør.message(0)
         val opprinneligBehov = utgående.path("opprinneligBehov")
 
-        assertInstanceOf(ObjectNode::class.java, opprinneligBehov) { "opprinneligBehov skal være et JSON-objekt, ikke en string" }
+        assertInstanceOf(
+            ObjectNode::class.java,
+            opprinneligBehov
+        ) { "opprinneligBehov skal være et JSON-objekt, ikke en string" }
 
         val objectMapper =
             jacksonObjectMapper()
@@ -195,7 +188,8 @@ internal class OpptjeningsvurderingRiverTest {
 
     private fun fullførtPrøving(): OpptjeningsvurderingId {
         val prøving = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving
-        val arbeidsforhold = Arbeidsforhold(orgnummer = ORGNUMMER, ansettelseperiode = 1.januar til 31.januar, type = ORDINÆRT)
+        val arbeidsforhold =
+            Arbeidsforhold(orgnummer = ORGNUMMER, ansettelseperiode = 1.januar til 31.januar, type = ORDINÆRT)
         val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(listOf(arbeidsforhold)))
         prøvinger.lagre(prøving)
         vurderinger.lagre(vurdering)

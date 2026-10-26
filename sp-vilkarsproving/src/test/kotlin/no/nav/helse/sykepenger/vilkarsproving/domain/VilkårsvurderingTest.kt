@@ -2,29 +2,30 @@ package no.nav.helse.sykepenger.vilkarsproving.domain
 
 import no.nav.helse.Periode
 import no.nav.helse.januar
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering.Companion.avgjørendeVilkårsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering.Companion.opptjeningErOppfylt
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 internal class VilkårsvurderingTest {
     @Test
     fun `Hovedregel er oppfylt`() {
         val vurderinger = listOf(hovedregelOppfylt)
-        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, vurderinger.avgjørendeVilkårsvurdering()?.vilkårskode)
+        assertTrue(vurderinger.opptjeningErOppfylt())
     }
 
     @Test
     fun `Hovedregel er ikke oppfylt`() {
-        assertEquals(null, listOf(hovedregelIkkeOppfylt).avgjørendeVilkårsvurdering()?.vilkårskode)
+        assertFalse(listOf(hovedregelIkkeOppfylt).opptjeningErOppfylt())
     }
 
     @Test
     fun `hvert punktum i andre ledd har sin egen lovreferanse`() {
         assertEquals(
             listOf(2 to 1, 2 to 2, 2 to 3),
-            Vilkårskode.andreAvsnitt.map { it.lovreferanse.avsnitt to it.lovreferanse.setning },
+            listOf(L2P1, L2P2, L2P3).map { it.lovreferanse.avsnitt to it.lovreferanse.setning },
         )
         assertEquals(1.januar(1997), Vilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER.lovreferanse.iKraftFra)
         assertEquals(1.januar(2018), Vilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP.lovreferanse.iKraftFra)
@@ -34,31 +35,31 @@ internal class VilkårsvurderingTest {
     // Scenario A–E fra docs/opptjening-8-2-kodeverk.md, med vilkårskodene fra regler.js
 
     @Test
-    fun `A - hovedregelen er avgjørende når den er oppfylt, også når andre ledd er vurdert`() {
+    fun `A - oppfylt når hovedregelen er oppfylt, også når andre ledd er vurdert`() {
         val vurderinger = listOf(hovedregelOppfylt, nyVurdering(L2P1, Utfall.Oppfylt))
-        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, vurderinger.avgjørendeVilkårsvurdering()?.vilkårskode)
+        assertTrue(vurderinger.opptjeningErOppfylt())
     }
 
     @Test
-    fun `B - første punktum er avgjørende når hovedregelen ikke er oppfylt og det ikke er foreldrepenger`() {
+    fun `B - oppfylt etter første punktum når hovedregelen ikke er oppfylt og det ikke er foreldrepenger`() {
         val vurderinger = listOf(hovedregelIkkeOppfylt, nyVurdering(L2P1, Utfall.Oppfylt))
-        assertEquals(L2P1, vurderinger.avgjørendeVilkårsvurdering()?.vilkårskode)
+        assertTrue(vurderinger.opptjeningErOppfylt())
     }
 
     @Test
-    fun `B - første punktum er avgjørende når foreldrepengene ikke er opptjent på AAP`() {
+    fun `B - oppfylt etter første punktum når foreldrepengene ikke er opptjent på AAP`() {
         val vurderinger = listOf(hovedregelIkkeOppfylt, nyVurdering(L2P1, Utfall.Oppfylt), nyVurdering(L2P2, Utfall.Oppfylt))
-        assertEquals(L2P1, vurderinger.avgjørendeVilkårsvurdering()?.vilkårskode)
+        assertTrue(vurderinger.opptjeningErOppfylt())
     }
 
     @Test
-    fun `B - første punktum kan avgjøre uten at hovedregelen er vurdert`() {
+    fun `B - oppfylt etter første punktum uten at hovedregelen er vurdert`() {
         val vurderinger = listOf(nyVurdering(L2P1, Utfall.Oppfylt))
-        assertEquals(L2P1, vurderinger.avgjørendeVilkårsvurdering()?.vilkårskode)
+        assertTrue(vurderinger.opptjeningErOppfylt())
     }
 
     @Test
-    fun `C - tredje punktum er avgjørende når foreldrepenger opptjent på AAP reddes av yrkesaktivitet før uttak`() {
+    fun `C - oppfylt etter tredje punktum når foreldrepenger opptjent på AAP reddes av yrkesaktivitet før uttak`() {
         val vurderinger =
             listOf(
                 hovedregelIkkeOppfylt,
@@ -66,17 +67,17 @@ internal class VilkårsvurderingTest {
                 nyVurdering(L2P2, Utfall.IkkeOppfylt),
                 nyVurdering(L2P3, Utfall.Oppfylt),
             )
-        assertEquals(L2P3, vurderinger.avgjørendeVilkårsvurdering()?.vilkårskode)
+        assertTrue(vurderinger.opptjeningErOppfylt())
     }
 
     @Test
-    fun `D - ingen avgjørende når verken hovedregel eller første punktum er oppfylt`() {
+    fun `D - ikke oppfylt når verken hovedregel eller første punktum er oppfylt`() {
         val vurderinger = listOf(hovedregelIkkeOppfylt, nyVurdering(L2P1, Utfall.IkkeOppfylt))
-        assertNull(vurderinger.avgjørendeVilkårsvurdering())
+        assertFalse(vurderinger.opptjeningErOppfylt())
     }
 
     @Test
-    fun `E - ingen avgjørende når foreldrepengene er opptjent på AAP uten yrkesaktivitet før uttak`() {
+    fun `E - ikke oppfylt når foreldrepengene er opptjent på AAP uten yrkesaktivitet før uttak`() {
         val vurderinger =
             listOf(
                 hovedregelIkkeOppfylt,
@@ -84,13 +85,13 @@ internal class VilkårsvurderingTest {
                 nyVurdering(L2P2, Utfall.IkkeOppfylt),
                 nyVurdering(L2P3, Utfall.IkkeOppfylt),
             )
-        assertNull(vurderinger.avgjørendeVilkårsvurdering())
+        assertFalse(vurderinger.opptjeningErOppfylt())
     }
 
     @Test
-    fun `første punktum avgjør ikke når andre punktum slår inn og tredje punktum ikke er vurdert ennå`() {
+    fun `ikke oppfylt når andre punktum slår inn og tredje punktum ikke er vurdert ennå`() {
         val vurderinger = listOf(hovedregelIkkeOppfylt, nyVurdering(L2P1, Utfall.Oppfylt), nyVurdering(L2P2, Utfall.IkkeOppfylt))
-        assertNull(vurderinger.avgjørendeVilkårsvurdering())
+        assertFalse(vurderinger.opptjeningErOppfylt())
     }
 
     private val L2P1 = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER

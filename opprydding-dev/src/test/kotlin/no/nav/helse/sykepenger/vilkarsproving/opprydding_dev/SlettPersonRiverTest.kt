@@ -6,7 +6,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 import kotlin.test.assertEquals
 
 internal class SlettPersonRiverTest {
@@ -35,7 +35,7 @@ internal class SlettPersonRiverTest {
 
         insertOpptjeningsproving(fødselsnummer = fødselsnummer)
         val opptjeningsvurderingId = insertOpptjeningsvurdering(fødselsnummer = fødselsnummer)
-        insertVilkarsvurdering(opptjeningsvurderingId = opptjeningsvurderingId, avgjørende = true)
+        insertVilkarsvurdering(opptjeningsvurderingId = opptjeningsvurderingId)
         insertMigreringslogg(fødselsnummer = fødselsnummer)
 
         assertEquals(1, Database.countOpptjeningsproving())
@@ -84,8 +84,8 @@ internal class SlettPersonRiverTest {
         val opptjeningsvurderingId1 = insertOpptjeningsvurdering(fødselsnummer = fødselsnummer1)
         val opptjeningsvurderingId2 = insertOpptjeningsvurdering(fødselsnummer = fødselsnummer2)
         val vilkarsvurderingId = UUID.randomUUID()
-        insertVilkarsvurdering(id = vilkarsvurderingId, opptjeningsvurderingId = opptjeningsvurderingId1, avgjørende = true)
-        kobleVilkarsvurdering(vilkarsvurderingId, opptjeningsvurderingId2, avgjørende = true)
+        insertVilkarsvurdering(id = vilkarsvurderingId, opptjeningsvurderingId = opptjeningsvurderingId1)
+        kobleVilkarsvurdering(vilkarsvurderingId, opptjeningsvurderingId2)
 
         rapid.sendTestMessage(slettPersonMelding(fødselsnummer1))
 
@@ -168,7 +168,6 @@ internal class SlettPersonRiverTest {
     private fun insertVilkarsvurdering(
         id: UUID = UUID.randomUUID(),
         opptjeningsvurderingId: UUID,
-        avgjørende: Boolean = false,
     ) {
         Database.dataSource.connection.use { conn ->
             conn
@@ -184,7 +183,7 @@ internal class SlettPersonRiverTest {
                     stmt.executeUpdate()
                 }
         }
-        kobleVilkarsvurdering(id, opptjeningsvurderingId, avgjørende)
+        kobleVilkarsvurdering(id, opptjeningsvurderingId)
     }
 
     private fun insertMigreringslogg(fødselsnummer: String) {
@@ -205,7 +204,6 @@ internal class SlettPersonRiverTest {
     private fun kobleVilkarsvurdering(
         vilkarsvurderingId: UUID,
         opptjeningsvurderingId: UUID,
-        avgjørende: Boolean,
     ) {
         Database.dataSource.connection.use { conn ->
             conn
@@ -220,16 +218,6 @@ internal class SlettPersonRiverTest {
                     stmt.setObject(2, vilkarsvurderingId)
                     stmt.executeUpdate()
                 }
-            if (avgjørende) {
-                conn
-                    .prepareStatement(
-                        "UPDATE opptjeningsvurdering SET avgjørende_vilkårsvurdering = ? WHERE id = ?",
-                    ).use { stmt ->
-                        stmt.setObject(1, vilkarsvurderingId)
-                        stmt.setObject(2, opptjeningsvurderingId)
-                        stmt.executeUpdate()
-                    }
-            }
         }
     }
 

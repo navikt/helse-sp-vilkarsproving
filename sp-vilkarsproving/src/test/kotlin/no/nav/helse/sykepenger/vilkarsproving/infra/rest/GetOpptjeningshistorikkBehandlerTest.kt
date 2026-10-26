@@ -158,7 +158,7 @@ class GetOpptjeningshistorikkBehandlerTest {
         testApplication {
             val transaksjonProvider = InMemoryTransaksjonProvider()
             val automatisk = saksbehandlervurdering(Utfall.IkkeOppfylt, Instant.parse("2025-04-01T10:03:00Z"))
-            val manuell = automatisk.prøvPåNyttMed(vilkårsvurdering(Utfall.Oppfylt, Instant.parse("2025-07-25T12:21:00Z")))
+            val manuell = saksbehandlervurdering(Utfall.Oppfylt, Instant.parse("2025-07-25T12:21:00Z"))
             val annetSkjæringstidspunkt = saksbehandlervurdering(Utfall.Oppfylt, Instant.now(), skjæringstidspunkt = LocalDate.of(2024, 3, 1))
             val annenPerson = saksbehandlervurdering(Utfall.Oppfylt, Instant.now(), fødselsnummer = "98765432109")
             listOf(automatisk, manuell, annetSkjæringstidspunkt, annenPerson).forEach(transaksjonProvider.opptjeningsvurderinger::lagre)
@@ -234,5 +234,5 @@ class GetOpptjeningshistorikkBehandlerTest {
         vurdertTidspunkt: Instant,
         fødselsnummer: String = identitetsnummer.value,
         skjæringstidspunkt: LocalDate = this.skjæringstidspunkt,
-    ) = Opptjeningsvurdering.avSaksbehandler(fødselsnummer, skjæringstidspunkt, vilkårsvurdering(utfall, vurdertTidspunkt))
+    ) = Opptjeningsvurdering.avSaksbehandler(fødselsnummer, skjæringstidspunkt, listOf(vilkårsvurdering(utfall, vurdertTidspunkt)))
 }

@@ -328,13 +328,15 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
     ) = Opptjeningsvurdering.avSaksbehandler(
         fødselsnummer = fødselsnummer,
         skjæringstidspunkt = skjæringstidspunkt,
-        vilkårsvurdering =
-            Vilkårsvurdering.avSaksbehandler(
-                vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
-                utfall = utfall,
-                saksbehandlerIdent = "Z999999",
-                fritekstbegrunnelse = fritekstbegrunnelse,
-                journalpostId = journalpostId,
+        vilkårsvurderinger =
+            listOf(
+                Vilkårsvurdering.avSaksbehandler(
+                    vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+                    utfall = utfall,
+                    saksbehandlerIdent = "Z999999",
+                    fritekstbegrunnelse = fritekstbegrunnelse,
+                    journalpostId = journalpostId,
+                ),
             ),
     )
 }

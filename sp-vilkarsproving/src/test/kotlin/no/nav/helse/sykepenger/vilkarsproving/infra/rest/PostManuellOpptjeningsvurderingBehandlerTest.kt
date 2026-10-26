@@ -23,6 +23,7 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.post
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures.InMemoryPersonPseudoIdProvider
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.util.*
@@ -46,7 +47,7 @@ class PostManuellOpptjeningsvurderingBehandlerTest {
             assertEquals(
                 listOf(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER),
                 lagret.vilkårsvurderinger.map { it.vilkårskode })
-            assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, lagret.avgjørendeVilkårskode)
+            assertTrue(lagret.erOk)
             assertEquals(
                 listOf(OutboxMelding.Saksbehandlerhandling::class, OutboxMelding.OpptjeningsvurderingEndret::class),
                 transaksjonProvider.outbox.upubliserteMeldinger.map { it.melding::class },
@@ -72,13 +73,10 @@ class PostManuellOpptjeningsvurderingBehandlerTest {
             assertEquals(HttpStatusCode.OK, response.status)
             val lagret = lagret()
             assertEquals(
-                setOf(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER) + Vilkårskode.andreAvsnitt,
+                Vilkårskode.entries.toSet(),
                 lagret.vilkårsvurderinger.map { it.vilkårskode }.toSet(),
             )
-            assertEquals(
-                Vilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER,
-                lagret.avgjørendeVilkårskode
-            )
+            assertTrue(lagret.erOk)
         }
 
     @Test

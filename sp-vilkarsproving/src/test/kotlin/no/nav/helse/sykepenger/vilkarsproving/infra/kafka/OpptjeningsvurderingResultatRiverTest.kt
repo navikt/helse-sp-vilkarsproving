@@ -7,6 +7,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.domain.avSaksbehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import org.intellij.lang.annotations.Language
@@ -14,10 +15,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.MethodSource
 import java.util.UUID
-import java.util.stream.Stream
 
 internal class OpptjeningsvurderingResultatRiverTest {
     private val transaksjon = InMemoryTransaksjonProvider()
@@ -35,7 +33,7 @@ internal class OpptjeningsvurderingResultatRiverTest {
 
     @Test
     fun `oppfylt vurdering gir ok = true`() {
-        val vurdering = manuellVurdering(utfall = Utfall.Oppfylt)
+        val vurdering = manuellVurdering(Utfall.Oppfylt)
 
         rapid.sendTestMessage(opptjeningsvurderingResultatBehov(vurdering.id.value))
 
@@ -52,7 +50,7 @@ internal class OpptjeningsvurderingResultatRiverTest {
 
     @Test
     fun `ikke-oppfylt vurdering gir ok = false`() {
-        val vurdering = manuellVurdering(utfall = Utfall.IkkeOppfylt)
+        val vurdering = manuellVurdering(Utfall.IkkeOppfylt)
 
         rapid.sendTestMessage(opptjeningsvurderingResultatBehov(vurdering.id.value))
 
@@ -65,46 +63,6 @@ internal class OpptjeningsvurderingResultatRiverTest {
                 .path("ok")
                 .asBoolean(),
         )
-    }
-
-    @ParameterizedTest
-    @MethodSource("opptjeningsVilkårskoder")
-    fun `oppfylt uansett avgjørende vilkårskode gir ok = true`(vilkårskode: Vilkårskode) {
-        rapid.reset()
-        val vurdering = manuellVurdering(vilkårskode = vilkårskode, utfall = Utfall.Oppfylt)
-
-        rapid.sendTestMessage(opptjeningsvurderingResultatBehov(vurdering.id.value))
-
-        val løsning = rapid.inspektør.message(0)
-        assertTrue(
-            løsning
-                .path("@løsning")
-                .path("OpptjeningsvurderingResultat")
-                .path("ok")
-                .asBoolean(),
-        ) {
-            "$vilkårskode oppfylt skal gi ok=true"
-        }
-    }
-
-    @ParameterizedTest
-    @MethodSource("opptjeningsVilkårskoder")
-    fun `ikke oppfylt uansett avgjørende vilkårskode gir ok = false`(vilkårskode: Vilkårskode) {
-        rapid.reset()
-        val vurdering = manuellVurdering(vilkårskode = vilkårskode, utfall = Utfall.IkkeOppfylt)
-
-        rapid.sendTestMessage(opptjeningsvurderingResultatBehov(vurdering.id.value))
-
-        val løsning = rapid.inspektør.message(0)
-        assertFalse(
-            løsning
-                .path("@løsning")
-                .path("OpptjeningsvurderingResultat")
-                .path("ok")
-                .asBoolean(),
-        ) {
-            "$vilkårskode ikke oppfylt skal gi ok=false"
-        }
     }
 
     @Test
@@ -159,13 +117,10 @@ internal class OpptjeningsvurderingResultatRiverTest {
         assertEquals(0, rapid.inspektør.size)
     }
 
-    private fun manuellVurdering(
-        vilkårskode: Vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
-        utfall: Utfall,
-    ): Opptjeningsvurdering.VurdertISpVilkårsprøving {
+    private fun manuellVurdering(utfall: Utfall): Opptjeningsvurdering.VurdertISpVilkårsprøving {
         val vilkårsvurdering =
             Vilkårsvurdering.avSaksbehandler(
-                vilkårskode = vilkårskode,
+                vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
                 utfall = utfall,
                 saksbehandlerIdent = "Z999999",
                 fritekstbegrunnelse = "",
@@ -174,16 +129,12 @@ internal class OpptjeningsvurderingResultatRiverTest {
             .avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                vilkårsvurdering = vilkårsvurdering,
+                vilkårsvurderinger = listOf(vilkårsvurdering),
             ).also { repository.lagre(it) }
     }
 
     private companion object {
         const val FØDSELSNUMMER = "12029240045"
-
-        // Andre ledd avgjøres av kombinasjonen av punktum, se scenarioene i VilkårsvurderingTest
-        @JvmStatic
-        fun opptjeningsVilkårskoder(): Stream<Vilkårskode> = Vilkårskode.entries.filterNot { it in Vilkårskode.andreAvsnitt }.stream()
 
         @Language("JSON")
         fun opptjeningsvurderingResultatBehov(opptjeningsvurderingId: UUID) =

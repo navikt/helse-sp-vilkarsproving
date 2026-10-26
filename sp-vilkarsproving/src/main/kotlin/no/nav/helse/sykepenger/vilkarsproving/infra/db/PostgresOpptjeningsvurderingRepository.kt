@@ -4,14 +4,7 @@ import kotliquery.Row
 import kotliquery.Session
 import kotliquery.queryOf
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningsvurderingRepository
-import no.nav.helse.sykepenger.vilkarsproving.domain.Kategori
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
-import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurderingskilde
-import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
-import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.domain.VilkårsvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.*
 import org.intellij.lang.annotations.Language
 import org.postgresql.util.PSQLException
 import java.time.LocalDate
@@ -26,13 +19,24 @@ internal class PostgresOpptjeningsvurderingRepository(
     override fun lagre(vurdering: Opptjeningsvurdering) {
         try {
             when (vurdering) {
-                is Opptjeningsvurdering.VurdertISpVilkårsprøving -> lagreMedVilkårsvurderinger(vurdering, VURDERINGSKILDE_VURDERT_I_SP_VILKARSPROVING)
-                is Opptjeningsvurdering.OverførtFraSpleis -> lagreMedVilkårsvurderinger(vurdering, VURDERINGSKILDE_OVERFORT_FRA_SPLEIS)
+                is Opptjeningsvurdering.VurdertISpVilkårsprøving -> lagreMedVilkårsvurderinger(
+                    vurdering,
+                    VURDERINGSKILDE_VURDERT_I_SP_VILKARSPROVING
+                )
+
+                is Opptjeningsvurdering.OverførtFraSpleis -> lagreMedVilkårsvurderinger(
+                    vurdering,
+                    VURDERINGSKILDE_OVERFORT_FRA_SPLEIS
+                )
+
                 is Opptjeningsvurdering.OverførtFraInfotrygd -> lagreInfotrygd(vurdering)
             }
         } catch (e: PSQLException) {
             if (e.sqlState != UNIKHETSBRUDD) throw e
-            throw IllegalStateException("Opptjeningsvurdering ${vurdering.id} er allerede lagret. Vurderinger er immutable.", e)
+            throw IllegalStateException(
+                "Opptjeningsvurdering ${vurdering.id} er allerede lagret. Vurderinger er immutable.",
+                e
+            )
         }
     }
 
@@ -104,20 +108,6 @@ internal class PostgresOpptjeningsvurderingRepository(
                         "opptjeningsvurderingId" to totalvurdering.id.value,
                         "vilkarsvurderingId" to enkeltvurdering.id.value,
                     ),
-                ).asUpdate,
-            )
-        }
-        totalvurdering.avgjørendeVilkårsvurdering?.let { avgjørende ->
-            @Language("PostgreSQL")
-            val sql = """
-                update opptjeningsvurdering
-                set avgjørende_vilkårsvurdering = :avgjorendeVilkarsvurderingId
-                where id = :id
-            """
-            session.run(
-                queryOf(
-                    sql,
-                    mapOf("id" to totalvurdering.id.value, "avgjorendeVilkarsvurderingId" to avgjørende.id.value),
                 ).asUpdate,
             )
         }
@@ -217,45 +207,28 @@ internal class PostgresOpptjeningsvurderingRepository(
                     vurdertTidspunkt = rad.vurdertTidspunkt,
                 )
 
-            VURDERINGSKILDE_VURDERT_I_SP_VILKARSPROVING -> {
-                val (vilkårsvurderinger, avgjørendeVilkårsvurdering) = finnVilkårsvurderingerOgAvgjørende(rad)
+            VURDERINGSKILDE_VURDERT_I_SP_VILKARSPROVING ->
                 Opptjeningsvurdering.fraLagring(
                     id = rad.id,
                     fødselsnummer = rad.fødselsnummer,
                     skjæringstidspunkt = rad.skjæringstidspunkt,
-                    vilkårsvurderinger = vilkårsvurderinger,
-                    avgjørendeVilkårsvurdering = avgjørendeVilkårsvurdering,
+                    vilkårsvurderinger = finnVilkårsvurderingerFor(rad.id),
                     erOk = rad.erOk,
                     kategori = rad.kategori,
                 )
-            }
 
-            VURDERINGSKILDE_OVERFORT_FRA_SPLEIS -> {
-                val (vilkårsvurderinger, avgjørendeVilkårsvurdering) = finnVilkårsvurderingerOgAvgjørende(rad)
+            VURDERINGSKILDE_OVERFORT_FRA_SPLEIS ->
                 Opptjeningsvurdering.spleisFraLagring(
                     id = rad.id,
                     fødselsnummer = rad.fødselsnummer,
                     skjæringstidspunkt = rad.skjæringstidspunkt,
-                    vilkårsvurderinger = vilkårsvurderinger,
-                    avgjørendeVilkårsvurdering = avgjørendeVilkårsvurdering,
+                    vilkårsvurderinger = finnVilkårsvurderingerFor(rad.id),
                     erOk = rad.erOk,
                     kategori = rad.kategori,
                 )
-            }
 
             else -> error("Ukjent vurderingskilde for opptjeningsvurdering ${rad.id}: ${rad.vurderingskilde}")
         }
-
-    private fun finnVilkårsvurderingerOgAvgjørende(rad: OpptjeningsvurderingRad): Pair<List<Vilkårsvurdering>, Vilkårsvurdering?> {
-        val vilkårsvurderinger = finnVilkårsvurderingerFor(rad.id)
-        val avgjørendeVilkårsvurdering =
-            rad.avgjørendeVilkårsvurderingId?.let { id ->
-                requireNotNull(vilkårsvurderinger.find { it.id == id }) {
-                    "Avgjørende vilkårsvurdering $id er ikke knyttet til opptjeningsvurdering ${rad.id}"
-                }
-            }
-        return vilkårsvurderinger to avgjørendeVilkårsvurdering
-    }
 
     private fun finnVilkårsvurderingerFor(opptjeningsvurderingId: OpptjeningsvurderingId): List<Vilkårsvurdering> {
         @Language("PostgreSQL")
@@ -266,7 +239,10 @@ internal class PostgresOpptjeningsvurderingRepository(
             where ov.opptjeningsvurdering_id = :opptjeningsvurderingId
         """
         return session.run(
-            queryOf(sql, mapOf("opptjeningsvurderingId" to opptjeningsvurderingId.value)).map(::tilVilkårsvurdering).asList,
+            queryOf(
+                sql,
+                mapOf("opptjeningsvurderingId" to opptjeningsvurderingId.value)
+            ).map(::tilVilkårsvurdering).asList,
         )
     }
 
@@ -289,7 +265,6 @@ internal class PostgresOpptjeningsvurderingRepository(
             kategori = row.string("kategori").fraDbVerdi(),
             vurderingskilde = row.string("vurderingskilde"),
             erOk = row.boolean("opptjening_ok"),
-            avgjørendeVilkårsvurderingId = row.uuidOrNull("avgjørende_vilkårsvurdering")?.let(::VilkårsvurderingId),
             vurdertTidspunkt = row.instant("vurdert_tidspunkt"),
         )
 
@@ -300,7 +275,6 @@ internal class PostgresOpptjeningsvurderingRepository(
         val kategori: Kategori,
         val vurderingskilde: String,
         val erOk: Boolean,
-        val avgjørendeVilkårsvurderingId: VilkårsvurderingId?,
         val vurdertTidspunkt: java.time.Instant,
     )
 
@@ -309,7 +283,7 @@ internal class PostgresOpptjeningsvurderingRepository(
 
         @Language("PostgreSQL")
         const val SELECT_OPPTJENINGSVURDERING = """
-            select id, fødselsnummer, skjæringstidspunkt, kategori, vurderingskilde, opptjening_ok, avgjørende_vilkårsvurdering, vurdert_tidspunkt
+            select id, fødselsnummer, skjæringstidspunkt, kategori, vurderingskilde, opptjening_ok, vurdert_tidspunkt
             from opptjeningsvurdering
         """
     }

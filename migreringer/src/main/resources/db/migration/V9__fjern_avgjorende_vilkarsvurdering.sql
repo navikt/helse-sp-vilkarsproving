@@ -1,0 +1,1 @@
+ALTER TABLE opptjeningsvurdering DROP COLUMN avgjørende_vilkårsvurdering;

@@ -48,7 +48,6 @@ internal class SlettPersonRiver(
         fødselsnummer: String,
     ) {
         val vilkarsvurderingIder = slettKoblingerTilOpptjeningsvurdering(tx, fødselsnummer)
-        fjernAvgjørendeVilkårsvurdering(tx, fødselsnummer)
         slettVilkarsvurdering(tx, vilkarsvurderingIder)
         slettOpptjeningsvurdering(tx, fødselsnummer)
         slettOpptjeningsproving(tx, fødselsnummer)
@@ -61,19 +60,6 @@ internal class SlettPersonRiver(
     ) {
         @Language("PostgreSQL")
         val query = "DELETE FROM migreringslogg WHERE fødselsnummer = :fnr"
-        tx.run(queryOf(query, mapOf("fnr" to fødselsnummer)).asUpdate)
-    }
-
-    private fun fjernAvgjørendeVilkårsvurdering(
-        tx: TransactionalSession,
-        fødselsnummer: String,
-    ) {
-        @Language("PostgreSQL")
-        val query = """
-            UPDATE opptjeningsvurdering
-            SET avgjørende_vilkårsvurdering = NULL
-            WHERE fødselsnummer = :fnr AND avgjørende_vilkårsvurdering IS NOT NULL
-        """
         tx.run(queryOf(query, mapOf("fnr" to fødselsnummer)).asUpdate)
     }
 
@@ -103,9 +89,6 @@ internal class SlettPersonRiver(
             WHERE id = ANY (:ider)
             AND NOT EXISTS (
                 SELECT 1 FROM opptjeningsvurdering_vilkarsvurdering WHERE vilkarsvurdering_id = vilkarsvurdering.id
-            )
-            AND NOT EXISTS (
-                SELECT 1 FROM opptjeningsvurdering WHERE avgjørende_vilkårsvurdering = vilkarsvurdering.id
             )
         """
         tx.run(

@@ -46,7 +46,6 @@ private fun Opptjeningsvurdering.tilApi(): ApiOpptjeningsvurdering =
                 id = id.value,
                 kravkode = ApiKravkode.OPPTJENING,
                 opptjeningOk = erOk,
-                avgjørendeVilkårskode = avgjørendeVilkårskode?.tilApi(),
                 vurderinger = vilkårsvurderinger.map { it.tilApi() },
             )
 
@@ -55,7 +54,6 @@ private fun Opptjeningsvurdering.tilApi(): ApiOpptjeningsvurdering =
                 id = id.value,
                 kravkode = ApiKravkode.OPPTJENING,
                 opptjeningOk = erOk,
-                avgjørendeVilkårskode = avgjørendeVilkårskode?.tilApi(),
                 vurderinger = vilkårsvurderinger.map { it.tilApi() },
             )
     }

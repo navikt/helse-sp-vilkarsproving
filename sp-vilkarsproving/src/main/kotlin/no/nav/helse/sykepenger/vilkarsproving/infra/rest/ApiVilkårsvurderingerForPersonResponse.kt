@@ -35,7 +35,6 @@ internal sealed interface ApiOpptjeningsvurdering {
         override val id: UUID,
         override val kravkode: ApiKravkode,
         override val opptjeningOk: Boolean,
-        val avgjørendeVilkårskode: ApiVilkårskode?,
         val vurderinger: List<ApiVilkårsvurdering>,
     ) : ApiOpptjeningsvurdering {
         override val kravkilde: ApiKravkilde = ApiKravkilde.VURDERT_I_SP_VILKARSPROVING
@@ -46,7 +45,6 @@ internal sealed interface ApiOpptjeningsvurdering {
         override val id: UUID,
         override val kravkode: ApiKravkode,
         override val opptjeningOk: Boolean,
-        val avgjørendeVilkårskode: ApiVilkårskode?,
         val vurderinger: List<ApiVilkårsvurdering>,
     ) : ApiOpptjeningsvurdering {
         override val kravkilde: ApiKravkilde = ApiKravkilde.OVERFORT_FRA_SPLEIS
@@ -106,15 +104,6 @@ internal enum class ApiVilkårskode {
     OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER,
     OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP,
     OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER,
-}
-
-@Serializable
-internal enum class ApiLikestiltYtelse {
-    DAGPENGER,
-    SYKEPENGER,
-    KAPITTEL_9,
-    FORELDREPENGER,
-    SVANGERSKAPSPENGER,
 }
 
 @Serializable

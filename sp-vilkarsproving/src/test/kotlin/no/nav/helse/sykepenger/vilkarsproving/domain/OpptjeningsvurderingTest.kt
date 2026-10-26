@@ -40,42 +40,39 @@ internal class OpptjeningsvurderingTest {
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                vilkårsvurdering = vilkårsvurdering,
+                vilkårsvurderinger = listOf(vilkårsvurdering),
             )
 
         // then
         assertTrue(vurdering.erOk)
-        assertEquals(vilkårsvurdering, vurdering.avgjørendeVilkårsvurdering)
         val kilde = vurdering.vilkårsvurderinger.single().kilde
         assertIs<Vurderingskilde.Saksbehandler>(kilde)
         assertEquals("Z999999", kilde.ident)
     }
 
     @Test
-    fun `en infotrygdvurdering har ingen vilkårsvurderinger å videreføre`() {
+    fun `saksbehandlervurdering erstatter alle tidligere vilkårsvurderinger`() {
         val forrige =
-            Opptjeningsvurdering.fraInfotrygd(
+            Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                erOk = false,
-                vurdertTidspunkt = Instant.now(),
+                vilkårsvurderinger =
+                    listOf(
+                        saksbehandlervurdering(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, Utfall.IkkeOppfylt),
+                        saksbehandlervurdering(Vilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER, Utfall.Oppfylt),
+                    ),
             )
+        val ny = saksbehandlervurdering(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, Utfall.Oppfylt)
 
         val vurdering =
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                vilkårsvurdering =
-                    Vilkårsvurdering.avSaksbehandler(
-                        vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
-                        utfall = Utfall.Oppfylt,
-                        saksbehandlerIdent = "Z999999",
-                        fritekstbegrunnelse = "hadde dagpenger i forkant",
-                    ),
+                vilkårsvurderinger = listOf(ny),
                 forrigeVurdering = forrige,
             )
 
-        assertEquals(1, vurdering.vilkårsvurderinger.size)
+        assertEquals(listOf(ny), vurdering.vilkårsvurderinger)
     }
 
     @Test
@@ -94,18 +91,25 @@ internal class OpptjeningsvurderingTest {
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = FØDSELSNUMMER,
                 skjæringstidspunkt = 1.februar,
-                vilkårsvurdering =
-                    Vilkårsvurdering.avSaksbehandler(
-                        vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
-                        utfall = Utfall.IkkeOppfylt,
-                        saksbehandlerIdent = "Z999999",
-                        fritekstbegrunnelse = "ny vurdering",
+                vilkårsvurderinger =
+                    listOf(
+                        Vilkårsvurdering.avSaksbehandler(
+                            vilkårskode = Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+                            utfall = Utfall.IkkeOppfylt,
+                            saksbehandlerIdent = "Z999999",
+                            fritekstbegrunnelse = "ny vurdering",
+                        ),
                     ),
                 forrigeVurdering = forrige,
             )
 
         assertEquals(Kategori.SelvstendigNæringsdrivende, vurdering.kategori)
     }
+
+    private fun saksbehandlervurdering(
+        vilkårskode: Vilkårskode,
+        utfall: Utfall,
+    ) = Vilkårsvurdering.avSaksbehandler(vilkårskode, utfall, "Z999999", "begrunnelse")
 
     private companion object {
         const val FØDSELSNUMMER = "12029240045"
