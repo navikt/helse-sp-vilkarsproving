@@ -1,8 +1,8 @@
 package no.nav.helse.sykepenger.vilkarsproving.domain
 
-import no.nav.helse.sykepenger.vilkarsproving.domain.LikestiltYtelse.DAGPENGER
-import no.nav.helse.sykepenger.vilkarsproving.domain.LikestiltYtelse.FORELDREPENGER
-import no.nav.helse.sykepenger.vilkarsproving.domain.LikestiltYtelse.SYKEPENGER
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsaktivitet.DAGPENGER
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsaktivitet.FORELDREPENGER
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsaktivitet.SYKEPENGER
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall.IkkeOppfylt
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall.Oppfylt
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -60,7 +60,7 @@ internal class LikestiltYtelseVurderingTest {
                 ident = "Z999999",
                 fritekstbegrunnelse = "begrunnelse",
                 journalpostId = listOf("journalpost-1"),
-                ytelser = listOf(SYKEPENGER, FORELDREPENGER),
+                opptjeningsaktiviteter = listOf(SYKEPENGER, FORELDREPENGER),
             )
         vurderinger.forEach {
             assertEquals(tidspunkt, it.vurdertTidspunkt)
@@ -117,7 +117,7 @@ internal class LikestiltYtelseVurderingTest {
 
     private fun svar(
         sammenlagt: Boolean,
-        ytelser: List<LikestiltYtelse>,
+        ytelser: List<Opptjeningsaktivitet>,
         fpAap: Boolean? = null,
         yrkesaktiv: Boolean? = null,
     ) = SvarPåLikestiltYtelse(sammenlagt, ytelser, fpAap, yrkesaktiv)

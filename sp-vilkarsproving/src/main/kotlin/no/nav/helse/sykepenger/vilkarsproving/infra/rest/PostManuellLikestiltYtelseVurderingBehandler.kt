@@ -5,9 +5,9 @@ import no.nav.helse.sykepenger.vilkarsproving.application.HandlingType
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvolutt
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
-import no.nav.helse.sykepenger.vilkarsproving.domain.LikestiltYtelse
 import no.nav.helse.sykepenger.vilkarsproving.domain.LikestiltYtelseVurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.LikestiltYtelseVurderingResultat
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsaktivitet
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.SvarPåLikestiltYtelse
 import no.nav.helse.sykepenger.vilkarsproving.domain.UgyldigSvarPåLikestiltYtelse
@@ -115,13 +115,13 @@ private fun ApiManuellLikestiltYtelseVurderingRequest.tilSvar() =
         yrkesaktivMinst4UkerFørUttak = yrkesaktivMinst4UkerFørUttak,
     )
 
-private fun ApiLikestiltYtelse.fraApi(): LikestiltYtelse =
+private fun ApiLikestiltYtelse.fraApi(): Opptjeningsaktivitet =
     when (this) {
-        ApiLikestiltYtelse.DAGPENGER -> LikestiltYtelse.DAGPENGER
-        ApiLikestiltYtelse.SYKEPENGER -> LikestiltYtelse.SYKEPENGER
-        ApiLikestiltYtelse.KAPITTEL_9 -> LikestiltYtelse.KAPITTEL_9
-        ApiLikestiltYtelse.FORELDREPENGER -> LikestiltYtelse.FORELDREPENGER
-        ApiLikestiltYtelse.SVANGERSKAPSPENGER -> LikestiltYtelse.SVANGERSKAPSPENGER
+        ApiLikestiltYtelse.DAGPENGER -> Opptjeningsaktivitet.DAGPENGER
+        ApiLikestiltYtelse.SYKEPENGER -> Opptjeningsaktivitet.SYKEPENGER
+        ApiLikestiltYtelse.KAPITTEL_9 -> Opptjeningsaktivitet.KAPITTEL_9
+        ApiLikestiltYtelse.FORELDREPENGER -> Opptjeningsaktivitet.FORELDREPENGER
+        ApiLikestiltYtelse.SVANGERSKAPSPENGER -> Opptjeningsaktivitet.SVANGERSKAPSPENGER
     }
 
 private fun UgyldigSvarPåLikestiltYtelse.tilApi(): ApiManuellLikestiltYtelseVurderingFeil =

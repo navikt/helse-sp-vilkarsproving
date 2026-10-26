@@ -163,6 +163,23 @@ internal sealed interface Opptjeningsvurdering {
             )
         }
 
+        /**
+         * Saksbehandlerens samlede vurdering av § 8-2 erstatter alle tidligere vilkårsvurderinger i [forrigeVurdering],
+         * slik at det ikke blir liggende igjen gamle vurderinger av punktum som ikke lenger er aktuelle.
+         */
+        fun avSaksbehandlerErstattAlle(
+            fødselsnummer: String,
+            skjæringstidspunkt: LocalDate,
+            vilkårsvurderinger: List<Vilkårsvurdering>,
+            forrigeVurdering: Opptjeningsvurdering? = null,
+        ): VurdertISpVilkårsprøving =
+            VurdertISpVilkårsprøving.med(
+                fødselsnummer = fødselsnummer,
+                skjæringstidspunkt = skjæringstidspunkt,
+                kategori = forrigeVurdering?.kategori ?: Kategori.Arbeidstaker,
+                vilkårsvurderinger = vilkårsvurderinger,
+            )
+
         fun fraInfotrygd(
             id: OpptjeningsvurderingId = OpptjeningsvurderingId.ny(),
             fødselsnummer: String,

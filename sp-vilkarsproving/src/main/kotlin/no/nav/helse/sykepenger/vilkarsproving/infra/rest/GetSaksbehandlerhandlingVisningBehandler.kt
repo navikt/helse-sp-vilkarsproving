@@ -2,7 +2,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoId
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
-import no.nav.helse.sykepenger.vilkarsproving.domain.LikestiltYtelse
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsaktivitet
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
@@ -89,8 +89,13 @@ private fun ManuellHandling.tilVisningsfelter(): List<ApiVisningsfelt> =
                 add(ApiVisningsfelt.Tekst(tittel = vurdering.vilkårskode.visningsnavn(), tekst = vurdering.utfall.visningsnavn()))
             }
         }
-        if (kilde.ytelser.isNotEmpty()) {
-            add(ApiVisningsfelt.Liste(tittel = "Likestilte ytelser", elementer = kilde.ytelser.map { it.visningsnavn() }))
+        if (kilde.opptjeningsaktiviteter.isNotEmpty()) {
+            add(
+                ApiVisningsfelt.Liste(
+                    tittel = "Arbeid og likestilte ytelser",
+                    elementer = kilde.opptjeningsaktiviteter.map { it.visningsnavn() },
+                ),
+            )
         }
         add(ApiVisningsfelt.Tekst(tittel = "Begrunnelse", tekst = kilde.fritekstbegrunnelse))
         if (kilde.journalpostId.isNotEmpty()) {
@@ -106,13 +111,14 @@ private fun Vilkårskode.visningsnavn(): String =
         Vilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER -> "Yrkesaktiv i minst 4 uker før uttak av foreldrepenger"
     }
 
-private fun LikestiltYtelse.visningsnavn(): String =
+private fun Opptjeningsaktivitet.visningsnavn(): String =
     when (this) {
-        LikestiltYtelse.DAGPENGER -> "Dagpenger"
-        LikestiltYtelse.SYKEPENGER -> "Sykepenger"
-        LikestiltYtelse.KAPITTEL_9 -> "Pleie-, omsorgs- eller opplæringspenger"
-        LikestiltYtelse.FORELDREPENGER -> "Foreldrepenger"
-        LikestiltYtelse.SVANGERSKAPSPENGER -> "Svangerskapspenger"
+        Opptjeningsaktivitet.ARBEID -> "Arbeid"
+        Opptjeningsaktivitet.DAGPENGER -> "Dagpenger"
+        Opptjeningsaktivitet.SYKEPENGER -> "Sykepenger"
+        Opptjeningsaktivitet.KAPITTEL_9 -> "Pleie-, omsorgs- eller opplæringspenger"
+        Opptjeningsaktivitet.FORELDREPENGER -> "Foreldrepenger"
+        Opptjeningsaktivitet.SVANGERSKAPSPENGER -> "Svangerskapspenger"
     }
 
 private fun Utfall.visningsnavn(): String =

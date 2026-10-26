@@ -88,7 +88,7 @@ internal class VurderingsresponsTest {
                     utfall = Utfall.Oppfylt,
                     saksbehandlerIdent = "Z999999",
                     fritekstbegrunnelse = "Yrkesaktiv før uttaket",
-                ).let { it.copy(kilde = (it.kilde as Vurderingskilde.Saksbehandler).copy(ytelser = listOf(LikestiltYtelse.FORELDREPENGER))) }
+                ).let { it.copy(kilde = (it.kilde as Vurderingskilde.Saksbehandler).copy(opptjeningsaktiviteter = listOf(Opptjeningsaktivitet.FORELDREPENGER))) }
         val vurdering =
             Opptjeningsvurdering.avSaksbehandler(
                 fødselsnummer = "12345678901",
@@ -101,7 +101,7 @@ internal class VurderingsresponsTest {
 
         assertEquals(ApiVilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER, api.vilkårskode)
         assertEquals(ApiLovreferanse("folketrygdloven", "8-2", 2, 3, null, 1.januar(2018)), api.lovreferanse)
-        assertEquals(listOf(ApiLikestiltYtelse.FORELDREPENGER), kilde.ytelser)
+        assertEquals(listOf(ApiOpptjeningsaktivitet.FORELDREPENGER), kilde.opptjeningsaktiviteter)
     }
 
     @Test

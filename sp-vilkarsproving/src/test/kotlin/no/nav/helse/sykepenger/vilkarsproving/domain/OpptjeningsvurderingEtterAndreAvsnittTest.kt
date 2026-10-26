@@ -49,6 +49,33 @@ internal class OpptjeningsvurderingEtterAndreAvsnittTest {
         assertEquals(listOf(L2P1), ny.vilkårsvurderinger.map { it.vilkårskode })
     }
 
+    @Test
+    fun `samlet vurdering erstatter alle tidligere vilkårsvurderinger`() {
+        val forrige = opptjeningsvurdering(hovedregelIkkeOppfylt, vurdering(L2P1), vurdering(L2P2, Utfall.IkkeOppfylt), vurdering(L2P3))
+        val nyHovedregel = vurdering(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER)
+
+        val ny = Opptjeningsvurdering.avSaksbehandlerErstattAlle(FØDSELSNUMMER, 1.februar, listOf(nyHovedregel), forrige)
+
+        assertEquals(listOf(nyHovedregel.id), ny.vilkårsvurderinger.map { it.id })
+        assertEquals(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, ny.avgjørendeVilkårskode)
+        assertTrue(ny.erOk)
+    }
+
+    @Test
+    fun `samlet vurdering beholder kategorien fra forrige vurdering`() {
+        val forrige =
+            Opptjeningsvurdering.VurdertISpVilkårsprøving.med(
+                fødselsnummer = FØDSELSNUMMER,
+                skjæringstidspunkt = 1.februar,
+                kategori = Kategori.SelvstendigNæringsdrivende,
+                vilkårsvurderinger = listOf(hovedregelIkkeOppfylt),
+            )
+
+        val ny = Opptjeningsvurdering.avSaksbehandlerErstattAlle(FØDSELSNUMMER, 1.februar, listOf(vurdering(L2P1)), forrige)
+
+        assertEquals(Kategori.SelvstendigNæringsdrivende, ny.kategori)
+    }
+
     private val L2P1 = Vilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER
     private val L2P2 = Vilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP
     private val L2P3 = Vilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER

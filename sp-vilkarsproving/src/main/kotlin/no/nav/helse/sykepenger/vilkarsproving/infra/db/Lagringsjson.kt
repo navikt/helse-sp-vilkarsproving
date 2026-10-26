@@ -2,8 +2,8 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
 import no.nav.helse.Periode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
-import no.nav.helse.sykepenger.vilkarsproving.domain.LikestiltYtelse
 import no.nav.helse.sykepenger.vilkarsproving.domain.Lovreferanse
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsaktivitet
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
@@ -65,7 +65,7 @@ private fun Vurderingskilde.tilDto(): VurderingskildeDto =
                 ident = ident,
                 fritekstbegrunnelse = fritekstbegrunnelse,
                 journalpostId = journalpostId,
-                ytelser = ytelser.map { it.tilDto() },
+                opptjeningsaktiviteter = opptjeningsaktiviteter.map { it.tilDto() },
             )
 
         is Vurderingskilde.OverførtFraSpleis ->
@@ -87,29 +87,31 @@ private fun VurderingskildeDto.tilVurderingskilde(): Vurderingskilde =
                 ident = ident,
                 fritekstbegrunnelse = fritekstbegrunnelse,
                 journalpostId = journalpostId,
-                ytelser = ytelser.map { it.tilLikestiltYtelse() },
+                opptjeningsaktiviteter = opptjeningsaktiviteter.map { it.tilOpptjeningsaktivitet() },
             )
 
         is VurderingskildeDto.OverførtFraSpleis ->
             Vurderingskilde.OverførtFraSpleis(grunnlag = grunnlag.tilOpptjeningsgrunnlag(), utledetFakta = utledet.tilUtledet())
     }
 
-private fun LikestiltYtelse.tilDto(): LikestiltYtelseDto =
+private fun Opptjeningsaktivitet.tilDto(): OpptjeningsaktivitetDto =
     when (this) {
-        LikestiltYtelse.DAGPENGER -> LikestiltYtelseDto.DAGPENGER
-        LikestiltYtelse.SYKEPENGER -> LikestiltYtelseDto.SYKEPENGER
-        LikestiltYtelse.KAPITTEL_9 -> LikestiltYtelseDto.KAPITTEL_9
-        LikestiltYtelse.FORELDREPENGER -> LikestiltYtelseDto.FORELDREPENGER
-        LikestiltYtelse.SVANGERSKAPSPENGER -> LikestiltYtelseDto.SVANGERSKAPSPENGER
+        Opptjeningsaktivitet.ARBEID -> OpptjeningsaktivitetDto.ARBEID
+        Opptjeningsaktivitet.DAGPENGER -> OpptjeningsaktivitetDto.DAGPENGER
+        Opptjeningsaktivitet.SYKEPENGER -> OpptjeningsaktivitetDto.SYKEPENGER
+        Opptjeningsaktivitet.KAPITTEL_9 -> OpptjeningsaktivitetDto.KAPITTEL_9
+        Opptjeningsaktivitet.FORELDREPENGER -> OpptjeningsaktivitetDto.FORELDREPENGER
+        Opptjeningsaktivitet.SVANGERSKAPSPENGER -> OpptjeningsaktivitetDto.SVANGERSKAPSPENGER
     }
 
-private fun LikestiltYtelseDto.tilLikestiltYtelse(): LikestiltYtelse =
+private fun OpptjeningsaktivitetDto.tilOpptjeningsaktivitet(): Opptjeningsaktivitet =
     when (this) {
-        LikestiltYtelseDto.DAGPENGER -> LikestiltYtelse.DAGPENGER
-        LikestiltYtelseDto.SYKEPENGER -> LikestiltYtelse.SYKEPENGER
-        LikestiltYtelseDto.KAPITTEL_9 -> LikestiltYtelse.KAPITTEL_9
-        LikestiltYtelseDto.FORELDREPENGER -> LikestiltYtelse.FORELDREPENGER
-        LikestiltYtelseDto.SVANGERSKAPSPENGER -> LikestiltYtelse.SVANGERSKAPSPENGER
+        OpptjeningsaktivitetDto.ARBEID -> Opptjeningsaktivitet.ARBEID
+        OpptjeningsaktivitetDto.DAGPENGER -> Opptjeningsaktivitet.DAGPENGER
+        OpptjeningsaktivitetDto.SYKEPENGER -> Opptjeningsaktivitet.SYKEPENGER
+        OpptjeningsaktivitetDto.KAPITTEL_9 -> Opptjeningsaktivitet.KAPITTEL_9
+        OpptjeningsaktivitetDto.FORELDREPENGER -> Opptjeningsaktivitet.FORELDREPENGER
+        OpptjeningsaktivitetDto.SVANGERSKAPSPENGER -> Opptjeningsaktivitet.SVANGERSKAPSPENGER
     }
 
 private fun Opptjeningsgrunnlag.tilDto(): OpptjeningsgrunnlagDto =

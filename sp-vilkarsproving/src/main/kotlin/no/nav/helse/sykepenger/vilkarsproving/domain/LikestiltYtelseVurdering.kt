@@ -8,13 +8,13 @@ import java.time.Instant
  *
  * - første punktum ([Vilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER]) vurderes alltid
  * - andre punktum ([Vilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP]) vurderes bare når første punktum er
- *   oppfylt og [LikestiltYtelse.FORELDREPENGER] er blant ytelsene
+ *   oppfylt og [Opptjeningsaktivitet.FORELDREPENGER] er blant ytelsene
  * - tredje punktum ([Vilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER]) vurderes bare når
  *   andre punktum ikke er oppfylt
  */
 internal data class SvarPåLikestiltYtelse(
     val sammenlagtMinst4Uker: Boolean,
-    val ytelser: List<LikestiltYtelse>,
+    val ytelser: List<Opptjeningsaktivitet>,
     val foreldrepengerOpptjentPåAap: Boolean?,
     val yrkesaktivMinst4UkerFørUttak: Boolean?,
 )
@@ -80,7 +80,7 @@ internal object LikestiltYtelseVurdering {
 
     // Etter valideringen er et svar satt hvis og bare hvis punktumet skal vurderes
     private fun SvarPåLikestiltYtelse.ugyldighet(): UgyldigSvarPåLikestiltYtelse? {
-        val harForeldrepenger = LikestiltYtelse.FORELDREPENGER in ytelser
+        val harForeldrepenger = Opptjeningsaktivitet.FORELDREPENGER in ytelser
         return when {
             sammenlagtMinst4Uker && ytelser.isEmpty() -> UgyldigSvarPåLikestiltYtelse.YTELSER_MANGLER
             !sammenlagtMinst4Uker && ytelser.isNotEmpty() -> UgyldigSvarPåLikestiltYtelse.YTELSER_UTEN_SAMMENLAGT_OPPTJENING

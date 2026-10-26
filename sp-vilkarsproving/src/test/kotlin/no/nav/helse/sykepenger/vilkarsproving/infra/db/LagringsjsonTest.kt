@@ -2,8 +2,8 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.db
 
 import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
-import no.nav.helse.sykepenger.vilkarsproving.domain.LikestiltYtelse
 import no.nav.helse.sykepenger.vilkarsproving.domain.Lovreferanse
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsaktivitet
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
@@ -112,31 +112,31 @@ internal class LagringsjsonTest {
     }
 
     @Test
-    fun `saksbehandlerkilde med likestilte ytelser lagres på avtalt format`() {
+    fun `saksbehandlerkilde med opptjeningsaktiviteter lagres på avtalt format`() {
         val kilde =
             Vurderingskilde.Saksbehandler(
                 ident = "A123456",
                 fritekstbegrunnelse = "dagpenger rett før",
                 journalpostId = emptyList(),
-                ytelser = listOf(LikestiltYtelse.DAGPENGER, LikestiltYtelse.FORELDREPENGER),
+                opptjeningsaktiviteter = listOf(Opptjeningsaktivitet.DAGPENGER, Opptjeningsaktivitet.FORELDREPENGER),
             )
 
         assertEquals(
             """{"type":"SAKSBEHANDLER","ident":"A123456","fritekstbegrunnelse":"dagpenger rett før",""" +
-                """"journalpostId":[],"ytelser":["DAGPENGER","FORELDREPENGER"]}""",
+                """"journalpostId":[],"opptjeningsaktiviteter":["DAGPENGER","FORELDREPENGER"]}""",
             Vurderingskildejson.tilJson(kilde),
         )
         assertEquals(kilde, mapFremOgTilbake(kilde))
     }
 
     @Test
-    fun `alle likestilte ytelser tåler en rundtur`() {
+    fun `alle opptjeningsaktiviteter tåler en rundtur`() {
         val kilde =
             Vurderingskilde.Saksbehandler(
                 ident = "A123456",
                 fritekstbegrunnelse = "",
                 journalpostId = emptyList(),
-                ytelser = LikestiltYtelse.entries,
+                opptjeningsaktiviteter = Opptjeningsaktivitet.entries,
             )
         assertEquals(kilde, mapFremOgTilbake(kilde))
     }

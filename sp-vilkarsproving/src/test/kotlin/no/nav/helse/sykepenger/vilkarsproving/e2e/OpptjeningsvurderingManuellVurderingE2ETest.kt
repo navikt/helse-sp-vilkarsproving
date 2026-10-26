@@ -1,6 +1,7 @@
 package no.nav.helse.sykepenger.vilkarsproving.e2e
 
 import com.github.navikt.tbd_libs.personpseudoid.Identitetsnummer
+import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoId
 import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
 import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
@@ -22,6 +23,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OutboxPubliseringsjobb
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellArbeidMinstFireUkerVurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellLikestiltYtelseVurderingBehandler
+import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellOpptjeningsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.*
@@ -34,6 +36,7 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures.InMemoryPer
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import tools.jackson.databind.JsonNode
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.util.*
 
@@ -124,6 +127,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
             )
             post(PostManuellArbeidMinstFireUkerVurderingBehandler(), restAdapter)
             post(PostManuellLikestiltYtelseVurderingBehandler(), restAdapter)
+            post(PostManuellOpptjeningsvurderingBehandler(), restAdapter)
         }
     }
 
@@ -359,6 +363,100 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                     .asBoolean(),
             )
         }
+
+    @Test
+    fun `samlet vurdering med bare arbeid erstatter tidligere vurderinger etter andre ledd`() =
+        testApplication {
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+            application { settOppTestapp(pseudoIdProvider) }
+
+            val behovId = UUID.randomUUID()
+            rapid.sendTestMessage(opptjeningsvurderingBehov(behovId, "Arbeidstaker"), FØDSELSNUMMER)
+            rapid.sendTestMessage(
+                arbeidsforholdløsning(behovId, arbeidsforhold(ansattSiden = "2018-01-05", ansattTil = "2018-01-31")),
+                FØDSELSNUMMER,
+            )
+
+            val førsteRespons =
+                postSamletVurdering(
+                    pseudoId,
+                    opptjeningsaktiviteter = """["ARBEID", "FORELDREPENGER"]""",
+                    foreldrepengerOpptjentPåAap = "true",
+                    yrkesaktiv = "true",
+                )
+            assertEquals(HttpStatusCode.OK, førsteRespons.status)
+            assertEquals(
+                mapOf(
+                    "OPPTJENING_ARBEID_MINST_4_UKER" to "IKKE_OPPFYLT",
+                    "OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER" to "OPPFYLT",
+                    "OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP" to "IKKE_OPPFYLT",
+                    "OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER" to "OPPFYLT",
+                ),
+                hentKrav(pseudoId, førsteRespons)["vurderinger"].toList().associate { it["vilkårskode"].asString() to it["utfall"].asString() },
+            )
+
+            val andreRespons = postSamletVurdering(pseudoId, opptjeningsaktiviteter = """["ARBEID"]""")
+            assertEquals(HttpStatusCode.OK, andreRespons.status)
+            val krav = hentKrav(pseudoId, andreRespons)
+            assertTrue(krav["opptjeningOk"].asBoolean())
+            assertEquals("OPPTJENING_ARBEID_MINST_4_UKER", krav["avgjørendeVilkårskode"].asString())
+            assertEquals(
+                mapOf("OPPTJENING_ARBEID_MINST_4_UKER" to "OPPFYLT"),
+                krav["vurderinger"].toList().associate { it["vilkårskode"].asString() to it["utfall"].asString() },
+            )
+            assertEquals(
+                listOf("ARBEID"),
+                krav["vurderinger"].single()["kilde"]["opptjeningsaktiviteter"].toList().map { it.asString() },
+            )
+        }
+
+    @Test
+    fun `samlet vurdering med ikke minst 4 uker avvises inntil videre`() =
+        testApplication {
+            val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
+            val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
+            application { settOppTestapp(pseudoIdProvider) }
+
+            val respons = postSamletVurdering(pseudoId, minst4Uker = false, opptjeningsaktiviteter = "[]")
+
+            assertEquals(HttpStatusCode.BadRequest, respons.status)
+        }
+
+    private suspend fun ApplicationTestBuilder.postSamletVurdering(
+        pseudoId: PersonPseudoId,
+        minst4Uker: Boolean = true,
+        opptjeningsaktiviteter: String,
+        foreldrepengerOpptjentPåAap: String = "null",
+        yrkesaktiv: String = "null",
+    ): HttpResponse {
+        @Language("JSON")
+        val request = """
+        {
+          "skjæringstidspunkt": "2018-02-01",
+          "minst4Uker": $minst4Uker,
+          "opptjeningsaktiviteter": $opptjeningsaktiviteter,
+          "foreldrepengerOpptjentPåAap": $foreldrepengerOpptjentPåAap,
+          "yrkesaktivMinst4UkerFørUttak": $yrkesaktiv,
+          "fritekstbegrunnelse": "Samlet vurdering",
+          "journalpostId": []
+        }
+        """
+        return client.post("/api/personer/$pseudoId/vilkarsvurderinger/manuell/opptjening") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    private suspend fun ApplicationTestBuilder.hentKrav(
+        pseudoId: PersonPseudoId,
+        postRespons: HttpResponse,
+    ): JsonNode {
+        val id = objectMapper.readTree(postRespons.bodyAsText())["opptjeningsvurderingId"].asString()
+        return objectMapper
+            .readTree(client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$id").bodyAsText())["krav"]
+            .single()
+    }
 
     private companion object {
         const val FØDSELSNUMMER = "12029240045"

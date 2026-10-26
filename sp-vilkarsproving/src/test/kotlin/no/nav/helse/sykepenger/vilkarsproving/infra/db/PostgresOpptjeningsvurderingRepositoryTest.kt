@@ -5,8 +5,8 @@ import no.nav.helse.januar
 import no.nav.helse.mars
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kategori
-import no.nav.helse.sykepenger.vilkarsproving.domain.LikestiltYtelse
 import no.nav.helse.sykepenger.vilkarsproving.domain.Lovreferanse
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsaktivitet
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
@@ -120,7 +120,7 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
                 ident = "A123456",
                 fritekstbegrunnelse = "Foreldrepenger opptjent på AAP, men yrkesaktiv før uttak",
                 journalpostId = emptyList(),
-                ytelser = listOf(LikestiltYtelse.FORELDREPENGER),
+                opptjeningsaktiviteter = listOf(Opptjeningsaktivitet.FORELDREPENGER),
             )
         val vilkårsvurderinger =
             listOf(

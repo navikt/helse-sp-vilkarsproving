@@ -117,6 +117,16 @@ internal enum class ApiLikestiltYtelse {
     SVANGERSKAPSPENGER,
 }
 
+@Serializable
+internal enum class ApiOpptjeningsaktivitet {
+    ARBEID,
+    DAGPENGER,
+    SYKEPENGER,
+    KAPITTEL_9,
+    FORELDREPENGER,
+    SVANGERSKAPSPENGER,
+}
+
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "kildetype", visible = true)
 @JsonSubTypes(
     JsonSubTypes.Type(value = ApiVurderingskilde.Automatisk::class, name = "AUTOMATISK"),
@@ -140,7 +150,7 @@ internal sealed interface ApiVurderingskilde {
         val ident: String,
         val fritekstbegrunnelse: String,
         val journalpostId: List<String> = emptyList(),
-        val ytelser: List<ApiLikestiltYtelse> = emptyList(),
+        val opptjeningsaktiviteter: List<ApiOpptjeningsaktivitet> = emptyList(),
     ) : ApiVurderingskilde {
         override val kildetype: ApiKildetype = ApiKildetype.SAKSBEHANDLER
     }

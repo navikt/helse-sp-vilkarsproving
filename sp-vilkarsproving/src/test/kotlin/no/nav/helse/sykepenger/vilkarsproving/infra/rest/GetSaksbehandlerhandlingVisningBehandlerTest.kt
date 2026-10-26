@@ -116,7 +116,7 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
                     ident = "Z999999",
                     fritekstbegrunnelse = "FP på AAP, men yrkesaktiv før uttak",
                     journalpostId = emptyList(),
-                    ytelser = listOf(LikestiltYtelse.SYKEPENGER, LikestiltYtelse.FORELDREPENGER),
+                    opptjeningsaktiviteter = listOf(Opptjeningsaktivitet.SYKEPENGER, Opptjeningsaktivitet.FORELDREPENGER),
                 )
             val hovedregel =
                 Vilkårsvurdering
@@ -147,7 +147,7 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
             assertTekst(felter[0], "Likestilt ytelse i minst 4 uker", "Oppfylt")
             assertTekst(felter[1], "Foreldrepenger ikke opptjent på AAP", "Ikke oppfylt")
             assertTekst(felter[2], "Yrkesaktiv i minst 4 uker før uttak av foreldrepenger", "Oppfylt")
-            assertEquals("Likestilte ytelser", felter[3]["tittel"].asString())
+            assertEquals("Arbeid og likestilte ytelser", felter[3]["tittel"].asString())
             assertEquals(listOf("Sykepenger", "Foreldrepenger"), felter[3]["elementer"].values().map { it.asString() })
             assertTekst(felter[4], "Begrunnelse", "FP på AAP, men yrkesaktiv før uttak")
         }

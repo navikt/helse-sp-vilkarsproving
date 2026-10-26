@@ -37,6 +37,42 @@
               🔴 AVSLAG     · § 8-2 andre ledd, andre setning, jf. tredje setning
 ```
 
+## 🧾 Samlet skjema i Speil (slik det er implementert)
+
+Saksbehandleren vurderer hele § 8-2 i ett skjema, som sendes til
+`POST /api/personer/{personId}/vilkarsvurderinger/manuell/opptjening`.
+Hver lagring erstatter alle tidligere vilkårsvurderinger for opptjeningen.
+
+```
+❓ 1. Har søkeren hatt arbeid, likestilt ytelse, eller en kombinasjon av arbeid og likestilt ytelse,
+      i minst 4 uker umiddelbart før arbeidsuførheten?
+ ├── ❌ Nei ➜ OPPTJENING_ARBEID_MINST_4_UKER = IkkeOppfylt
+ │            OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER = IkkeOppfylt
+ │            (avvises foreløpig med 400, Speil viser «støttes ikke ennå»)
+ └── ✅ Ja
+      │
+❓ 2. Hvilken likestilt ytelse/arbeid har søkeren hatt? (Arbeid, kap. 4, 8, 9, 14)
+ ├── Bare arbeid ➜ OPPTJENING_ARBEID_MINST_4_UKER = Oppfylt
+ │                 🟢 INNVILGET · § 8-2 første ledd
+ └── Minst én ytelse (med eller uten arbeid)
+                 ➜ OPPTJENING_ARBEID_MINST_4_UKER = IkkeOppfylt
+                   OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER = Oppfylt
+      │
+❓ 3. Bare når foreldrepenger er valgt: Er foreldrepengene opptjent på grunnlag av AAP?
+ ├── ❌ Nei ➜ OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP = Oppfylt
+ │            🟢 INNVILGET · § 8-2 andre ledd, første punktum
+ └── ✅ Ja  ➜ OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP = IkkeOppfylt
+      │
+❓ 4. Var søkeren yrkesaktiv, eller mottok ytelse etter kapittel 8, 9 eller 14, i minst 4 uker før uttaket startet?
+ ├── ✅ Ja  ➜ OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER = Oppfylt
+ │            🟢 INNVILGET · § 8-2 andre ledd, tredje punktum
+ └── ❌ Nei ➜ OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER = IkkeOppfylt
+              🔴 AVSLAG    · § 8-2 andre ledd, andre punktum, jf. tredje punktum
+```
+
+Valgene i spørsmål 2 lagres som `opptjeningsaktiviteter` på saksbehandlerkilden til alle vurderingene.
+I prod-gcp er likestilte ytelser foreløpig skrudd av, så der kan bare arbeid velges.
+
 ## 🎯 Mulige sluttresultater
 
 | | 🔵 Vilkår 1 | 🟣 Vilkår 2 | 🟠 Vilkår 3 | Resultat | Hjemmel |

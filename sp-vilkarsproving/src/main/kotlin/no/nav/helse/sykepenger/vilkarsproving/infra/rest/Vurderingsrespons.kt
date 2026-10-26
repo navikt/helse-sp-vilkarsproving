@@ -2,7 +2,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import no.nav.helse.Periode
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
-import no.nav.helse.sykepenger.vilkarsproving.domain.LikestiltYtelse
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsaktivitet
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
@@ -95,13 +95,14 @@ private fun Vilkårskode.tilApi(): ApiVilkårskode =
             ApiVilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER
     }
 
-internal fun LikestiltYtelse.tilApi(): ApiLikestiltYtelse =
+internal fun Opptjeningsaktivitet.tilApi(): ApiOpptjeningsaktivitet =
     when (this) {
-        LikestiltYtelse.DAGPENGER -> ApiLikestiltYtelse.DAGPENGER
-        LikestiltYtelse.SYKEPENGER -> ApiLikestiltYtelse.SYKEPENGER
-        LikestiltYtelse.KAPITTEL_9 -> ApiLikestiltYtelse.KAPITTEL_9
-        LikestiltYtelse.FORELDREPENGER -> ApiLikestiltYtelse.FORELDREPENGER
-        LikestiltYtelse.SVANGERSKAPSPENGER -> ApiLikestiltYtelse.SVANGERSKAPSPENGER
+        Opptjeningsaktivitet.ARBEID -> ApiOpptjeningsaktivitet.ARBEID
+        Opptjeningsaktivitet.DAGPENGER -> ApiOpptjeningsaktivitet.DAGPENGER
+        Opptjeningsaktivitet.SYKEPENGER -> ApiOpptjeningsaktivitet.SYKEPENGER
+        Opptjeningsaktivitet.KAPITTEL_9 -> ApiOpptjeningsaktivitet.KAPITTEL_9
+        Opptjeningsaktivitet.FORELDREPENGER -> ApiOpptjeningsaktivitet.FORELDREPENGER
+        Opptjeningsaktivitet.SVANGERSKAPSPENGER -> ApiOpptjeningsaktivitet.SVANGERSKAPSPENGER
     }
 
 private fun Vurderingskilde.tilApi(): ApiVurderingskilde =
@@ -117,7 +118,7 @@ private fun Vurderingskilde.tilApi(): ApiVurderingskilde =
                 ident = ident,
                 fritekstbegrunnelse = fritekstbegrunnelse,
                 journalpostId = journalpostId,
-                ytelser = ytelser.map { it.tilApi() },
+                opptjeningsaktiviteter = opptjeningsaktiviteter.map { it.tilApi() },
             )
 
         is Vurderingskilde.OverførtFraSpleis ->

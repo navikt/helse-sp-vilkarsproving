@@ -66,9 +66,9 @@ internal sealed interface VurderingskildeDto {
         val ident: String,
         val fritekstbegrunnelse: String,
         val journalpostId: List<String> = emptyList(),
-        // Utelates når tom, slik at lagringsformatet for vurderinger uten likestilte ytelser er uendret
+        // Utelates når tom, slik at lagringsformatet for vurderinger uten opptjeningsaktiviteter er uendret
         @get:JsonInclude(JsonInclude.Include.NON_EMPTY)
-        val ytelser: List<LikestiltYtelseDto> = emptyList(),
+        val opptjeningsaktiviteter: List<OpptjeningsaktivitetDto> = emptyList(),
     ) : VurderingskildeDto
 
     data class OverførtFraSpleis(
@@ -77,7 +77,8 @@ internal sealed interface VurderingskildeDto {
     ) : VurderingskildeDto
 }
 
-internal enum class LikestiltYtelseDto {
+internal enum class OpptjeningsaktivitetDto {
+    ARBEID,
     DAGPENGER,
     SYKEPENGER,
     KAPITTEL_9,

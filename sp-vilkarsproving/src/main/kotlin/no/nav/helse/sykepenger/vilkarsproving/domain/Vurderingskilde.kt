@@ -12,7 +12,7 @@ internal sealed interface Vurderingskilde {
         val ident: String,
         val fritekstbegrunnelse: String,
         val journalpostId: List<String>,
-        val ytelser: List<LikestiltYtelse> = emptyList(),
+        val opptjeningsaktiviteter: List<Opptjeningsaktivitet> = emptyList(),
     ) : Vurderingskilde
 
     data class OverførtFraSpleis(
