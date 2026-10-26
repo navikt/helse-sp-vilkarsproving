@@ -80,16 +80,11 @@ private data class ManuellHandling(
 
 private fun ManuellHandling.tilVisningsfelter(): List<ApiVisningsfelt> =
     buildList {
-        val enkelt = vilkårsvurderinger.singleOrNull()
-        if (enkelt != null) {
-            add(ApiVisningsfelt.Tekst(tittel = "Vilkår", tekst = enkelt.vilkårskode.visningsnavn()))
-            add(ApiVisningsfelt.Tekst(tittel = "Utfall", tekst = enkelt.utfall.visningsnavn()))
-        } else {
-            vilkårsvurderinger.sortedBy { it.vilkårskode.ordinal }.forEach { vurdering ->
-                add(ApiVisningsfelt.Tekst(tittel = vurdering.vilkårskode.visningsnavn(), tekst = vurdering.utfall.visningsnavn()))
-            }
+        vilkårsvurderinger.sortedBy { it.vilkårskode.ordinal }.forEach { vurdering ->
+            add(ApiVisningsfelt.Tekst(tittel = vurdering.vilkårskode.visningsnavn(), tekst = vurdering.utfall.visningsnavn()))
         }
-        if (kilde.opptjeningsaktiviteter.isNotEmpty()) {
+        // Bare arbeid følger av at «Arbeid i minst 4 uker» er oppfylt, så lista vises bare når det er likestilte ytelser
+        if (kilde.opptjeningsaktiviteter.any { it != Opptjeningsaktivitet.ARBEID }) {
             add(
                 ApiVisningsfelt.Liste(
                     tittel = "Arbeid og likestilte ytelser",

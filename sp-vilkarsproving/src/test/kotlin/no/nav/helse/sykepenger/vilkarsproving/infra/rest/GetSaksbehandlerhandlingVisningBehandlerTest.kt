@@ -46,13 +46,38 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
 
             assertEquals(HttpStatusCode.OK, response.status)
             val felter = response.json()["felter"]
-            assertEquals(4, felter.size())
-            assertTekst(felter[0], "Vilkår", "Arbeid i minst 4 uker")
-            assertTekst(felter[1], "Utfall", "Oppfylt")
-            assertTekst(felter[2], "Begrunnelse", "Fritekst fra saksbehandler\nmed linjeskift")
-            assertEquals("LISTE", felter[3]["type"].asString())
-            assertEquals("Journalposter", felter[3]["tittel"].asString())
-            assertEquals(listOf("598373838", "598373839"), felter[3]["elementer"].values().map { it.asString() })
+            assertEquals(3, felter.size())
+            assertTekst(felter[0], "Arbeid i minst 4 uker", "Oppfylt")
+            assertTekst(felter[1], "Begrunnelse", "Fritekst fra saksbehandler\nmed linjeskift")
+            assertEquals("LISTE", felter[2]["type"].asString())
+            assertEquals("Journalposter", felter[2]["tittel"].asString())
+            assertEquals(listOf("598373838", "598373839"), felter[2]["elementer"].values().map { it.asString() })
+        }
+
+    @Test
+    fun `bare arbeid i minst 4 uker gir ingen liste over aktiviteter`() =
+        testApplication {
+            val vurdering = manuellVurderingFraSkjema(SvarPåOpptjening(true, setOf(Opptjeningsaktivitet.ARBEID), null, null))
+            val pseudoId = settOpp(lagret = listOf(vurdering))
+
+            val felter = client.get(url(pseudoId, vurdering.id.value)).json()["felter"]
+
+            assertEquals(listOf("Arbeid i minst 4 uker", "Begrunnelse"), felter.values().map { it["tittel"].asString() })
+            assertTekst(felter[0], "Arbeid i minst 4 uker", "Oppfylt")
+        }
+
+    @Test
+    fun `ikke minst 4 uker vises i samme format som oppfylt`() =
+        testApplication {
+            val vurdering = manuellVurderingFraSkjema(SvarPåOpptjening(false, emptySet(), null, null))
+            val pseudoId = settOpp(lagret = listOf(vurdering))
+
+            val felter = client.get(url(pseudoId, vurdering.id.value)).json()["felter"]
+
+            assertEquals(3, felter.size())
+            assertTekst(felter[0], "Arbeid i minst 4 uker", "Ikke oppfylt")
+            assertTekst(felter[1], "Likestilt ytelse i minst 4 uker", "Ikke oppfylt")
+            assertTekst(felter[2], "Begrunnelse", "Begrunnelse")
         }
 
     @Test
@@ -65,7 +90,7 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
 
             assertEquals(HttpStatusCode.OK, response.status)
             val felter = response.json()["felter"]
-            assertEquals(listOf("Vilkår", "Utfall", "Begrunnelse"), felter.values().map { it["tittel"].asString() })
+            assertEquals(listOf("Arbeid i minst 4 uker", "Begrunnelse"), felter.values().map { it["tittel"].asString() })
         }
 
     @Test
@@ -76,7 +101,7 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
 
             val response = client.get(url(pseudoId, vurdering.id.value))
 
-            assertTekst(response.json()["felter"][1], "Utfall", "Ikke oppfylt")
+            assertTekst(response.json()["felter"][0], "Arbeid i minst 4 uker", "Ikke oppfylt")
         }
 
     @Test
@@ -103,8 +128,8 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
 
             val felter = client.get(url(pseudoId, vurdering.id.value)).json()["felter"]
 
-            assertTekst(felter[1], "Utfall", "Oppfylt")
-            assertTekst(felter[2], "Begrunnelse", "nyere")
+            assertTekst(felter[0], "Arbeid i minst 4 uker", "Oppfylt")
+            assertTekst(felter[1], "Begrunnelse", "nyere")
         }
 
     @Test
@@ -339,6 +364,15 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
                 ),
             ),
     )
+
+    private fun manuellVurderingFraSkjema(svar: SvarPåOpptjening): Opptjeningsvurdering {
+        val resultat = ManuellOpptjeningsvurdering.vurder(svar, "Z999999", "Begrunnelse", emptyList())
+        return Opptjeningsvurdering.avSaksbehandler(
+            fødselsnummer = identitetsnummer.value,
+            skjæringstidspunkt = skjæringstidspunkt,
+            vilkårsvurderinger = (resultat as ManuellOpptjeningsvurderingResultat.Vurdert).vilkårsvurderinger,
+        )
+    }
 }
 
 private fun url(
