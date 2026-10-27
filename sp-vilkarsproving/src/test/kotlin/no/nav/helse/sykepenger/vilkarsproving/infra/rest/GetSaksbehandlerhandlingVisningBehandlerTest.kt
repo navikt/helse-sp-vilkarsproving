@@ -47,7 +47,7 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
             assertEquals(HttpStatusCode.OK, response.status)
             val felter = response.json()["felter"]
             assertEquals(4, felter.size())
-            assertTekst(felter[0], "Opptjening oppfylt", "Ja")
+            assertTekst(felter[0], "Opptjeningstid", "Oppfylt")
             assertTekst(felter[1], "Arbeid i minst 4 uker", "Ja")
             assertTekst(felter[2], "Begrunnelse", "Fritekst fra saksbehandler\nmed linjeskift")
             assertEquals("LISTE", felter[3]["type"].asString())
@@ -64,7 +64,7 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
             val felter = client.get(url(pseudoId, vurdering.id.value)).json()["felter"]
 
             assertEquals(
-                listOf("Opptjening oppfylt", "Arbeid i minst 4 uker", "Begrunnelse"),
+                listOf("Opptjeningstid", "Arbeid i minst 4 uker", "Begrunnelse"),
                 felter.values().map { it["tittel"].asString() },
             )
             assertTekst(felter[1], "Arbeid i minst 4 uker", "Ja")
@@ -79,7 +79,7 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
             val felter = client.get(url(pseudoId, vurdering.id.value)).json()["felter"]
 
             assertEquals(4, felter.size())
-            assertTekst(felter[0], "Opptjening oppfylt", "Nei")
+            assertTekst(felter[0], "Opptjeningstid", "Ikke oppfylt")
             assertTekst(felter[1], "Arbeid i minst 4 uker", "Nei")
             assertTekst(felter[2], "Likestilt ytelse i minst 4 uker", "Nei")
             assertTekst(felter[3], "Begrunnelse", "Begrunnelse")
@@ -96,7 +96,7 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
 
             val felter = client.get(url(pseudoId, vurdering.id.value)).json()["felter"]
 
-            assertTekst(felter[0], "Opptjening oppfylt", "Nei")
+            assertTekst(felter[0], "Opptjeningstid", "Ikke oppfylt")
             assertTekst(felter[1], "Arbeid i minst 4 uker", "Nei")
             assertTekst(felter[2], "Likestilt ytelse i minst 4 uker", "Ja")
             assertTekst(felter[3], "Foreldrepenger opptjent på AAP", "Ja")
@@ -115,7 +115,7 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
             assertEquals(HttpStatusCode.OK, response.status)
             val felter = response.json()["felter"]
             assertEquals(
-                listOf("Opptjening oppfylt", "Arbeid i minst 4 uker", "Begrunnelse"),
+                listOf("Opptjeningstid", "Arbeid i minst 4 uker", "Begrunnelse"),
                 felter.values().map { it["tittel"].asString() },
             )
         }
@@ -128,7 +128,7 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
 
             val felter = client.get(url(pseudoId, vurdering.id.value)).json()["felter"]
 
-            assertTekst(felter[0], "Opptjening oppfylt", "Nei")
+            assertTekst(felter[0], "Opptjeningstid", "Ikke oppfylt")
             assertTekst(felter[1], "Arbeid i minst 4 uker", "Nei")
         }
 
@@ -197,7 +197,7 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
             val felter = client.get(url(pseudoId, vurdering.id.value)).json()["felter"]
 
             assertEquals(6, felter.size())
-            assertTekst(felter[0], "Opptjening oppfylt", "Ja")
+            assertTekst(felter[0], "Opptjeningstid", "Oppfylt")
             assertTekst(felter[1], "Likestilt ytelse i minst 4 uker", "Ja")
             assertTekst(felter[2], "Foreldrepenger opptjent på AAP", "Ja")
             assertTekst(felter[3], "Yrkesaktiv eller likestilt ytelse i minst 4 uker før uttak av foreldrepenger", "Ja")

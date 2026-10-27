@@ -82,7 +82,7 @@ private data class ManuellHandling(
 
 private fun ManuellHandling.tilVisningsfelter(opptjeningOk: Boolean): List<ApiVisningsfelt> =
     buildList {
-        add(ApiVisningsfelt.Tekst(tittel = "Opptjening oppfylt", tekst = if (opptjeningOk) "Ja" else "Nei"))
+        add(ApiVisningsfelt.Tekst(tittel = "Opptjeningstid", tekst = if (opptjeningOk) "Oppfylt" else "Ikke oppfylt"))
         vilkårsvurderinger.sortedBy { it.vilkårskode.ordinal }.forEach { vurdering ->
             add(ApiVisningsfelt.Tekst(tittel = vurdering.vilkårskode.spørsmål(), tekst = vurdering.svar()))
         }
