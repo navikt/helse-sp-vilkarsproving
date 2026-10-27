@@ -52,7 +52,9 @@ internal class GetSaksbehandlerhandlingVisningBehandler :
 
             val manuellHandling = vurdering.nyesteManuelleHandling() ?: return@medPerson ikkeFunnet
 
-            RestResponse.ok(ApiSaksbehandlerhandlingVisningResponse(felter = manuellHandling.tilVisningsfelter()))
+            RestResponse.ok(
+                ApiSaksbehandlerhandlingVisningResponse(felter = manuellHandling.tilVisningsfelter(opptjeningOk = vurdering.erOk)),
+            )
         }
     }
 }
@@ -78,10 +80,11 @@ private data class ManuellHandling(
     val kilde: Vurderingskilde.Saksbehandler,
 )
 
-private fun ManuellHandling.tilVisningsfelter(): List<ApiVisningsfelt> =
+private fun ManuellHandling.tilVisningsfelter(opptjeningOk: Boolean): List<ApiVisningsfelt> =
     buildList {
+        add(ApiVisningsfelt.Tekst(tittel = "Opptjening oppfylt", tekst = if (opptjeningOk) "Ja" else "Nei"))
         vilkårsvurderinger.sortedBy { it.vilkårskode.ordinal }.forEach { vurdering ->
-            add(ApiVisningsfelt.Tekst(tittel = vurdering.vilkårskode.visningsnavn(), tekst = vurdering.utfall.visningsnavn()))
+            add(ApiVisningsfelt.Tekst(tittel = vurdering.vilkårskode.spørsmål(), tekst = vurdering.svar()))
         }
         // Bare arbeid følger av at «Arbeid i minst 4 uker» er oppfylt, så lista vises bare når det er likestilte ytelser
         if (kilde.opptjeningsaktiviteter.any { it != Opptjeningsaktivitet.ARBEID }) {
@@ -98,13 +101,22 @@ private fun ManuellHandling.tilVisningsfelter(): List<ApiVisningsfelt> =
         }
     }
 
-private fun Vilkårskode.visningsnavn(): String =
+// Vilkårene vises som spørsmålene saksbehandleren svarte på i skjemaet
+private fun Vilkårskode.spørsmål(): String =
     when (this) {
         Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER -> "Arbeid i minst 4 uker"
         Vilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER -> "Likestilt ytelse i minst 4 uker"
-        Vilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP -> "Foreldrepenger ikke opptjent på AAP"
-        Vilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER -> "Yrkesaktiv i minst 4 uker før uttak av foreldrepenger"
+        Vilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP -> "Foreldrepenger opptjent på AAP"
+        Vilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER ->
+            "Yrkesaktiv eller likestilt ytelse i minst 4 uker før uttak av foreldrepenger"
     }
+
+// Vilkåret «Foreldrepenger ikke opptjent på AAP» er negert i forhold til spørsmålet, så svaret snus
+private fun Vilkårsvurdering.svar(): String {
+    val oppfylt = utfall == Utfall.Oppfylt
+    val ja = if (vilkårskode == Vilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP) !oppfylt else oppfylt
+    return if (ja) "Ja" else "Nei"
+}
 
 private fun Opptjeningsaktivitet.visningsnavn(): String =
     when (this) {
@@ -114,10 +126,4 @@ private fun Opptjeningsaktivitet.visningsnavn(): String =
         Opptjeningsaktivitet.KAPITTEL_9 -> "Pleie-, omsorgs- eller opplæringspenger"
         Opptjeningsaktivitet.FORELDREPENGER -> "Foreldrepenger"
         Opptjeningsaktivitet.SVANGERSKAPSPENGER -> "Svangerskapspenger"
-    }
-
-private fun Utfall.visningsnavn(): String =
-    when (this) {
-        Utfall.Oppfylt -> "Oppfylt"
-        Utfall.IkkeOppfylt -> "Ikke oppfylt"
     }

@@ -46,12 +46,13 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
 
             assertEquals(HttpStatusCode.OK, response.status)
             val felter = response.json()["felter"]
-            assertEquals(3, felter.size())
-            assertTekst(felter[0], "Arbeid i minst 4 uker", "Oppfylt")
-            assertTekst(felter[1], "Begrunnelse", "Fritekst fra saksbehandler\nmed linjeskift")
-            assertEquals("LISTE", felter[2]["type"].asString())
-            assertEquals("Journalposter", felter[2]["tittel"].asString())
-            assertEquals(listOf("598373838", "598373839"), felter[2]["elementer"].values().map { it.asString() })
+            assertEquals(4, felter.size())
+            assertTekst(felter[0], "Opptjening oppfylt", "Ja")
+            assertTekst(felter[1], "Arbeid i minst 4 uker", "Ja")
+            assertTekst(felter[2], "Begrunnelse", "Fritekst fra saksbehandler\nmed linjeskift")
+            assertEquals("LISTE", felter[3]["type"].asString())
+            assertEquals("Journalposter", felter[3]["tittel"].asString())
+            assertEquals(listOf("598373838", "598373839"), felter[3]["elementer"].values().map { it.asString() })
         }
 
     @Test
@@ -62,8 +63,11 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
 
             val felter = client.get(url(pseudoId, vurdering.id.value)).json()["felter"]
 
-            assertEquals(listOf("Arbeid i minst 4 uker", "Begrunnelse"), felter.values().map { it["tittel"].asString() })
-            assertTekst(felter[0], "Arbeid i minst 4 uker", "Oppfylt")
+            assertEquals(
+                listOf("Opptjening oppfylt", "Arbeid i minst 4 uker", "Begrunnelse"),
+                felter.values().map { it["tittel"].asString() },
+            )
+            assertTekst(felter[1], "Arbeid i minst 4 uker", "Ja")
         }
 
     @Test
@@ -74,10 +78,30 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
 
             val felter = client.get(url(pseudoId, vurdering.id.value)).json()["felter"]
 
-            assertEquals(3, felter.size())
-            assertTekst(felter[0], "Arbeid i minst 4 uker", "Ikke oppfylt")
-            assertTekst(felter[1], "Likestilt ytelse i minst 4 uker", "Ikke oppfylt")
-            assertTekst(felter[2], "Begrunnelse", "Begrunnelse")
+            assertEquals(4, felter.size())
+            assertTekst(felter[0], "Opptjening oppfylt", "Nei")
+            assertTekst(felter[1], "Arbeid i minst 4 uker", "Nei")
+            assertTekst(felter[2], "Likestilt ytelse i minst 4 uker", "Nei")
+            assertTekst(felter[3], "Begrunnelse", "Begrunnelse")
+        }
+
+    @Test
+    fun `foreldrepenger opptjent paa AAP uten yrkesaktivitet foer uttak gir ikke oppfylt`() =
+        testApplication {
+            val vurdering =
+                manuellVurderingFraSkjema(
+                    SvarPåOpptjening(true, setOf(Opptjeningsaktivitet.ARBEID, Opptjeningsaktivitet.FORELDREPENGER), true, false),
+                )
+            val pseudoId = settOpp(lagret = listOf(vurdering))
+
+            val felter = client.get(url(pseudoId, vurdering.id.value)).json()["felter"]
+
+            assertTekst(felter[0], "Opptjening oppfylt", "Nei")
+            assertTekst(felter[1], "Arbeid i minst 4 uker", "Nei")
+            assertTekst(felter[2], "Likestilt ytelse i minst 4 uker", "Ja")
+            assertTekst(felter[3], "Foreldrepenger opptjent på AAP", "Ja")
+            assertTekst(felter[4], "Yrkesaktiv eller likestilt ytelse i minst 4 uker før uttak av foreldrepenger", "Nei")
+            assertEquals(listOf("Arbeid", "Foreldrepenger"), felter[5]["elementer"].values().map { it.asString() })
         }
 
     @Test
@@ -90,18 +114,22 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
 
             assertEquals(HttpStatusCode.OK, response.status)
             val felter = response.json()["felter"]
-            assertEquals(listOf("Arbeid i minst 4 uker", "Begrunnelse"), felter.values().map { it["tittel"].asString() })
+            assertEquals(
+                listOf("Opptjening oppfylt", "Arbeid i minst 4 uker", "Begrunnelse"),
+                felter.values().map { it["tittel"].asString() },
+            )
         }
 
     @Test
-    fun `ikke oppfylt vises som Ikke oppfylt`() =
+    fun `ikke oppfylt vises som Nei`() =
         testApplication {
             val vurdering = manuellVurdering(utfall = Utfall.IkkeOppfylt)
             val pseudoId = settOpp(lagret = listOf(vurdering))
 
-            val response = client.get(url(pseudoId, vurdering.id.value))
+            val felter = client.get(url(pseudoId, vurdering.id.value)).json()["felter"]
 
-            assertTekst(response.json()["felter"][0], "Arbeid i minst 4 uker", "Ikke oppfylt")
+            assertTekst(felter[0], "Opptjening oppfylt", "Nei")
+            assertTekst(felter[1], "Arbeid i minst 4 uker", "Nei")
         }
 
     @Test
@@ -128,8 +156,8 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
 
             val felter = client.get(url(pseudoId, vurdering.id.value)).json()["felter"]
 
-            assertTekst(felter[0], "Arbeid i minst 4 uker", "Oppfylt")
-            assertTekst(felter[1], "Begrunnelse", "nyere")
+            assertTekst(felter[1], "Arbeid i minst 4 uker", "Ja")
+            assertTekst(felter[2], "Begrunnelse", "nyere")
         }
 
     @Test
@@ -168,13 +196,14 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
 
             val felter = client.get(url(pseudoId, vurdering.id.value)).json()["felter"]
 
-            assertEquals(5, felter.size())
-            assertTekst(felter[0], "Likestilt ytelse i minst 4 uker", "Oppfylt")
-            assertTekst(felter[1], "Foreldrepenger ikke opptjent på AAP", "Ikke oppfylt")
-            assertTekst(felter[2], "Yrkesaktiv i minst 4 uker før uttak av foreldrepenger", "Oppfylt")
-            assertEquals("Arbeid og likestilte ytelser", felter[3]["tittel"].asString())
-            assertEquals(listOf("Sykepenger", "Foreldrepenger"), felter[3]["elementer"].values().map { it.asString() })
-            assertTekst(felter[4], "Begrunnelse", "FP på AAP, men yrkesaktiv før uttak")
+            assertEquals(6, felter.size())
+            assertTekst(felter[0], "Opptjening oppfylt", "Ja")
+            assertTekst(felter[1], "Likestilt ytelse i minst 4 uker", "Ja")
+            assertTekst(felter[2], "Foreldrepenger opptjent på AAP", "Ja")
+            assertTekst(felter[3], "Yrkesaktiv eller likestilt ytelse i minst 4 uker før uttak av foreldrepenger", "Ja")
+            assertEquals("Arbeid og likestilte ytelser", felter[4]["tittel"].asString())
+            assertEquals(listOf("Sykepenger", "Foreldrepenger"), felter[4]["elementer"].values().map { it.asString() })
+            assertTekst(felter[5], "Begrunnelse", "FP på AAP, men yrkesaktiv før uttak")
         }
 
     @Test
