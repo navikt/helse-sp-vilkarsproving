@@ -80,12 +80,13 @@ private data class ManuellHandling(
     val kilde: Vurderingskilde.Saksbehandler,
 )
 
+// Feltene kommer i samme rekkefølge som spørsmålene i skjemaet: aktivitetene før spørsmålene om foreldrepenger
 private fun ManuellHandling.tilVisningsfelter(opptjeningOk: Boolean): List<ApiVisningsfelt> =
     buildList {
         add(ApiVisningsfelt.Tekst(tittel = "Opptjeningstid", tekst = if (opptjeningOk) "Oppfylt" else "Ikke oppfylt"))
-        vilkårsvurderinger.sortedBy { it.vilkårskode.ordinal }.forEach { vurdering ->
-            add(ApiVisningsfelt.Tekst(tittel = vurdering.vilkårskode.spørsmål(), tekst = vurdering.svar()))
-        }
+        val (foreldrepengevilkår, minst4Ukervilkår) =
+            vilkårsvurderinger.sortedBy { it.vilkårskode.ordinal }.partition { it.vilkårskode.gjelderForeldrepenger() }
+        minst4Ukervilkår.forEach { add(it.tilVisningsfelt()) }
         // Bare arbeid følger av at «Arbeid i minst 4 uker» er oppfylt, så lista vises bare når det er likestilte ytelser
         if (kilde.opptjeningsaktiviteter.any { it != Opptjeningsaktivitet.ARBEID }) {
             add(
@@ -95,10 +96,23 @@ private fun ManuellHandling.tilVisningsfelter(opptjeningOk: Boolean): List<ApiVi
                 ),
             )
         }
+        foreldrepengevilkår.forEach { add(it.tilVisningsfelt()) }
         add(ApiVisningsfelt.Tekst(tittel = "Begrunnelse", tekst = kilde.fritekstbegrunnelse))
         if (kilde.journalpostId.isNotEmpty()) {
             add(ApiVisningsfelt.Liste(tittel = "Journalposter", elementer = kilde.journalpostId))
         }
+    }
+
+private fun Vilkårsvurdering.tilVisningsfelt() = ApiVisningsfelt.Tekst(tittel = vilkårskode.spørsmål(), tekst = svar())
+
+private fun Vilkårskode.gjelderForeldrepenger(): Boolean =
+    when (this) {
+        Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+        Vilkårskode.OPPTJENING_LIKESTILT_YTELSE_MINST_4_UKER,
+        -> false
+        Vilkårskode.OPPTJENING_FORELDREPENGER_IKKE_OPPTJENT_PA_AAP,
+        Vilkårskode.OPPTJENING_YRKESAKTIV_MINST_4_UKER_FOR_UTTAK_AV_FORELDREPENGER,
+        -> true
     }
 
 // Vilkårene vises som spørsmålene saksbehandleren svarte på i skjemaet

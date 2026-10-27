@@ -99,9 +99,10 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
             assertTekst(felter[0], "Opptjeningstid", "Ikke oppfylt")
             assertTekst(felter[1], "Arbeid i minst 4 uker", "Nei")
             assertTekst(felter[2], "Likestilt ytelse i minst 4 uker", "Ja")
-            assertTekst(felter[3], "Foreldrepenger opptjent på AAP", "Ja")
-            assertTekst(felter[4], "Yrkesaktiv eller likestilt ytelse i minst 4 uker før uttak av foreldrepenger", "Nei")
-            assertEquals(listOf("Arbeid", "Foreldrepenger"), felter[5]["elementer"].values().map { it.asString() })
+            assertEquals("Arbeid og likestilte ytelser", felter[3]["tittel"].asString())
+            assertEquals(listOf("Arbeid", "Foreldrepenger"), felter[3]["elementer"].values().map { it.asString() })
+            assertTekst(felter[4], "Foreldrepenger opptjent på AAP", "Ja")
+            assertTekst(felter[5], "Yrkesaktiv eller likestilt ytelse i minst 4 uker før uttak av foreldrepenger", "Nei")
         }
 
     @Test
@@ -199,10 +200,10 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
             assertEquals(6, felter.size())
             assertTekst(felter[0], "Opptjeningstid", "Oppfylt")
             assertTekst(felter[1], "Likestilt ytelse i minst 4 uker", "Ja")
-            assertTekst(felter[2], "Foreldrepenger opptjent på AAP", "Ja")
-            assertTekst(felter[3], "Yrkesaktiv eller likestilt ytelse i minst 4 uker før uttak av foreldrepenger", "Ja")
-            assertEquals("Arbeid og likestilte ytelser", felter[4]["tittel"].asString())
-            assertEquals(listOf("Sykepenger", "Foreldrepenger"), felter[4]["elementer"].values().map { it.asString() })
+            assertEquals("Arbeid og likestilte ytelser", felter[2]["tittel"].asString())
+            assertEquals(listOf("Sykepenger", "Foreldrepenger"), felter[2]["elementer"].values().map { it.asString() })
+            assertTekst(felter[3], "Foreldrepenger opptjent på AAP", "Ja")
+            assertTekst(felter[4], "Yrkesaktiv eller likestilt ytelse i minst 4 uker før uttak av foreldrepenger", "Ja")
             assertTekst(felter[5], "Begrunnelse", "FP på AAP, men yrkesaktiv før uttak")
         }
 
