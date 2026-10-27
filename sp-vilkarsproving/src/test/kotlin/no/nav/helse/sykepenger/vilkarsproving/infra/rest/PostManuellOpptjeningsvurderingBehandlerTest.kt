@@ -106,28 +106,6 @@ class PostManuellOpptjeningsvurderingBehandlerTest {
         }
 
     @Test
-    fun `likestilt ytelse gir 400 når det ikke er skrudd på`() =
-        testApplication {
-            val pseudoId = settOpp(likestilteYtelserSkruddPå = false)
-
-            val response =
-                client.post(url(pseudoId)) { json(request(opptjeningsaktiviteter = """["ARBEID", "SYKEPENGER"]""")) }
-
-            assertEquals(HttpStatusCode.BadRequest, response.status)
-            assertEquals(0, transaksjonProvider.opptjeningsvurderinger.antallLagringer)
-        }
-
-    @Test
-    fun `bare arbeid er lov selv om likestilte ytelser ikke er skrudd på`() =
-        testApplication {
-            val pseudoId = settOpp(likestilteYtelserSkruddPå = false)
-
-            val response = client.post(url(pseudoId)) { json(request(opptjeningsaktiviteter = """["ARBEID"]""")) }
-
-            assertEquals(HttpStatusCode.OK, response.status)
-        }
-
-    @Test
     fun `ugyldig kombinasjon av svar gir 400 og lagrer ingenting`() =
         testApplication {
             val pseudoId = settOpp()
@@ -192,7 +170,6 @@ class PostManuellOpptjeningsvurderingBehandlerTest {
     private fun ApplicationTestBuilder.settOpp(
         tilganger: Set<Tilgang> = setOf(Tilgang.Les, Tilgang.Skriv),
         tilgangskontroll: PopulasjonstilgangskontrollProvider = FakeTilgangskontroll(),
-        likestilteYtelserSkruddPå: Boolean = true,
     ): String {
         val pseudoIdProvider = InMemoryPersonPseudoIdProvider()
         val pseudoId = pseudoIdProvider.nyPersonPseudoId(identitetsnummer)
@@ -210,7 +187,7 @@ class PostManuellOpptjeningsvurderingBehandlerTest {
                     transaksjonProvider = transaksjonProvider,
                 )
             routing {
-                post(PostManuellOpptjeningsvurderingBehandler(likestilteYtelserSkruddPå), restAdapter)
+                post(PostManuellOpptjeningsvurderingBehandler(), restAdapter)
             }
         }
         return pseudoId.toString()

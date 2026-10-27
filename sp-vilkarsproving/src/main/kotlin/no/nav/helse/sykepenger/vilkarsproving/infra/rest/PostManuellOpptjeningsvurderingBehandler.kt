@@ -20,12 +20,9 @@ import java.time.Instant
 /**
  * Samlet manuell vurdering av opptjening etter § 8-2 første og andre ledd.
  *
- * «Ikke minst 4 uker» avvises inntil videre. Likestilte ytelser (andre ledd) avvises når
- * [likestilteYtelserSkruddPå] er false, som i prod-gcp.
+ * Ikke oppfylt avvises inntil videre.
  */
-internal class PostManuellOpptjeningsvurderingBehandler(
-    private val likestilteYtelserSkruddPå: Boolean = System.getenv()["NAIS_CLUSTER_NAME"] != "prod-gcp",
-) : PostBehandler<
+internal class PostManuellOpptjeningsvurderingBehandler : PostBehandler<
         ApiManuellOpptjeningsvurderingResource,
         ApiManuellOpptjeningsvurderingRequest,
         ApiManuellOpptjeningsvurderingResponse,
@@ -52,9 +49,6 @@ internal class PostManuellOpptjeningsvurderingBehandler(
             val svar = request.tilSvar()
             if (!svar.minst4Uker || svar.yrkesaktivMinst4UkerFørUttak == false) {
                 return@medPerson RestResponse.feil(ApiManuellOpptjeningsvurderingFeil.IkkeOppfyltStøttesIkke)
-            }
-            if (svar.harLikestiltYtelse && !likestilteYtelserSkruddPå) {
-                return@medPerson RestResponse.feil(ApiManuellOpptjeningsvurderingFeil.LikestiltYtelseIkkeSkruddPå)
             }
 
             val saksbehandlerIdent = kallKontekst.saksbehandler.navIdent.value

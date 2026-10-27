@@ -9,7 +9,6 @@ internal enum class ApiManuellOpptjeningsvurderingFeil(
     PersonIkkeFunnet(404, "Person ikke funnet"),
     ManglerTilgang(403, "Mangler tilgang"),
     IkkeOppfyltStøttesIkke(400, "Det er ennå ikke støtte for å manuelt vurdere opptjening til ikke oppfylt"),
-    LikestiltYtelseIkkeSkruddPå(400, "Manuell vurdering av likestilte ytelser er ikke skrudd på"),
     OpptjeningsaktiviteterMangler(400, "Minst én opptjeningsaktivitet må velges når søkeren har hatt minst 4 uker"),
     OpptjeningsaktiviteterUtenMinst4Uker(400, "Opptjeningsaktiviteter kan bare oppgis når søkeren har hatt minst 4 uker"),
     ForeldrepengerOpptjentPåAapMangler(400, "Må svare på om foreldrepengene er opptjent på AAP"),
