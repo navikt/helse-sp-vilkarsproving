@@ -50,7 +50,9 @@ internal class PostManuellOpptjeningsvurderingBehandler(
             manglerTilgang = { ApiManuellOpptjeningsvurderingFeil.ManglerTilgang },
         ) { identitetsnummer ->
             val svar = request.tilSvar()
-            if (!svar.minst4Uker) return@medPerson RestResponse.feil(ApiManuellOpptjeningsvurderingFeil.IkkeOppfyltStøttesIkke)
+            if (!svar.minst4Uker || svar.yrkesaktivMinst4UkerFørUttak == false) {
+                return@medPerson RestResponse.feil(ApiManuellOpptjeningsvurderingFeil.IkkeOppfyltStøttesIkke)
+            }
             if (svar.harLikestiltYtelse && !likestilteYtelserSkruddPå) {
                 return@medPerson RestResponse.feil(ApiManuellOpptjeningsvurderingFeil.LikestiltYtelseIkkeSkruddPå)
             }

@@ -92,6 +92,20 @@ class PostManuellOpptjeningsvurderingBehandlerTest {
         }
 
     @Test
+    fun `foreldrepenger opptjent på AAP uten yrkesaktivitet før uttak gir 400 inntil videre`() =
+        testApplication {
+            val pseudoId = settOpp()
+
+            val response =
+                client.post(url(pseudoId)) {
+                    json(request(opptjeningsaktiviteter = """["ARBEID", "FORELDREPENGER"]""", fpAap = true, yrkesaktiv = false))
+                }
+
+            assertEquals(HttpStatusCode.BadRequest, response.status)
+            assertEquals(0, transaksjonProvider.opptjeningsvurderinger.antallLagringer)
+        }
+
+    @Test
     fun `likestilt ytelse gir 400 når det ikke er skrudd på`() =
         testApplication {
             val pseudoId = settOpp(likestilteYtelserSkruddPå = false)
