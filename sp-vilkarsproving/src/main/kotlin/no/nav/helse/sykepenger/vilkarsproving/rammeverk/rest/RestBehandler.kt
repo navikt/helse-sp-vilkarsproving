@@ -3,7 +3,7 @@ package no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest
 import io.github.smiley4.ktoropenapi.config.RouteConfig
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
+import no.nav.sykepenger.libs.ktor.auth.Tilgang
 
 /**
  * Kontrakten alle REST-endepunkter i appen implementerer. Deny-by-default: [påkrevdTilgang] må

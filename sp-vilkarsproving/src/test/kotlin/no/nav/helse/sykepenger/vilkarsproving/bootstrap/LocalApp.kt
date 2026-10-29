@@ -11,18 +11,18 @@ import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonPro
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AZURE_AD_AUTHENTICATION_NAME
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.NavIdent
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerOid
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerPrincipal
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.openapi.OpenApiConfig
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestAdapter
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.configureRestRuting
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures.InMemoryPersonPseudoIdProvider
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures.installTestPlugins
+import no.nav.sykepenger.libs.ktor.auth.AZURE_AD_AUTHENTICATION_NAME
+import no.nav.sykepenger.libs.ktor.auth.AccessToken
+import no.nav.sykepenger.libs.ktor.auth.NavIdent
+import no.nav.sykepenger.libs.ktor.auth.Saksbehandler
+import no.nav.sykepenger.libs.ktor.auth.SaksbehandlerOid
+import no.nav.sykepenger.libs.ktor.auth.SaksbehandlerPrincipal
+import no.nav.sykepenger.libs.ktor.auth.Tilgang
 import java.util.UUID
 
 private const val PORT = 8181

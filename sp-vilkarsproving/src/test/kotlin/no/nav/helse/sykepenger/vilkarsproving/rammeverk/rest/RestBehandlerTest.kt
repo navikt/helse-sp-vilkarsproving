@@ -1,6 +1,6 @@
 package no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest
 
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
+import no.nav.sykepenger.libs.ktor.auth.Tilgang
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

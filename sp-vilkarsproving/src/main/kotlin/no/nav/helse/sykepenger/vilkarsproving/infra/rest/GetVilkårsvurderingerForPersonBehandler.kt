@@ -5,10 +5,10 @@ import no.nav.helse.sykepenger.vilkarsproving.application.PersonAvstemmingServic
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.GetBehandler
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.KallKontekst
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestResponse
+import no.nav.sykepenger.libs.ktor.auth.Tilgang
 import no.nav.sykepenger.libs.logging.loggWarn
 
 internal class GetVilkårsvurderingerForPersonBehandler(

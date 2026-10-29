@@ -4,7 +4,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.auth.authenticate
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.routing
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AZURE_AD_AUTHENTICATION_NAME
+import no.nav.sykepenger.libs.ktor.auth.AZURE_AD_AUTHENTICATION_NAME
 
 /**
  * Registrerer appens endepunkter bak Azure AD-autentisering. Alle ruter som settes opp via

@@ -5,9 +5,9 @@ import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoId
 import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoIdProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
+import no.nav.sykepenger.libs.ktor.auth.AccessToken
+import no.nav.sykepenger.libs.ktor.auth.Saksbehandler
+import no.nav.sykepenger.libs.ktor.auth.Tilgang
 import no.nav.sykepenger.libs.logging.loggDebug
 
 class KallKontekst<TRANSAKSJON>(

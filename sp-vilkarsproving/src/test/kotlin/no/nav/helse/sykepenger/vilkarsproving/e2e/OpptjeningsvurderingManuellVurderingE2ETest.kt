@@ -24,13 +24,13 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerF
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellOpptjeningsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.*
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureResources
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestAdapter
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.get
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.post
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures.InMemoryPersonPseudoIdProvider
+import no.nav.sykepenger.libs.ktor.auth.*
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -49,7 +49,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
             "opptjeningsvurdering",
             "vilkarsvurdering",
             "opptjeningsvurdering_vilkarsvurdering",
-            overskrift = steg
+            overskrift = steg,
         )
     }
 
@@ -62,8 +62,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                 this,
                 transaksjon,
                 object : ISpleisClient {
-                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> =
-                        emptyList()
+                    override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> = emptyList()
                 },
             )
         }
@@ -116,8 +115,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                     PersonAvstemmingService(
                         transaksjon,
                         object : ISpleisClient {
-                            override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> =
-                                emptyList()
+                            override fun hentOpptjeningsvurderinger(fødselsnummer: String): List<SpleisOpptjeningsvurdering> = emptyList()
                         },
                     ),
                 ),
@@ -191,7 +189,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
             val nyId = objectMapper.readTree(postRespons.bodyAsText())["opptjeningsvurderingId"].asString()
             assertNotEquals(
                 automatiskId,
-                nyId
+                nyId,
             ) { "Den manuelle vurderingen skal lage en ny opptjeningsvurdering, ikke skrive over den gamle" }
 
             outboxJobb.kjørEnRundeHvisLeader()
@@ -296,8 +294,9 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
             val krav =
                 objectMapper
                     .readTree(
-                        client.get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$nyId")
-                            .bodyAsText()
+                        client
+                            .get("/api/personer/$pseudoId/vilkarsvurderinger?opptjeningsvurderingId=$nyId")
+                            .bodyAsText(),
                     )["krav"]
                     .single()
             assertTrue(krav["opptjeningOk"].asBoolean())

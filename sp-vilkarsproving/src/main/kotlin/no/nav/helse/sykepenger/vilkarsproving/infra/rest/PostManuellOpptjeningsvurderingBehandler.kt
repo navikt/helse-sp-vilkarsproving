@@ -11,10 +11,10 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsaktivitet
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.SvarPåOpptjening
 import no.nav.helse.sykepenger.vilkarsproving.domain.UgyldigSvarPåOpptjening
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.KallKontekst
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.PostBehandler
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestResponse
+import no.nav.sykepenger.libs.ktor.auth.Tilgang
 import java.time.Instant
 
 /**
@@ -22,7 +22,8 @@ import java.time.Instant
  *
  * Ikke oppfylt avvises inntil videre.
  */
-internal class PostManuellOpptjeningsvurderingBehandler : PostBehandler<
+internal class PostManuellOpptjeningsvurderingBehandler :
+    PostBehandler<
         ApiManuellOpptjeningsvurderingResource,
         ApiManuellOpptjeningsvurderingRequest,
         ApiManuellOpptjeningsvurderingResponse,

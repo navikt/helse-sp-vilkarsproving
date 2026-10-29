@@ -25,9 +25,6 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostNyAutomatiskVilkår
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.leaderelection.NaisLeaderElection
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AzureAdConfig
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.TilgangsgrupperTilTilganger
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.configureJwtAuthentication
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.db.DatabaseConfig
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.db.dataSource
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.db.migrerSynkront
@@ -42,6 +39,9 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestAdapter
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestRuting
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.configureRestRuting
+import no.nav.sykepenger.libs.ktor.auth.AzureAdConfig
+import no.nav.sykepenger.libs.ktor.auth.TilgangsgrupperTilTilganger
+import no.nav.sykepenger.libs.ktor.auth.configureJwtAuthentication
 import no.nav.sykepenger.libs.logging.loggInfo
 import kotlin.time.Duration.Companion.seconds
 

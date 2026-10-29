@@ -5,11 +5,11 @@ import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoId
 import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangSomMangler
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.NavIdent
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerOid
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures.InMemoryPersonPseudoIdProvider
+import no.nav.sykepenger.libs.ktor.auth.AccessToken
+import no.nav.sykepenger.libs.ktor.auth.NavIdent
+import no.nav.sykepenger.libs.ktor.auth.Saksbehandler
+import no.nav.sykepenger.libs.ktor.auth.SaksbehandlerOid
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test

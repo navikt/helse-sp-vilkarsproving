@@ -15,12 +15,12 @@ import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonPro
 import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.*
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureResources
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestAdapter
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.post
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures.InMemoryPersonPseudoIdProvider
+import no.nav.sykepenger.libs.ktor.auth.*
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -46,7 +46,8 @@ class PostManuellOpptjeningsvurderingBehandlerTest {
             assertEquals(id, lagret.id.value.toString())
             assertEquals(
                 listOf(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER),
-                lagret.vilkårsvurderinger.map { it.vilkårskode })
+                lagret.vilkårsvurderinger.map { it.vilkårskode },
+            )
             assertTrue(lagret.erOk)
             assertEquals(
                 listOf(OutboxMelding.Saksbehandlerhandling::class, OutboxMelding.OpptjeningsvurderingEndret::class),
@@ -65,8 +66,8 @@ class PostManuellOpptjeningsvurderingBehandlerTest {
                         request(
                             opptjeningsaktiviteter = """["ARBEID", "FORELDREPENGER"]""",
                             fpAap = true,
-                            yrkesaktiv = true
-                        )
+                            yrkesaktiv = true,
+                        ),
                     )
                 }
 
@@ -121,11 +122,13 @@ class PostManuellOpptjeningsvurderingBehandlerTest {
     @Test
     fun `manglende tilgang til personen gir 403`() =
         testApplication {
-            val pseudoId = settOpp(
-                tilgangskontroll = FakeTilgangskontroll(
-                    TilgangskontrollResultat.ManglerTilgang(TilgangSomMangler.Habilitet)
+            val pseudoId =
+                settOpp(
+                    tilgangskontroll =
+                        FakeTilgangskontroll(
+                            TilgangskontrollResultat.ManglerTilgang(TilgangSomMangler.Habilitet),
+                        ),
                 )
-            )
 
             val response = client.post(url(pseudoId)) { json(request()) }
 
@@ -164,8 +167,7 @@ class PostManuellOpptjeningsvurderingBehandlerTest {
             assertEquals(HttpStatusCode.BadRequest, response.status)
         }
 
-    private fun lagret() =
-        transaksjonProvider.opptjeningsvurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpVilkårsprøving
+    private fun lagret() = transaksjonProvider.opptjeningsvurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpVilkårsprøving
 
     private fun ApplicationTestBuilder.settOpp(
         tilganger: Set<Tilgang> = setOf(Tilgang.Les, Tilgang.Skriv),

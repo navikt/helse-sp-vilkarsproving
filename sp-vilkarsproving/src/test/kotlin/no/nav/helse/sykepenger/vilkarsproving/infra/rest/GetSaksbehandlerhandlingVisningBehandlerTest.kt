@@ -13,12 +13,12 @@ import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.domain.*
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.*
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureResources
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestAdapter
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.get
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures.InMemoryPersonPseudoIdProvider
+import no.nav.sykepenger.libs.ktor.auth.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import tools.jackson.databind.JsonNode
@@ -136,12 +136,13 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
     @Test
     fun `viser nyeste manuelle vurdering naar flere er med`() =
         testApplication {
-            val eldre = Vilkårsvurdering.avSaksbehandler(
-                Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
-                Utfall.IkkeOppfylt,
-                "Z1",
-                "eldre"
-            )
+            val eldre =
+                Vilkårsvurdering.avSaksbehandler(
+                    Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER,
+                    Utfall.IkkeOppfylt,
+                    "Z1",
+                    "eldre",
+                )
             val nyere =
                 Vilkårsvurdering
                     .avSaksbehandler(Vilkårskode.OPPTJENING_ARBEID_MINST_4_UKER, Utfall.Oppfylt, "Z1", "nyere")
@@ -347,7 +348,7 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
                 SaksbehandlerPrincipal(saksbehandler, tilganger, AccessToken("token")),
                 transaksjonProvider,
                 tilgangskontroll,
-                pseudoIdProvider
+                pseudoIdProvider,
             )
         }
         return pseudoId.toString()
@@ -412,8 +413,7 @@ private fun url(
 
 private suspend fun HttpResponse.json(): JsonNode = jacksonObjectMapper().readTree(bodyAsText())
 
-private fun JsonNode.utenInstance(): Map<String, String> =
-    properties().filter { it.key != "instance" }.associate { it.key to it.value.toString() }
+private fun JsonNode.utenInstance(): Map<String, String> = properties().filter { it.key != "instance" }.associate { it.key to it.value.toString() }
 
 private fun assertTekst(
     felt: JsonNode,

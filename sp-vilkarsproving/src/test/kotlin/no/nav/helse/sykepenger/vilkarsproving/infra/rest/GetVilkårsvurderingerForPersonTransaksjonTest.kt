@@ -22,12 +22,6 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.db.FØDSELSNUMMER
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClientException
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.AccessToken
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.NavIdent
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Saksbehandler
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerOid
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.SaksbehandlerPrincipal
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureResources
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.KallKontekst
@@ -35,6 +29,12 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestAdapter
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestResponse
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.get
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures.InMemoryPersonPseudoIdProvider
+import no.nav.sykepenger.libs.ktor.auth.AccessToken
+import no.nav.sykepenger.libs.ktor.auth.NavIdent
+import no.nav.sykepenger.libs.ktor.auth.Saksbehandler
+import no.nav.sykepenger.libs.ktor.auth.SaksbehandlerOid
+import no.nav.sykepenger.libs.ktor.auth.SaksbehandlerPrincipal
+import no.nav.sykepenger.libs.ktor.auth.Tilgang
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test

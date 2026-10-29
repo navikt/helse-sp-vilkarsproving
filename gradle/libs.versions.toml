@@ -5,6 +5,7 @@ kotlinx-coroutines = "1.11.0"
 kotlin = "2.4.21"
 kotlinx-serialization-json = "1.12.0"
 ktor = "3.6.0"
+sykepenger-ktor-auth = "20261029.1425"
 sykepenger-logging = "20261013.1719"
 mockk = "1.14.11"
 smiley4-ktor-openapi-tools = "5.7.0"
@@ -24,7 +25,6 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
 ktor-serialization-jackson3 = { module = "io.ktor:ktor-serialization-jackson3", version.ref = "ktor" }
 ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
-ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor" }
 ktor-server-call-id = { module = "io.ktor:ktor-server-call-id", version.ref = "ktor" }
 ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
 ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
@@ -33,6 +33,7 @@ ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-resources = { module = "io.ktor:ktor-server-resources", version.ref = "ktor" }
 ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+sykepenger-ktor-auth = { module = "no.nav.sykepenger.libs:ktor-auth", version.ref = "sykepenger-ktor-auth" }
 sykepenger-logging = { module = "no.nav.sykepenger.libs:logging", version.ref = "sykepenger-logging" }
 mock-oauth2-server = "no.nav.security:mock-oauth2-server:6.1.2"
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }

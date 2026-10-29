@@ -7,10 +7,10 @@ import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService.VurderOpptjeningPåNyttResultat
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.auth.Tilgang
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.KallKontekst
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.PostBehandler
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestResponse
+import no.nav.sykepenger.libs.ktor.auth.Tilgang
 import no.nav.sykepenger.libs.logging.loggInfo
 import java.time.LocalDate
 
