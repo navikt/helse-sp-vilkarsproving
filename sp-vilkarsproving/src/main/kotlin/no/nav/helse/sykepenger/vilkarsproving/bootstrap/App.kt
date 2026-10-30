@@ -25,9 +25,6 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostNyAutomatiskVilkår
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.leaderelection.NaisLeaderElection
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.db.DatabaseConfig
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.db.dataSource
-import no.nav.helse.sykepenger.vilkarsproving.rammeverk.db.migrerSynkront
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.openapi.OpenApiConfig
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.openapi.configureOpenApiPlugin
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureCallId
@@ -43,9 +40,15 @@ import no.nav.sykepenger.libs.ktor.auth.AzureAdConfig
 import no.nav.sykepenger.libs.ktor.auth.TilgangsgrupperTilTilganger
 import no.nav.sykepenger.libs.ktor.auth.configureJwtAuthentication
 import no.nav.sykepenger.libs.logging.loggInfo
+import no.nav.sykepenger.libs.logging.navngittLogger
+import no.nav.sykepenger.libs.postgres.DatabaseConfig
+import no.nav.sykepenger.libs.postgres.dataSource
+import no.nav.sykepenger.libs.postgres.migrerSynkront
 import kotlin.time.Duration.Companion.seconds
 
 private const val APP_NAVN = "sp-vilkarsproving"
+
+private val logger = navngittLogger("no.nav.helse.sykepenger.vilkarsproving.bootstrap.App")
 
 data class AppKonfigurasjon(
     val appNavn: String,
@@ -78,7 +81,9 @@ fun main() {
     val spleisClient = SpleisClient.fromEnv()
 
     val dataSource = konfigurasjon.database.dataSource()
+    logger.info("Migrerer database")
     migrerSynkront(konfigurasjon.database)
+    logger.info("Migrering ferdig")
     val transaksjonProvider = PostgresTransaksjonProvider(dataSource)
     lateinit var rapidsConnection: RapidsConnection
 
