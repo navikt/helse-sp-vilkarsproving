@@ -106,7 +106,7 @@ internal class OpptjeningsvurderingRiverTest {
 
         assertInstanceOf(
             ObjectNode::class.java,
-            opprinneligBehov
+            opprinneligBehov,
         ) { "opprinneligBehov skal være et JSON-objekt, ikke en string" }
 
         val objectMapper =
@@ -116,6 +116,35 @@ internal class OpptjeningsvurderingRiverTest {
         forventet.properties().forEach { (key, value) ->
             assertEquals(value, opprinneligBehov.get(key)) { "Feltet '$key' i opprinneligBehov stemmer ikke" }
         }
+    }
+
+    @Test
+    fun `selvstendig næringsdrivende med rettighetskategoriId løses som før`() {
+        rapid.sendTestMessage(
+            opptjeningsvurderingBehov(arbeidssituasjon = "SelvstendigNæringsdrivende", rettighetskategoriId = UUID.randomUUID()),
+        )
+
+        assertEquals(1, rapid.inspektør.size)
+        val løsning = rapid.inspektør.message(0)
+        assertTrue(løsning.path("@løsning").path("Opptjeningsvurdering").hasNonNull("id"))
+    }
+
+    @Test
+    fun `arbeidstaker med rettighetskategoriId beholder feltet i opprinneligBehov`() {
+        val rettighetskategoriId = UUID.randomUUID()
+        rapid.sendTestMessage(opptjeningsvurderingBehov(arbeidssituasjon = "Arbeidstaker", rettighetskategoriId = rettighetskategoriId))
+
+        assertEquals(1, rapid.inspektør.size)
+        val utgående = rapid.inspektør.message(0)
+        assertEquals(listOf("ArbeidsforholdV2"), utgående.path("@behov").toList().map { it.asString() })
+        assertEquals(
+            rettighetskategoriId.toString(),
+            utgående
+                .path("opprinneligBehov")
+                .path("Opptjeningsvurdering")
+                .path("rettighetskategoriId")
+                .asString(),
+        )
     }
 
     // Riveren skal ikke plukke opp behov som allerede har fått en løsning
@@ -200,9 +229,14 @@ internal class OpptjeningsvurderingRiverTest {
         const val FØDSELSNUMMER = "12029240045"
         const val ORGNUMMER = "987654321"
 
-        @Language("JSON")
-        fun opptjeningsvurderingBehov(arbeidssituasjon: String) =
-            """
+        fun opptjeningsvurderingBehov(
+            arbeidssituasjon: String,
+            rettighetskategoriId: UUID? = null,
+        ): String {
+            val rettighetskategorifelt = rettighetskategoriId?.let { ""","rettighetskategoriId": "$it"""" } ?: ""
+
+            @Language("JSON")
+            val behov = """
         {
           "@event_name": "behov",
           "@id": "${UUID.randomUUID()}",
@@ -210,9 +244,11 @@ internal class OpptjeningsvurderingRiverTest {
           "fødselsnummer": "$FØDSELSNUMMER",
           "Opptjeningsvurdering" : {
               "skjæringstidspunkt": "2018-02-01",
-              "arbeidssituasjon": "$arbeidssituasjon"
+              "arbeidssituasjon": "$arbeidssituasjon"$rettighetskategorifelt
           }
         }
         """
+            return behov
+        }
     }
 }

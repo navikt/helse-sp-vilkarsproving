@@ -3,6 +3,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.kafka
 import com.github.navikt.tbd_libs.rapids_and_rivers.JsonMessage
 import com.github.navikt.tbd_libs.rapids_and_rivers.River
 import com.github.navikt.tbd_libs.rapids_and_rivers.asLocalDate
+import com.github.navikt.tbd_libs.rapids_and_rivers.isMissingOrNull
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageContext
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.MessageMetadata
 import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
@@ -38,6 +39,7 @@ internal class OpptjeningsvurderingRiver(
                     it.requireKey("fødselsnummer")
                     it.require("Opptjeningsvurdering.skjæringstidspunkt", JsonNode::asLocalDate)
                     it.requireKey("Opptjeningsvurdering.arbeidssituasjon")
+                    it.interestedIn("Opptjeningsvurdering.rettighetskategoriId")
                 }
             }.register(this)
     }
@@ -51,11 +53,17 @@ internal class OpptjeningsvurderingRiver(
         val fødselsnummer = packet["fødselsnummer"].asString()
         val skjæringstidspunkt = packet["Opptjeningsvurdering.skjæringstidspunkt"].asLocalDate()
         val arbeidssituasjon = Arbeidssituasjon.valueOf(packet["Opptjeningsvurdering.arbeidssituasjon"].asString())
+        val rettighetskategoriId =
+            packet["Opptjeningsvurdering.rettighetskategoriId"].takeUnless { it.isMissingOrNull() }?.asString()
 
         medMdc(
             MdcKey.IDENTITETSNUMMER to fødselsnummer,
         ) {
-            loggInfo("Mottatt behov for $behovKey", "skjæringstidspunkt" to skjæringstidspunkt.toString())
+            loggInfo(
+                "Mottatt behov for $behovKey",
+                "skjæringstidspunkt" to skjæringstidspunkt.toString(),
+                "rettighetskategoriId" to rettighetskategoriId,
+            )
 
             val vurderOpptjeningResultat =
                 transaksjonProvider.transaksjon { kontekst ->

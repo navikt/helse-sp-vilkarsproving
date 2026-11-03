@@ -29,9 +29,10 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
             arbeidsforholdløsning(
                 arbeidsforhold(
                     ansattSiden = "2018-01-01",
-                    ansattTil = "2018-01-31"
-                )
-            ), "123"
+                    ansattTil = "2018-01-31",
+                ),
+            ),
+            "123",
         )
 
         assertTrue(påbegynt.erAvsluttet)
@@ -57,6 +58,23 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
     }
 
     @Test
+    fun `rettighetskategoriId fra opprinnelig behov følger med i løsningen`() {
+        påbegyntPrøving()
+        val rettighetskategoriId = UUID.randomUUID()
+
+        rapid.sendTestMessage(
+            arbeidsforholdløsning(
+                arbeidsforhold(ansattSiden = "2018-01-01", ansattTil = "2018-01-31"),
+                rettighetskategoriId = rettighetskategoriId,
+            ),
+        )
+
+        val svar = rapid.inspektør.message(0)
+        assertTrue(svar.path("@løsning").path("Opptjeningsvurdering").hasNonNull("id"))
+        assertEquals(rettighetskategoriId.toString(), svar.path("Opptjeningsvurdering").path("rettighetskategoriId").asString())
+    }
+
+    @Test
     fun `for kort opptjening gir ikke oppfylt`() {
         påbegyntPrøving()
 
@@ -64,9 +82,9 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
             arbeidsforholdløsning(
                 arbeidsforhold(
                     ansattSiden = "2018-01-05",
-                    ansattTil = "2018-01-31"
-                )
-            )
+                    ansattTil = "2018-01-31",
+                ),
+            ),
         )
 
         val vurdering = vurdert()
@@ -123,25 +141,25 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
                     orgnummer = "111111111",
                     type = "FORENKLET_OPPGJØRSORDNING",
                     ansattSiden = "2018-01-01",
-                    ansattTil = "2018-01-31"
+                    ansattTil = "2018-01-31",
                 ),
                 arbeidsforhold(
                     orgnummer = "222222222",
                     type = "FRILANSER",
                     ansattSiden = "2018-01-01",
-                    ansattTil = "2018-01-31"
+                    ansattTil = "2018-01-31",
                 ),
                 arbeidsforhold(
                     orgnummer = "333333333",
                     type = "MARITIMT",
                     ansattSiden = "2018-01-01",
-                    ansattTil = "2018-01-31"
+                    ansattTil = "2018-01-31",
                 ),
                 arbeidsforhold(
                     orgnummer = "444444444",
                     type = "ORDINÆRT",
                     ansattSiden = "2018-01-01",
-                    ansattTil = "2018-01-31"
+                    ansattTil = "2018-01-31",
                 ),
             ),
         )
@@ -163,9 +181,9 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
             arbeidsforholdløsning(
                 arbeidsforhold(
                     ansattSiden = "2018-01-01",
-                    ansattTil = "2018-01-31"
-                )
-            )
+                    ansattTil = "2018-01-31",
+                ),
+            ),
         )
 
         assertEquals(0, rapid.inspektør.size)
@@ -210,8 +228,8 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
                 arbeidsforhold(
                     type = "NOE_HELT_ANNET",
                     ansattSiden = "2018-01-01",
-                    ansattTil = "2018-01-31"
-                )
+                    ansattTil = "2018-01-31",
+                ),
             ),
         )
 
@@ -221,11 +239,12 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
 
     @Test
     fun `løsning på allerede avsluttet prøving gir ingen melding`() {
-        val (prøving, vurdering) = Opptjeningsprøving.start(
-            FØDSELSNUMMER,
-            1.februar,
-            Arbeidssituasjon.SelvstendigNæringsdrivende
-        )
+        val (prøving, vurdering) =
+            Opptjeningsprøving.start(
+                FØDSELSNUMMER,
+                1.februar,
+                Arbeidssituasjon.SelvstendigNæringsdrivende,
+            )
         prøvinger.lagre(prøving)
         vurderinger.lagre(vurdering!!)
 
@@ -233,9 +252,9 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
             arbeidsforholdløsning(
                 arbeidsforhold(
                     ansattSiden = "2018-01-01",
-                    ansattTil = "2018-01-31"
-                )
-            )
+                    ansattTil = "2018-01-31",
+                ),
+            ),
         )
 
         assertEquals(0, rapid.inspektør.size)
@@ -243,16 +262,18 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, kilde.grunnlag)
     }
 
-    private fun påbegyntPrøving() = Opptjeningsprøving.start(
-        FØDSELSNUMMER,
-        1.februar,
-        Arbeidssituasjon.Arbeidstaker
-    ).prøving.also { prøvinger.lagre(it) }
+    private fun påbegyntPrøving() =
+        Opptjeningsprøving
+            .start(
+                FØDSELSNUMMER,
+                1.februar,
+                Arbeidssituasjon.Arbeidstaker,
+            ).prøving
+            .also { prøvinger.lagre(it) }
 
     private fun vurdert() = vurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpVilkårsprøving
 
-    private fun arbeidsforholdPåVurdering() =
-        ((vurdert().vilkårsvurderinger.single().kilde as Vurderingskilde.Automatisk).grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold
+    private fun arbeidsforholdPåVurdering() = ((vurdert().vilkårsvurderinger.single().kilde as Vurderingskilde.Automatisk).grunnlag as Opptjeningsgrunnlag.Arbeidstaker).arbeidsforhold
 
     private companion object {
         const val FØDSELSNUMMER = "12029240045"
@@ -273,11 +294,15 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
             }
             """.trimIndent()
 
-        @Language("JSON")
         fun arbeidsforholdløsning(
             vararg arbeidsforhold: String,
             erFinal: Boolean = true,
-        ) = """
+            rettighetskategoriId: UUID? = null,
+        ): String {
+            val rettighetskategorifelt = rettighetskategoriId?.let { ""","rettighetskategoriId": "$it"""" } ?: ""
+
+            @Language("JSON")
+            val løsning = """
         {
           "@event_name": "behov",
           "@id": "${UUID.randomUUID()}",
@@ -290,13 +315,17 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
             "@id": "$OPPRINNELIG_BEHOV_ID",
             "@behov": ["Opptjeningsvurdering"],
             "fødselsnummer": "$FØDSELSNUMMER",
-            "skjæringstidspunkt": "2018-02-01",
-            "arbeidssituasjon": "Arbeidstaker"
+            "Opptjeningsvurdering": {
+              "skjæringstidspunkt": "2018-02-01",
+              "arbeidssituasjon": "Arbeidstaker"$rettighetskategorifelt
+            }
           },
           "@løsning": {
             "ArbeidsforholdV2": [${arbeidsforhold.joinToString()}]
           }
         }
         """
+            return løsning
+        }
     }
 }
