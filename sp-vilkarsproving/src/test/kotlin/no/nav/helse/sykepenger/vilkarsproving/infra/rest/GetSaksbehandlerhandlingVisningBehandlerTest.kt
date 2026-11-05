@@ -49,10 +49,10 @@ class GetSaksbehandlerhandlingVisningBehandlerTest {
             assertEquals(4, felter.size())
             assertTekst(felter[0], "Opptjeningstid", "Oppfylt")
             assertTekst(felter[1], "Arbeid i minst 4 uker", "Ja")
-            assertTekst(felter[2], "Begrunnelse", "Fritekst fra saksbehandler\nmed linjeskift")
-            assertEquals("LISTE", felter[3]["type"].asString())
-            assertEquals("Journalposter", felter[3]["tittel"].asString())
-            assertEquals(listOf("598373838", "598373839"), felter[3]["elementer"].values().map { it.asString() })
+            assertEquals("LISTE", felter[2]["type"].asString())
+            assertEquals("Journalposter", felter[2]["tittel"].asString())
+            assertEquals(listOf("598373838", "598373839"), felter[2]["elementer"].values().map { it.asString() })
+            assertTekst(felter[3], "Begrunnelse", "Fritekst fra saksbehandler\nmed linjeskift")
         }
 
     @Test

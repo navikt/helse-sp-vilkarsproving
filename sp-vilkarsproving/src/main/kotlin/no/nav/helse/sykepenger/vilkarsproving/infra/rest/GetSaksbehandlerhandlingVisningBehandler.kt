@@ -97,10 +97,10 @@ private fun ManuellHandling.tilVisningsfelter(opptjeningOk: Boolean): List<ApiVi
             )
         }
         foreldrepengevilkår.forEach { add(it.tilVisningsfelt()) }
-        add(ApiVisningsfelt.Tekst(tittel = "Begrunnelse", tekst = kilde.fritekstbegrunnelse))
         if (kilde.journalpostId.isNotEmpty()) {
             add(ApiVisningsfelt.Liste(tittel = "Journalposter", elementer = kilde.journalpostId))
         }
+        add(ApiVisningsfelt.Tekst(tittel = "Begrunnelse", tekst = kilde.fritekstbegrunnelse))
     }
 
 private fun Vilkårsvurdering.tilVisningsfelt() = ApiVisningsfelt.Tekst(tittel = vilkårskode.spørsmål(), tekst = svar())
