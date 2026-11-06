@@ -8,6 +8,7 @@ import com.github.navikt.tbd_libs.rapids_and_rivers_api.RapidsConnection
 import io.micrometer.core.instrument.MeterRegistry
 import no.nav.helse.sykepenger.vilkarsproving.application.PersonAvstemmingService
 import no.nav.sykepenger.libs.logging.MdcKey
+import no.nav.sykepenger.libs.logging.loggError
 import no.nav.sykepenger.libs.logging.loggInfo
 import no.nav.sykepenger.libs.logging.medMdc
 
@@ -40,7 +41,11 @@ internal class PersonAvstemmingRiver(
             MdcKey.MELDING_ID to packet["@id"].asString(),
         ) {
             loggInfo("Mottatt $eventName")
-            personAvstemmingService.lagreOpptjeningsvurderinger(fødselsnummer)
+            try {
+                personAvstemmingService.lagreOpptjeningsvurderinger(fødselsnummer)
+            } catch (ex: IllegalStateException) {
+                loggError("Hopper over $eventName som ikke kunne behandles", ex)
+            }
         }
     }
 }

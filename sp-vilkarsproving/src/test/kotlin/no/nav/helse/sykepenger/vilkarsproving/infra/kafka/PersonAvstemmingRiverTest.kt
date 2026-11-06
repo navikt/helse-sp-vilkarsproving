@@ -14,6 +14,7 @@ import java.util.UUID
 
 internal class PersonAvstemmingRiverTest {
     private val transaksjon = InMemoryTransaksjonProvider()
+    private val opptjeningsvurderingId = OpptjeningsvurderingId(UUID.randomUUID())
     private val rapid =
         TestRapid().apply {
             PersonAvstemmingRiver(
@@ -26,7 +27,7 @@ internal class PersonAvstemmingRiverTest {
                                 override fun hentOpptjeningsvurderinger(fødselsnummer: String) =
                                     listOf(
                                         SpleisOpptjeningsvurdering.SpleisSelvstendig(
-                                            opptjeningsvurderingId = OpptjeningsvurderingId(UUID.randomUUID()),
+                                            opptjeningsvurderingId = opptjeningsvurderingId,
                                             opprettet = Instant.now(),
                                             skjæringstidspunkt = LocalDate.of(2026, 1, 1),
                                         ),
@@ -58,6 +59,32 @@ internal class PersonAvstemmingRiverTest {
     }
 
     @Test
+    fun `hopper over melding når opptjeningsvurderingen allerede er lagret for en annen person`() {
+        sendPersonAvstemming(FØDSELSNUMMER)
+        sendPersonAvstemming(ANNET_FØDSELSNUMMER)
+
+        assertEquals(1, transaksjon.opptjeningsvurderinger.antallLagringer)
+        assertEquals(
+            FØDSELSNUMMER,
+            transaksjon.opptjeningsvurderinger.alleVurderinger
+                .single()
+                .fødselsnummer,
+        )
+    }
+
+    private fun sendPersonAvstemming(fødselsnummer: String) {
+        rapid.sendTestMessage(
+            """
+            {
+              "@event_name": "person_avstemming",
+              "@id": "${UUID.randomUUID()}",
+              "fødselsnummer": "$fødselsnummer"
+            }
+            """.trimIndent(),
+        )
+    }
+
+    @Test
     fun `ignorerer andre hendelser`() {
         rapid.sendTestMessage(
             """
@@ -74,5 +101,6 @@ internal class PersonAvstemmingRiverTest {
 
     private companion object {
         const val FØDSELSNUMMER = "12029240045"
+        const val ANNET_FØDSELSNUMMER = "13029240045"
     }
 }
