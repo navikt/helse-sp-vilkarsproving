@@ -1,6 +1,5 @@
 package no.nav.helse.sykepenger.vilkarsproving.application
 
-import com.github.navikt.tbd_libs.personpseudoid.Identitetsnummer
 import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResultat.HarVurdering
 import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResultat.TrengerArbeidsforhold
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold
@@ -247,28 +246,24 @@ internal class OpptjeningService(
     ) {
         opptjeningsvurderingRepository.lagre(vurdering)
         outbox.leggTil(
-            OutboxKonvolutt.ny(
-                melding =
-                    OutboxMelding.Saksbehandlerhandling(
-                        skjæringstidspunkt = vurdering.skjæringstidspunkt,
-                        saksbehandlerIdent = saksbehandlerIdent,
-                        handlingId = vurdering.id.value,
-                        handlingType = HandlingType.NY_AUTOMATISK_OPPTJENINGSVURDERING,
-                        kreverTotrinnsvurdering = false,
-                        tidspunkt = Instant.now(),
-                    ),
-                identitetsnummer = Identitetsnummer(vurdering.fødselsnummer),
+            vurdering.fødselsnummer,
+            saksbehandlerhandling(
+                fødselsnummer = vurdering.fødselsnummer,
+                skjæringstidspunkt = vurdering.skjæringstidspunkt,
+                saksbehandlerIdent = saksbehandlerIdent,
+                handlingId = vurdering.id.value,
+                handlingType = "NY_AUTOMATISK_OPPTJENINGSVURDERING",
+                kreverTotrinnsvurdering = false,
+                tidspunkt = Instant.now(),
             ),
         )
         outbox.leggTil(
-            OutboxKonvolutt.ny(
-                melding =
-                    OutboxMelding.OpptjeningsvurderingEndret(
-                        skjæringstidspunkt = vurdering.skjæringstidspunkt,
-                        opptjeningsvurderingId = vurdering.id.value,
-                        manuellVurdering = false,
-                    ),
-                identitetsnummer = Identitetsnummer(vurdering.fødselsnummer),
+            vurdering.fødselsnummer,
+            endretOpptjeningsvurdering(
+                fødselsnummer = vurdering.fødselsnummer,
+                skjæringstidspunkt = vurdering.skjæringstidspunkt,
+                opptjeningsvurderingId = vurdering.id.value,
+                manuellVurdering = false,
             ),
         )
     }

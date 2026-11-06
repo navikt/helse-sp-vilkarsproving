@@ -15,7 +15,6 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskA
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForNyArbeidstakerOpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingResultatRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
-import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OutboxPubliseringsjobb
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.PersonAvstemmingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetOpptjeningshistorikkBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetSaksbehandlerhandlingVisningBehandler
@@ -24,7 +23,6 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellOpptjeningsv
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostNyAutomatiskVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClient
-import no.nav.helse.sykepenger.vilkarsproving.leaderelection.NaisLeaderElection
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.openapi.OpenApiConfig
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.openapi.configureOpenApiPlugin
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureCallId
@@ -39,12 +37,13 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.configureRestRuting
 import no.nav.sykepenger.libs.ktor.auth.AzureAdConfig
 import no.nav.sykepenger.libs.ktor.auth.TilgangsgrupperTilTilganger
 import no.nav.sykepenger.libs.ktor.auth.configureJwtAuthentication
+import no.nav.sykepenger.libs.leaderelection.NaisLeaderElection
 import no.nav.sykepenger.libs.logging.loggInfo
 import no.nav.sykepenger.libs.logging.navngittLogger
+import no.nav.sykepenger.libs.outbox.OutboxPubliseringsjobb
 import no.nav.sykepenger.libs.postgres.DatabaseConfig
 import no.nav.sykepenger.libs.postgres.dataSource
 import no.nav.sykepenger.libs.postgres.migrerSynkront
-import kotlin.time.Duration.Companion.seconds
 
 private const val APP_NAVN = "sp-vilkarsproving"
 
@@ -134,16 +133,9 @@ fun main() {
                 NaisLeaderElection(
                     electorSseUrl = env.getValue("ELECTOR_SSE_URL"),
                     hostname = env.getValue("HOSTNAME"),
-                    ventetidFørNyTilkobling = 5.seconds,
                 )
-            register(leaderElection)
-            register(
-                OutboxPubliseringsjobb(
-                    rapidsConnection = this,
-                    transaksjonProvider = transaksjonProvider,
-                    leaderElection = leaderElection,
-                ),
-            )
+            register(NaisLeaderElectionStatusListener(leaderElection))
+            register(OutboxPubliseringsjobb(dataSource, this, leaderElection))
         }.start()
 }
 
@@ -196,3 +188,15 @@ internal fun endepunkter(
         post(PostManuellOpptjeningsvurderingBehandler())
         post(PostNyAutomatiskVilkårsvurderingBehandler(publiser, versjonAvKode))
     }
+
+private class NaisLeaderElectionStatusListener(
+    private val leaderElection: NaisLeaderElection,
+) : RapidsConnection.StatusListener {
+    override fun onStartup(rapidsConnection: RapidsConnection) {
+        leaderElection.start()
+    }
+
+    override fun onShutdownSignal(rapidsConnection: RapidsConnection) {
+        leaderElection.close()
+    }
+}

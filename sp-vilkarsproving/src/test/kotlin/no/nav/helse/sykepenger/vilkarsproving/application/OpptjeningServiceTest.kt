@@ -9,6 +9,8 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforho
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.readValue
 import java.time.Instant
 import java.time.LocalDate
 import kotlin.test.assertIs
@@ -238,7 +240,7 @@ internal class OpptjeningServiceTest {
 
         assertEquals(OpptjeningService.VurderOpptjeningPåNyttResultat.IngenVurderingFunnet, resultat)
         assertTrue(prøvinger.allePrøvinger.isEmpty())
-        assertTrue(transaksjon.outbox.upubliserteMeldinger.isEmpty())
+        assertTrue(transaksjon.outbox.meldinger.isEmpty())
     }
 
     @Test
@@ -252,7 +254,7 @@ internal class OpptjeningServiceTest {
         assertEquals(2, prøvinger.allePrøvinger.size)
         assertEquals(nyPrøving.id, venter.opptjeningsprøvingId)
         assertEquals(Grunnlagsbehov.Arbeidsforhold, nyPrøving.uteståendeBehov)
-        assertTrue(transaksjon.outbox.upubliserteMeldinger.isEmpty())
+        assertTrue(transaksjon.outbox.meldinger.isEmpty())
     }
 
     @Test
@@ -268,9 +270,9 @@ internal class OpptjeningServiceTest {
         assertEquals(
             listOf(
                 saksbehandlerhandling(ny.opptjeningsvurderingId),
-                OutboxMelding.OpptjeningsvurderingEndret(1.februar, ny.opptjeningsvurderingId.value, manuellVurdering = false),
+                endretOpptjeningsvurdering(ny.opptjeningsvurderingId),
             ),
-            transaksjon.outbox.upubliserteMeldinger.map { it.melding.utenTidspunkt() },
+            transaksjon.outbox.meldinger.map { it.innhold() },
         )
     }
 
@@ -283,7 +285,7 @@ internal class OpptjeningServiceTest {
 
         assertEquals(OpptjeningService.VurderOpptjeningPåNyttResultat.PrøvingPågår, resultat)
         assertEquals(2, prøvinger.allePrøvinger.size)
-        assertTrue(transaksjon.outbox.upubliserteMeldinger.isEmpty())
+        assertTrue(transaksjon.outbox.meldinger.isEmpty())
     }
 
     @Test
@@ -309,9 +311,9 @@ internal class OpptjeningServiceTest {
         assertEquals(
             listOf(
                 saksbehandlerhandling(ny.opptjeningsvurderingId),
-                OutboxMelding.OpptjeningsvurderingEndret(1.februar, ny.opptjeningsvurderingId.value, manuellVurdering = false),
+                endretOpptjeningsvurdering(ny.opptjeningsvurderingId),
             ),
-            transaksjon.outbox.upubliserteMeldinger.map { it.melding.utenTidspunkt() },
+            transaksjon.outbox.meldinger.map { it.innhold() },
         )
     }
 
@@ -362,7 +364,7 @@ internal class OpptjeningServiceTest {
 
         assertEquals(BehandleGrunnlagResultat.IngenPrøvingFunnet, resultat)
         assertFalse(prøvinger.allePrøvinger.last().erAvsluttet)
-        assertTrue(transaksjon.outbox.upubliserteMeldinger.isEmpty())
+        assertTrue(transaksjon.outbox.meldinger.isEmpty())
     }
 
     @Test
@@ -381,7 +383,7 @@ internal class OpptjeningServiceTest {
         behandle()
 
         assertEquals(BehandleGrunnlagResultat.AlleredeVurdert, behandle())
-        assertEquals(2, transaksjon.outbox.upubliserteMeldinger.size)
+        assertEquals(2, transaksjon.outbox.meldinger.size)
     }
 
     @Test
@@ -400,20 +402,30 @@ internal class OpptjeningServiceTest {
     }
 
     private fun saksbehandlerhandling(opptjeningsvurderingId: OpptjeningsvurderingId) =
-        OutboxMelding.Saksbehandlerhandling(
-            skjæringstidspunkt = 1.februar,
-            saksbehandlerIdent = SAKSBEHANDLER,
-            handlingId = opptjeningsvurderingId.value,
-            handlingType = HandlingType.NY_AUTOMATISK_OPPTJENINGSVURDERING,
-            kreverTotrinnsvurdering = false,
-            tidspunkt = Instant.EPOCH,
+        mapOf(
+            "@event_name" to "saksbehandlerhandling",
+            "fødselsnummer" to FØDSELSNUMMER,
+            "skjæringstidspunkt" to 1.februar.toString(),
+            "saksbehandlerIdent" to SAKSBEHANDLER,
+            "kreverTotrinnsvurdering" to false,
+            "handlingId" to opptjeningsvurderingId.value.toString(),
+            "handlingType" to "NY_AUTOMATISK_OPPTJENINGSVURDERING",
         )
 
-    private fun OutboxMelding.utenTidspunkt() =
-        when (this) {
-            is OutboxMelding.Saksbehandlerhandling -> copy(tidspunkt = Instant.EPOCH)
-            is OutboxMelding.OpptjeningsvurderingEndret -> this
-        }
+    private fun endretOpptjeningsvurdering(opptjeningsvurderingId: OpptjeningsvurderingId) =
+        mapOf(
+            "@event_name" to "endret_opptjeningsvurdering",
+            "fødselsnummer" to FØDSELSNUMMER,
+            "skjæringstidspunkt" to 1.februar.toString(),
+            "opptjeningsvurderingId" to opptjeningsvurderingId.value.toString(),
+            "manuellVurdering" to false,
+        )
+
+    // Tar bort feltene JsonMessage legger til, og tidspunktet, som settes til nå.
+    private fun InMemoryOutbox.Melding.innhold() =
+        jacksonObjectMapper()
+            .readValue<Map<String, Any?>>(melding)
+            .filterKeys { it == "@event_name" || (!it.startsWith("@") && !it.startsWith("system_") && it != "tidspunkt") }
 
     private fun fullførtPrøving(
         skjæringstidspunkt: LocalDate,

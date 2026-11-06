@@ -19,7 +19,6 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.db.DatabaseTest
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingResultatRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
-import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OutboxPubliseringsjobb
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellOpptjeningsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
@@ -31,6 +30,8 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.get
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.post
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures.InMemoryPersonPseudoIdProvider
 import no.nav.sykepenger.libs.ktor.auth.*
+import no.nav.sykepenger.libs.leaderelection.LeaderElection
+import no.nav.sykepenger.libs.outbox.OutboxPubliseringsjobb
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -67,7 +68,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
             )
         }
 
-    private val outboxJobb = OutboxPubliseringsjobb(rapid, transaksjon, { true })
+    private val outboxJobb = OutboxPubliseringsjobb(Database.dataSource, rapid, { true })
 
     private val saksbehandler = Saksbehandler(NavIdent("Z999999"), SaksbehandlerOid("oid"), "Test Testesen")
     private val identitetsnummer = Identitetsnummer(FØDSELSNUMMER)
@@ -192,7 +193,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                 nyId,
             ) { "Den manuelle vurderingen skal lage en ny opptjeningsvurdering, ikke skrive over den gamle" }
 
-            outboxJobb.kjørEnRundeHvisLeader()
+            outboxJobb.publiserUpubliserte()
 
             dump("etter 4")
 
@@ -253,7 +254,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
             val postRespons = postSamletVurdering(pseudoId, opptjeningsaktiviteter = """["ARBEID"]""")
             assertEquals(HttpStatusCode.OK, postRespons.status)
 
-            outboxJobb.kjørEnRundeHvisLeader()
+            outboxJobb.publiserUpubliserte()
 
             assertEquals(
                 listOf("saksbehandlerhandling", "endret_opptjeningsvurdering"),
@@ -310,7 +311,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
                 krav["vurderinger"].toList().associate { it["vilkårskode"].asString() to it["utfall"].asString() },
             )
 
-            outboxJobb.kjørEnRundeHvisLeader()
+            outboxJobb.publiserUpubliserte()
             val antallFør = rapid.inspektør.size
             rapid.sendTestMessage(opptjeningsvurderingResultatBehov(UUID.fromString(nyId)), FØDSELSNUMMER)
             assertTrue(

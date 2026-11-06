@@ -1,10 +1,9 @@
 package no.nav.helse.sykepenger.vilkarsproving.infra.rest
 
 import com.github.navikt.tbd_libs.personpseudoid.PersonPseudoId
-import no.nav.helse.sykepenger.vilkarsproving.application.HandlingType
-import no.nav.helse.sykepenger.vilkarsproving.application.OutboxKonvolutt
-import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
+import no.nav.helse.sykepenger.vilkarsproving.application.endretOpptjeningsvurdering
+import no.nav.helse.sykepenger.vilkarsproving.application.saksbehandlerhandling
 import no.nav.helse.sykepenger.vilkarsproving.domain.ManuellOpptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.ManuellOpptjeningsvurderingResultat
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsaktivitet
@@ -82,28 +81,24 @@ internal class PostManuellOpptjeningsvurderingBehandler :
             kallKontekst.transaksjon.opptjeningsvurderinger.lagre(opptjeningsvurdering)
 
             kallKontekst.transaksjon.outbox.leggTil(
-                OutboxKonvolutt.ny(
-                    melding =
-                        OutboxMelding.Saksbehandlerhandling(
-                            skjæringstidspunkt = request.skjæringstidspunkt,
-                            saksbehandlerIdent = saksbehandlerIdent,
-                            handlingId = opptjeningsvurdering.id.value,
-                            handlingType = HandlingType.MANUELT_VURDERT_OPPTJENING,
-                            kreverTotrinnsvurdering = true,
-                            tidspunkt = Instant.now(),
-                        ),
-                    identitetsnummer = identitetsnummer,
+                identitetsnummer.value,
+                saksbehandlerhandling(
+                    fødselsnummer = identitetsnummer.value,
+                    skjæringstidspunkt = request.skjæringstidspunkt,
+                    saksbehandlerIdent = saksbehandlerIdent,
+                    handlingId = opptjeningsvurdering.id.value,
+                    handlingType = "MANUELT_VURDERT_OPPTJENING",
+                    kreverTotrinnsvurdering = true,
+                    tidspunkt = Instant.now(),
                 ),
             )
             kallKontekst.transaksjon.outbox.leggTil(
-                OutboxKonvolutt.ny(
-                    melding =
-                        OutboxMelding.OpptjeningsvurderingEndret(
-                            skjæringstidspunkt = request.skjæringstidspunkt,
-                            opptjeningsvurderingId = opptjeningsvurdering.id.value,
-                            manuellVurdering = true,
-                        ),
-                    identitetsnummer = identitetsnummer,
+                identitetsnummer.value,
+                endretOpptjeningsvurdering(
+                    fødselsnummer = identitetsnummer.value,
+                    skjæringstidspunkt = request.skjæringstidspunkt,
+                    opptjeningsvurderingId = opptjeningsvurdering.id.value,
+                    manuellVurdering = true,
                 ),
             )
 

@@ -26,12 +26,10 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.db.DatabaseTest
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForNyArbeidstakerOpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
-import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OutboxPubliseringsjobb
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostNyAutomatiskVilkårsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
-import no.nav.helse.sykepenger.vilkarsproving.leaderelection.LeaderElection
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureResources
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestAdapter
@@ -44,6 +42,8 @@ import no.nav.sykepenger.libs.ktor.auth.Saksbehandler
 import no.nav.sykepenger.libs.ktor.auth.SaksbehandlerOid
 import no.nav.sykepenger.libs.ktor.auth.SaksbehandlerPrincipal
 import no.nav.sykepenger.libs.ktor.auth.Tilgang
+import no.nav.sykepenger.libs.leaderelection.LeaderElection
+import no.nav.sykepenger.libs.outbox.OutboxPubliseringsjobb
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -64,11 +64,7 @@ internal class OpptjeningsvurderingNyAutomatiskVurderingE2ETest : DatabaseTest()
         }
 
     private val outboxJobb =
-        OutboxPubliseringsjobb(
-            rapid,
-            transaksjon,
-            LeaderElection { true },
-        )
+        OutboxPubliseringsjobb(Database.dataSource, rapid, LeaderElection { true })
 
     private val saksbehandler = Saksbehandler(NavIdent("Z999999"), SaksbehandlerOid("oid"), "Test Testesen")
     private val identitetsnummer = Identitetsnummer(FØDSELSNUMMER)
@@ -166,7 +162,7 @@ internal class OpptjeningsvurderingNyAutomatiskVurderingE2ETest : DatabaseTest()
 
             // Mens prøvingen pågår kan det ikke startes enda en, og ingenting publiseres
             assertEquals(HttpStatusCode.Conflict, client.vurderPåNytt(pseudoId).status)
-            outboxJobb.kjørEnRunde()
+            outboxJobb.publiserUpubliserte()
             assertEquals(3, rapid.inspektør.size)
             assertEquals(listOf("ArbeidsforholdV2"), arbeidsforholdbehov.path("@behov").toList().map { it.asString() })
             assertTrue(arbeidsforholdbehov.hasNonNull("opptjeningsprøvingId"))
@@ -183,7 +179,7 @@ internal class OpptjeningsvurderingNyAutomatiskVurderingE2ETest : DatabaseTest()
             assertEquals(3, rapid.inspektør.size) { "Ny vurdering skal ikke svare på noe behov direkte" }
 
             // Steg 5: saksbehandlerhandlingen sendes til Spesialist og endringen til Spleis via outboxen
-            outboxJobb.kjørEnRunde()
+            outboxJobb.publiserUpubliserte()
             assertEquals(5, rapid.inspektør.size)
             val saksbehandlerhandling = rapid.inspektør.message(3)
             val endretEvent = rapid.inspektør.message(4)
@@ -218,7 +214,7 @@ internal class OpptjeningsvurderingNyAutomatiskVurderingE2ETest : DatabaseTest()
             application { settOppTestapp(pseudoIdProvider) }
 
             assertEquals(HttpStatusCode.NotFound, client.vurderPåNytt(pseudoId).status)
-            outboxJobb.kjørEnRunde()
+            outboxJobb.publiserUpubliserte()
             assertEquals(0, rapid.inspektør.size)
         }
 

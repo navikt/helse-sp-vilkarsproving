@@ -25,7 +25,8 @@ dependencies {
     implementation(libs.sykepenger.ktor.auth)
     implementation(libs.sykepenger.logging)
     implementation(libs.sykepenger.postgres)
-    implementation(libs.httpclient5.fluent)
+    implementation(libs.sykepenger.leader.election)
+    implementation(libs.sykepenger.outbox)
     implementation(libs.postgresql)
     implementation(libs.tbd.libs.access.token.provider.texas)
     implementation(libs.tbd.libs.person.pseudo.id)
@@ -33,7 +34,6 @@ dependencies {
     implementation(libs.tbd.libs.populasjonstilgangskontroll.provider.tilgangsmaskinen)
 
     implementation(libs.kotliquery)
-    implementation(libs.kotlinx.coroutines.core)
     implementation(project(":migreringer"))
     testImplementation(libs.rapids.and.rivers.test)
     testImplementation(libs.wiremock)

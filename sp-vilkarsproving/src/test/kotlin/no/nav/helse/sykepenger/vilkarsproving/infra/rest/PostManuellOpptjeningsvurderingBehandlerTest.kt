@@ -12,7 +12,6 @@ import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
-import no.nav.helse.sykepenger.vilkarsproving.application.OutboxMelding
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
@@ -49,10 +48,13 @@ class PostManuellOpptjeningsvurderingBehandlerTest {
                 lagret.vilkårsvurderinger.map { it.vilkårskode },
             )
             assertTrue(lagret.erOk)
-            assertEquals(
-                listOf(OutboxMelding.Saksbehandlerhandling::class, OutboxMelding.OpptjeningsvurderingEndret::class),
-                transaksjonProvider.outbox.upubliserteMeldinger.map { it.melding::class },
-            )
+            val meldinger = transaksjonProvider.outbox.meldinger.map { jacksonObjectMapper().readTree(it.melding) }
+            assertEquals(listOf("saksbehandlerhandling", "endret_opptjeningsvurdering"), meldinger.map { it["@event_name"].asString() })
+            assertEquals("MANUELT_VURDERT_OPPTJENING", meldinger[0]["handlingType"].asString())
+            assertTrue(meldinger[0]["kreverTotrinnsvurdering"].asBoolean())
+            assertEquals(id, meldinger[1]["opptjeningsvurderingId"].asString())
+            assertTrue(meldinger[1]["manuellVurdering"].asBoolean())
+            assertEquals(List(2) { lagret.fødselsnummer }, transaksjonProvider.outbox.meldinger.map { it.fødselsnummer })
         }
 
     @Test
@@ -116,7 +118,7 @@ class PostManuellOpptjeningsvurderingBehandlerTest {
 
             assertEquals(HttpStatusCode.BadRequest, response.status)
             assertEquals(0, transaksjonProvider.opptjeningsvurderinger.antallLagringer)
-            assertEquals(emptyList<Any>(), transaksjonProvider.outbox.upubliserteMeldinger)
+            assertEquals(emptyList<Any>(), transaksjonProvider.outbox.meldinger)
         }
 
     @Test
