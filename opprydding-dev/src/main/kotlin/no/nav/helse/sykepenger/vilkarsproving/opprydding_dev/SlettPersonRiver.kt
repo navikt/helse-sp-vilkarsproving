@@ -49,6 +49,7 @@ internal class SlettPersonRiver(
     ) {
         val vilkarsvurderingIder = slettKoblingerTilOpptjeningsvurdering(tx, fødselsnummer)
         slettVilkarsvurdering(tx, vilkarsvurderingIder)
+        slettKoblingerTilRettighetskategori(tx, fødselsnummer)
         slettOpptjeningsvurdering(tx, fødselsnummer)
         slettOpptjeningsproving(tx, fødselsnummer)
         slettMigreringslogg(tx, fødselsnummer)
@@ -97,6 +98,20 @@ internal class SlettPersonRiver(
                 mapOf("ider" to tx.createArrayOf("uuid", vilkarsvurderingIder)),
             ).asUpdate,
         )
+    }
+
+    private fun slettKoblingerTilRettighetskategori(
+        tx: TransactionalSession,
+        fødselsnummer: String,
+    ) {
+        @Language("PostgreSQL")
+        val query = """
+            DELETE FROM opptjeningsvurdering_rettighetskategori
+            WHERE opptjeningsvurdering_id IN (
+                SELECT id FROM opptjeningsvurdering WHERE fødselsnummer = :fnr
+            )
+        """
+        tx.run(queryOf(query, mapOf("fnr" to fødselsnummer)).asUpdate)
     }
 
     private fun slettOpptjeningsvurdering(

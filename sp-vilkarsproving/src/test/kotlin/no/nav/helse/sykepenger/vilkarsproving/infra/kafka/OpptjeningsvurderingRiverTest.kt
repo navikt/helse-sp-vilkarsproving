@@ -99,6 +99,69 @@ internal class OpptjeningsvurderingRiverTest {
     }
 
     @Test
+    fun `kjent rettighetskategoriId svarer med koblet vurdering uten ny prøving`() {
+        val rettighetskategoriId = UUID.randomUUID()
+        rapid.sendTestMessage(opptjeningsvurderingBehov("SelvstendigNæringsdrivende", rettighetskategoriId))
+        val koblet = løsningsId(0)
+
+        rapid.sendTestMessage(opptjeningsvurderingBehov("Arbeidstaker", rettighetskategoriId))
+
+        assertEquals(2, rapid.inspektør.size)
+        assertEquals(koblet, løsningsId(1))
+        assertEquals(1, prøvinger.allePrøvinger.size)
+    }
+
+    @Test
+    fun `ukjent rettighetskategoriId kobles til gjenbrukt vurdering`() {
+        val gjenbrukt = fullførtPrøving()
+        val rettighetskategoriId = UUID.randomUUID()
+        rapid.sendTestMessage(opptjeningsvurderingBehov("Arbeidstaker", rettighetskategoriId))
+        assertEquals(gjenbrukt.toString(), løsningsId(0))
+
+        rapid.sendTestMessage(opptjeningsvurderingBehov("SelvstendigNæringsdrivende", rettighetskategoriId))
+
+        assertEquals(gjenbrukt.toString(), løsningsId(1))
+        assertEquals(1, vurderinger.antallLagringer)
+    }
+
+    @Test
+    fun `kjent rettighetskategoriId svarer med nyeste koblede vurdering`() {
+        val rettighetskategoriId = UUID.randomUUID()
+        val eldste = fullførtPrøving()
+        rapid.sendTestMessage(opptjeningsvurderingBehov("Arbeidstaker", rettighetskategoriId))
+        assertEquals(eldste.toString(), løsningsId(0))
+        val nyeste = fullførtPrøving()
+        vurderinger.koble(nyeste, setOf(RettighetskategoriId(rettighetskategoriId)), java.time.Instant.now())
+
+        rapid.sendTestMessage(opptjeningsvurderingBehov("Arbeidstaker", rettighetskategoriId))
+
+        assertEquals(nyeste.toString(), løsningsId(1))
+    }
+
+    @Test
+    fun `gjentatt behov med samme rettighetskategoriId lagrer koblingen én gang`() {
+        fullførtPrøving()
+        val rettighetskategoriId = UUID.randomUUID()
+
+        repeat(2) { rapid.sendTestMessage(opptjeningsvurderingBehov("Arbeidstaker", rettighetskategoriId)) }
+
+        assertEquals(1, vurderinger.koblinger.size)
+    }
+
+    @Test
+    fun `ny vurdering kobles til rettighetskategoriId`() {
+        val rettighetskategoriId = UUID.randomUUID()
+        rapid.sendTestMessage(opptjeningsvurderingBehov("SelvstendigNæringsdrivende", rettighetskategoriId))
+        val ny = løsningsId(0)
+        // En nyere vurdering for samme skjæringstidspunkt uten kobling skal ikke vinne over den koblede
+        fullførtPrøving()
+
+        rapid.sendTestMessage(opptjeningsvurderingBehov("SelvstendigNæringsdrivende", rettighetskategoriId))
+
+        assertEquals(ny, løsningsId(1))
+    }
+
+    @Test
     fun `opprinneligBehov er json-objekt med identisk innhold som innkommende behov`() {
         val innkommendeBehov = opptjeningsvurderingBehov(arbeidssituasjon = "Arbeidstaker")
         rapid.sendTestMessage(innkommendeBehov)
@@ -248,6 +311,14 @@ internal class OpptjeningsvurderingRiverTest {
         assertEquals(0, rapid.inspektør.size)
         assertEquals(0, prøvinger.allePrøvinger.size)
     }
+
+    private fun løsningsId(indeks: Int) =
+        rapid.inspektør
+            .message(indeks)
+            .path("@løsning")
+            .path("Opptjeningsvurdering")
+            .path("id")
+            .asString()
 
     private fun fullførtPrøving(): OpptjeningsvurderingId {
         val prøving = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker).prøving

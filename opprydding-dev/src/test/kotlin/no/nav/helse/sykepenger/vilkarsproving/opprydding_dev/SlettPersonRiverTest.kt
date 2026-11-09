@@ -36,6 +36,7 @@ internal class SlettPersonRiverTest {
         insertOpptjeningsproving(fødselsnummer = fødselsnummer)
         val opptjeningsvurderingId = insertOpptjeningsvurdering(fødselsnummer = fødselsnummer)
         insertVilkarsvurdering(opptjeningsvurderingId = opptjeningsvurderingId)
+        insertRettighetskategorikobling(opptjeningsvurderingId = opptjeningsvurderingId)
         insertMigreringslogg(fødselsnummer = fødselsnummer)
 
         assertEquals(1, Database.countOpptjeningsproving())
@@ -43,6 +44,7 @@ internal class SlettPersonRiverTest {
         assertEquals(1, Database.countVilkarsvurdering())
         assertEquals(1, Database.countOpptjeningsvurderingVilkarsvurdering())
         assertEquals(1, Database.countMigreringslogg())
+        assertEquals(1, Database.countOpptjeningsvurderingRettighetskategori())
 
         rapid.sendTestMessage(slettPersonMelding(fødselsnummer))
 
@@ -51,6 +53,7 @@ internal class SlettPersonRiverTest {
         assertEquals(0, Database.countVilkarsvurdering())
         assertEquals(0, Database.countOpptjeningsvurderingVilkarsvurdering())
         assertEquals(0, Database.countMigreringslogg())
+        assertEquals(0, Database.countOpptjeningsvurderingRettighetskategori())
     }
 
     @Test
@@ -61,10 +64,12 @@ internal class SlettPersonRiverTest {
         insertOpptjeningsproving(fødselsnummer = fødselsnummer1)
         val opptjeningsvurderingId1 = insertOpptjeningsvurdering(fødselsnummer = fødselsnummer1)
         insertVilkarsvurdering(opptjeningsvurderingId = opptjeningsvurderingId1)
+        insertRettighetskategorikobling(opptjeningsvurderingId = opptjeningsvurderingId1)
 
         insertOpptjeningsproving(fødselsnummer = fødselsnummer2)
         val opptjeningsvurderingId2 = insertOpptjeningsvurdering(fødselsnummer = fødselsnummer2)
         insertVilkarsvurdering(opptjeningsvurderingId = opptjeningsvurderingId2)
+        insertRettighetskategorikobling(opptjeningsvurderingId = opptjeningsvurderingId2)
         insertMigreringslogg(fødselsnummer = fødselsnummer1)
         insertMigreringslogg(fødselsnummer = fødselsnummer2)
 
@@ -75,6 +80,7 @@ internal class SlettPersonRiverTest {
         assertEquals(1, Database.countVilkarsvurdering())
         assertEquals(1, Database.countOpptjeningsvurderingVilkarsvurdering())
         assertEquals(1, Database.countMigreringslogg())
+        assertEquals(1, Database.countOpptjeningsvurderingRettighetskategori())
     }
 
     @Test
@@ -184,6 +190,24 @@ internal class SlettPersonRiverTest {
                 }
         }
         kobleVilkarsvurdering(id, opptjeningsvurderingId)
+    }
+
+    private fun insertRettighetskategorikobling(opptjeningsvurderingId: UUID) {
+        Database.dataSource.connection.use { conn ->
+            conn
+                .prepareStatement(
+                    """
+                INSERT INTO opptjeningsvurdering_rettighetskategori
+                    (opptjeningsvurdering_id, rettighetskategori_id, registrert)
+                VALUES (?, ?, ?)
+                """,
+                ).use { stmt ->
+                    stmt.setObject(1, opptjeningsvurderingId)
+                    stmt.setObject(2, UUID.randomUUID())
+                    stmt.setObject(3, java.sql.Timestamp.from(Instant.now()))
+                    stmt.executeUpdate()
+                }
+        }
     }
 
     private fun insertMigreringslogg(fødselsnummer: String) {

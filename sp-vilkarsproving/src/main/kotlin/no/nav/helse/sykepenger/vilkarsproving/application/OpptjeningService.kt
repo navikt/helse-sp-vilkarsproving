@@ -10,6 +10,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.RettighetskategoriId
 import no.nav.sykepenger.libs.logging.MdcKey
 import no.nav.sykepenger.libs.logging.loggError
 import no.nav.sykepenger.libs.logging.loggInfo
@@ -29,26 +30,42 @@ internal class OpptjeningService(
         fødselsnummer: String,
         skjæringstidspunkt: LocalDate,
         arbeidssituasjon: Arbeidssituasjon,
+        rettighetskategoriId: RettighetskategoriId,
     ): VurderOpptjeningResultat =
         medMdc(
             MdcKey.IDENTITETSNUMMER to fødselsnummer,
         ) {
+            opptjeningsvurderingRepository.nyesteKobletTil(rettighetskategoriId)?.let { vurdering ->
+                loggInfo(
+                    "Rettighetskategori-ID-en er koblet til en opptjeningsvurdering",
+                    "opptjeningsvurderingId" to vurdering.id.toString(),
+                    "rettighetskategoriId" to rettighetskategoriId.toString(),
+                    "skjæringstidspunkt" to skjæringstidspunkt.toString(),
+                )
+                return@medMdc HarVurdering(fødselsnummer, skjæringstidspunkt, vurdering.id)
+            }
+
             opptjeningsvurderingRepository
                 .gjeldende(fødselsnummer, skjæringstidspunkt)
                 ?.takeIf { it.kategori == arbeidssituasjon.kategori }
                 ?.let { vurdering ->
+                    opptjeningsvurderingRepository.koble(vurdering.id, setOf(rettighetskategoriId), Instant.now())
                     loggInfo(
-                        "Har allerede opptjeningsvurdering",
+                        "Har allerede opptjeningsvurdering. Kobler den til rettighetskategori-ID-en",
                         "opptjeningsvurderingId" to vurdering.id.toString(),
+                        "rettighetskategoriId" to rettighetskategoriId.toString(),
                         "skjæringstidspunkt" to skjæringstidspunkt.toString(),
                     )
                     return@medMdc HarVurdering(fødselsnummer, skjæringstidspunkt, vurdering.id)
                 }
 
             opptjeningsprøvingRepository.finnSiste(fødselsnummer, skjæringstidspunkt, arbeidssituasjon.kategori)?.takeUnless { it.erAvsluttet }?.let {
+                it.leggTil(rettighetskategoriId)
+                opptjeningsprøvingRepository.lagre(it)
                 loggInfo(
                     "Opptjeningsprøving pågår allerede. Etterspør grunnlaget på nytt",
                     "opptjeningsprøvingId" to it.id.toString(),
+                    "rettighetskategoriId" to rettighetskategoriId.toString(),
                     "skjæringstidspunkt" to skjæringstidspunkt.toString(),
                 )
                 return@medMdc TrengerArbeidsforhold(fødselsnummer, skjæringstidspunkt)
@@ -60,6 +77,7 @@ internal class OpptjeningService(
                     skjæringstidspunkt,
                     arbeidssituasjon,
                     versjonAvKode,
+                    setOf(rettighetskategoriId),
                 )
             opptjeningsprøvingRepository.lagre(prøving)
 
@@ -73,7 +91,7 @@ internal class OpptjeningService(
                 return@medMdc TrengerArbeidsforhold(fødselsnummer, skjæringstidspunkt)
             }
 
-            opptjeningsvurderingRepository.lagre(vurdering)
+            lagreOgKoble(vurdering, prøving)
             loggInfo(
                 "Opptjeningsprøving fullført uten innhenting",
                 "opptjeningsprøvingId" to prøving.id.toString(),
@@ -115,7 +133,7 @@ internal class OpptjeningService(
             }
 
             val vurdering = prøving.motta(Opptjeningsgrunnlag.Arbeidstaker(arbeidsforhold), versjonAvKode)
-            opptjeningsvurderingRepository.lagre(vurdering)
+            lagreOgKoble(vurdering, prøving)
             opptjeningsprøvingRepository.lagre(prøving)
             loggInfo(
                 "Opptjeningsprøving fullført",
@@ -239,6 +257,14 @@ internal class OpptjeningService(
             )
             BehandleGrunnlagResultat.NyVurderingForetatt(fødselsnummer, skjæringstidspunkt, vurdering.id)
         }
+
+    private fun lagreOgKoble(
+        vurdering: Opptjeningsvurdering,
+        prøving: Opptjeningsprøving,
+    ) {
+        opptjeningsvurderingRepository.lagre(vurdering)
+        opptjeningsvurderingRepository.koble(vurdering.id, prøving.rettighetskategoriIder, vurdering.vurdertTidspunkt)
+    }
 
     private fun lagreOgMeldNyVurdering(
         vurdering: Opptjeningsvurdering,

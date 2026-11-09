@@ -24,7 +24,7 @@ internal class OpptjeningServiceTest {
 
     @Test
     fun `arbeidstaker uten eksisterende vurdering starter en prøving som venter på arbeidsforhold`() {
-        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
+        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker, nyRettighetskategoriId())
 
         assertEquals(TrengerArbeidsforhold(FØDSELSNUMMER, 1.februar), resultat)
         assertEquals(0, vurderinger.antallLagringer)
@@ -38,7 +38,7 @@ internal class OpptjeningServiceTest {
 
     @Test
     fun `selvstendig næringsdrivende vurderes umiddelbart`() {
-        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
+        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende, nyRettighetskategoriId())
 
         val harVurdering = assertInstanceOf(HarVurdering::class.java, resultat)
         assertEquals(FØDSELSNUMMER, harVurdering.fødselsnummer)
@@ -57,7 +57,7 @@ internal class OpptjeningServiceTest {
     fun `eksisterende vurdering gjenbrukes`() {
         val eksisterende = fullførtPrøving(1.februar)
 
-        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
+        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker, nyRettighetskategoriId())
 
         assertEquals(HarVurdering(FØDSELSNUMMER, 1.februar, eksisterende), resultat)
         assertEquals(1, vurderinger.antallLagringer)
@@ -68,7 +68,7 @@ internal class OpptjeningServiceTest {
     fun `eksisterende vurdering med annen kategori erstattes ikke`() {
         val eksisterende = fullførtPrøving(1.februar)
 
-        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
+        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende, nyRettighetskategoriId())
 
         val nyVurdering = assertInstanceOf(HarVurdering::class.java, resultat)
         assertNotEquals(eksisterende, nyVurdering.opptjeningsvurderingId)
@@ -79,10 +79,10 @@ internal class OpptjeningServiceTest {
 
     @Test
     fun `eksisterende vurdering med samme kategori gjenbrukes`() {
-        val eksisterende = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
+        val eksisterende = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende, nyRettighetskategoriId())
         val eksisterendeId = (eksisterende as HarVurdering).opptjeningsvurderingId
 
-        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
+        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende, nyRettighetskategoriId())
 
         assertEquals(HarVurdering(FØDSELSNUMMER, 1.februar, eksisterendeId), resultat)
         assertEquals(1, prøvinger.allePrøvinger.size)
@@ -90,9 +90,9 @@ internal class OpptjeningServiceTest {
 
     @Test
     fun `pågående prøving fører til nytt behov om arbeidsforhold, ikke ny prøving`() {
-        service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
+        service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker, nyRettighetskategoriId())
 
-        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
+        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker, nyRettighetskategoriId())
 
         assertEquals(TrengerArbeidsforhold(FØDSELSNUMMER, 1.februar), resultat)
         assertEquals(1, prøvinger.allePrøvinger.size)
@@ -100,9 +100,9 @@ internal class OpptjeningServiceTest {
 
     @Test
     fun `pågående arbeidstakerprøving blokkerer ikke selvstendig næringsdrivende`() {
-        service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
+        service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker, nyRettighetskategoriId())
 
-        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende)
+        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende, nyRettighetskategoriId())
 
         val harVurdering = assertIs<HarVurdering>(resultat)
         assertEquals(2, prøvinger.allePrøvinger.size)
@@ -113,7 +113,7 @@ internal class OpptjeningServiceTest {
     fun `vurdering på et annet skjæringstidspunkt gjenbrukes ikke`() {
         fullførtPrøving(1.januar)
 
-        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
+        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker, nyRettighetskategoriId())
 
         assertEquals(TrengerArbeidsforhold(FØDSELSNUMMER, 1.februar), resultat)
     }
@@ -122,7 +122,7 @@ internal class OpptjeningServiceTest {
     fun `vurdering for en annen person gjenbrukes ikke`() {
         fullførtPrøving(1.februar, fødselsnummer = ET_ANNET_FØDSELSNUMMER)
 
-        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
+        val resultat = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker, nyRettighetskategoriId())
 
         assertEquals(TrengerArbeidsforhold(FØDSELSNUMMER, 1.februar), resultat)
     }
@@ -142,7 +142,7 @@ internal class OpptjeningServiceTest {
 
     @Test
     fun `grunnlag fullfører påbegynt prøving og produserer vurderingen`() {
-        service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
+        service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker, nyRettighetskategoriId())
         val arbeidsforhold = listOf(arbeidsforhold(1.januar til 31.januar))
 
         val resultat =
@@ -167,7 +167,7 @@ internal class OpptjeningServiceTest {
 
     @Test
     fun `grunnlag med for kort opptjening gir ikke oppfylt`() {
-        service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
+        service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker, nyRettighetskategoriId())
 
         service.behandleGrunnlagForAutomatiskArbeidstakerOpptjeningsvurdering(
             arbeidsforhold = listOf(arbeidsforhold(5.januar til 31.januar)),
@@ -182,7 +182,7 @@ internal class OpptjeningServiceTest {
 
     @Test
     fun `grunnlag uten arbeidsforhold fullfører prøvingen`() {
-        service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
+        service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker, nyRettighetskategoriId())
 
         val resultat =
             service.behandleGrunnlagForAutomatiskArbeidstakerOpptjeningsvurdering(
@@ -199,7 +199,7 @@ internal class OpptjeningServiceTest {
 
     @Test
     fun `grunnlag på allerede fullført prøving gjør ingenting`() {
-        service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
+        service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker, nyRettighetskategoriId())
         service.behandleGrunnlagForAutomatiskArbeidstakerOpptjeningsvurdering(
             arbeidsforhold = listOf(arbeidsforhold(1.januar til 31.januar)),
             fødselsnummer = FØDSELSNUMMER,
@@ -220,7 +220,7 @@ internal class OpptjeningServiceTest {
 
     @Test
     fun `grunnlag for et annet skjæringstidspunkt treffer ikke prøvingen`() {
-        service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker)
+        service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker, nyRettighetskategoriId())
 
         val resultat =
             service.behandleGrunnlagForAutomatiskArbeidstakerOpptjeningsvurdering(
@@ -259,7 +259,7 @@ internal class OpptjeningServiceTest {
 
     @Test
     fun `ny vurdering av selvstendig næringsdrivende vurderes umiddelbart og varsler endring`() {
-        val eksisterende = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende) as HarVurdering
+        val eksisterende = service.vurderOpptjening(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.SelvstendigNæringsdrivende, nyRettighetskategoriId()) as HarVurdering
 
         val resultat = service.vurderOpptjeningPåNytt(FØDSELSNUMMER, 1.februar, SAKSBEHANDLER)
 
@@ -439,6 +439,8 @@ internal class OpptjeningServiceTest {
     }
 
     private companion object {
+        fun nyRettighetskategoriId() = RettighetskategoriId(java.util.UUID.randomUUID())
+
         const val FØDSELSNUMMER = "12029240045"
         const val ET_ANNET_FØDSELSNUMMER = "12029240046"
         const val ORGNUMMER = "987654321"

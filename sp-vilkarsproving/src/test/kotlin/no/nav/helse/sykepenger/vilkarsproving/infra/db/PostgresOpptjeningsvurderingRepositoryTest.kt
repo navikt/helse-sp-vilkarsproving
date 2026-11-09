@@ -11,6 +11,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsgrunnlag
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.RettighetskategoriId
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurderingskilde
 import no.nav.helse.sykepenger.vilkarsproving.domain.Utfall
 import no.nav.helse.sykepenger.vilkarsproving.domain.UtledetFakta
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -265,6 +267,37 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
     @Test
     fun `finn gir null for en ukjent vurdering`() {
         assertNull(transaksjon { it.opptjeningsvurderinger.finn(OpptjeningsvurderingId.ny()) })
+    }
+
+    @Test
+    fun `nyeste koblede vurdering er den med senest vurderingstidspunkt`() {
+        val rettighetskategoriId = RettighetskategoriId(UUID.randomUUID())
+        val nyest = vurderingMedVurdertTidspunkt(Instant.parse("2018-02-02T00:00:00Z"))
+        val eldst = vurderingMedVurdertTidspunkt(Instant.parse("2018-02-01T00:00:00Z"))
+        val ukoblet = vurderingMedVurdertTidspunkt(Instant.parse("2018-02-03T00:00:00Z"))
+        transaksjon { kontekst ->
+            listOf(nyest, eldst, ukoblet).forEach { kontekst.opptjeningsvurderinger.lagre(it) }
+            kontekst.opptjeningsvurderinger.koble(nyest.id, setOf(rettighetskategoriId), Instant.now())
+            kontekst.opptjeningsvurderinger.koble(eldst.id, setOf(rettighetskategoriId), Instant.now())
+        }
+
+        assertEquals(nyest.id, transaksjon { it.opptjeningsvurderinger.nyesteKobletTil(rettighetskategoriId) }?.id)
+        assertNull(transaksjon { it.opptjeningsvurderinger.nyesteKobletTil(RettighetskategoriId(UUID.randomUUID())) })
+    }
+
+    @Test
+    fun `kobling lagres én gang og beholder første registreringstidspunkt`() {
+        val vurdering = lagreVurdering(Opptjeningsgrunnlag.SelvstendigNæringsdrivende)
+        val første = RettighetskategoriId(UUID.randomUUID())
+        val andre = RettighetskategoriId(UUID.randomUUID())
+        val registrert = Instant.parse("2018-02-01T12:00:00Z")
+
+        transaksjon { it.opptjeningsvurderinger.koble(vurdering.id, setOf(første, andre), registrert) }
+        transaksjon { it.opptjeningsvurderinger.koble(vurdering.id, setOf(første), Instant.now()) }
+
+        assertEquals(2, Database.antallRader("opptjeningsvurdering_rettighetskategori"))
+        assertEquals(vurdering.id, transaksjon { it.opptjeningsvurderinger.nyesteKobletTil(første) }?.id)
+        assertEquals(vurdering.id, transaksjon { it.opptjeningsvurderinger.nyesteKobletTil(andre) }?.id)
     }
 
     private fun vurderingMedVurdertTidspunkt(vurdertTidspunkt: Instant) = vurderingMedVurderteTidspunkter(vurdertTidspunkt)

@@ -18,9 +18,19 @@ internal class Opptjeningsprøving private constructor(
     val kategori: Kategori,
     val startet: Instant,
     tilstand: Tilstand,
+    rettighetskategoriIder: Set<RettighetskategoriId>,
 ) {
     var tilstand: Tilstand = tilstand
         private set
+
+    /** Rettighetskategori-ID-ene fra behovene som venter på prøvingen. Vurderingen gjelder for alle sammen. */
+    var rettighetskategoriIder: Set<RettighetskategoriId> = rettighetskategoriIder
+        private set
+
+    fun leggTil(rettighetskategoriId: RettighetskategoriId) {
+        check(!erAvsluttet) { "Prøving $id er avsluttet og kan ikke få flere rettighetskategori-ID-er" }
+        rettighetskategoriIder = rettighetskategoriIder + rettighetskategoriId
+    }
 
     val erAvsluttet get() = tilstand is Tilstand.Fullført
 
@@ -89,6 +99,7 @@ internal class Opptjeningsprøving private constructor(
             skjæringstidspunkt: LocalDate,
             arbeidssituasjon: Arbeidssituasjon,
             versjonAvKode: String = "test",
+            rettighetskategoriIder: Set<RettighetskategoriId> = emptySet(),
         ): Påbegynt {
             val umiddelbartGrunnlag =
                 when (arbeidssituasjon) {
@@ -103,6 +114,7 @@ internal class Opptjeningsprøving private constructor(
                     kategori = arbeidssituasjon.kategori,
                     startet = Instant.now(),
                     tilstand = Tilstand.Startet,
+                    rettighetskategoriIder = rettighetskategoriIder,
                 )
             val vurdering =
                 when (umiddelbartGrunnlag) {
@@ -123,7 +135,8 @@ internal class Opptjeningsprøving private constructor(
             kategori: Kategori,
             startet: Instant,
             tilstand: Tilstand,
-        ) = Opptjeningsprøving(id, fødselsnummer, skjæringstidspunkt, kategori, startet, tilstand)
+            rettighetskategoriIder: Set<RettighetskategoriId>,
+        ) = Opptjeningsprøving(id, fødselsnummer, skjæringstidspunkt, kategori, startet, tilstand, rettighetskategoriIder)
     }
 }
 

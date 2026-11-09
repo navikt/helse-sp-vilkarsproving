@@ -7,6 +7,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Grunnlagsbehov
 import no.nav.helse.sykepenger.vilkarsproving.domain.Kategori
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.RettighetskategoriId
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -17,6 +18,7 @@ import org.postgresql.util.PSQLException
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 
 internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
     // Prøvingen skal komme tilbake fra databasen med den tilstanden den hadde, slik at en ny pod
@@ -35,6 +37,20 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
         assertEquals(prøving.startet.truncatedTo(ChronoUnit.MILLIS), lagret.startet.truncatedTo(ChronoUnit.MILLIS))
         assertEquals(Grunnlagsbehov.Arbeidsforhold, lagret.uteståendeBehov)
         assertFalse(lagret.erAvsluttet)
+    }
+
+    @Test
+    fun `rettighetskategori-ID-ene på prøvingen lagres og oppdateres`() {
+        val første = RettighetskategoriId(UUID.randomUUID())
+        val andre = RettighetskategoriId(UUID.randomUUID())
+        val prøving = Opptjeningsprøving.start(FØDSELSNUMMER, 1.februar, Arbeidssituasjon.Arbeidstaker, rettighetskategoriIder = setOf(første)).prøving
+        transaksjon { it.opptjeningsprøvinger.lagre(prøving) }
+        assertEquals(setOf(første), transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar, Kategori.Arbeidstaker) }!!.rettighetskategoriIder)
+
+        prøving.leggTil(andre)
+        transaksjon { it.opptjeningsprøvinger.lagre(prøving) }
+
+        assertEquals(setOf(første, andre), transaksjon { it.opptjeningsprøvinger.finnSiste(FØDSELSNUMMER, 1.februar, Kategori.Arbeidstaker) }!!.rettighetskategoriIder)
     }
 
     @Test
@@ -153,6 +169,7 @@ internal class PostgresOpptjeningsprøvingRepositoryTest : DatabaseTest() {
             kategori = Kategori.Arbeidstaker,
             startet = Instant.now(),
             tilstand = tilstand,
+            rettighetskategoriIder = emptySet(),
         )
 
     private companion object {

@@ -11,6 +11,7 @@ internal object Database {
 
     fun tøm() =
         database.tøm(
+            "opptjeningsvurdering_rettighetskategori",
             "opptjeningsvurdering_vilkarsvurdering",
             "vilkarsvurdering",
             "opptjeningsproving",

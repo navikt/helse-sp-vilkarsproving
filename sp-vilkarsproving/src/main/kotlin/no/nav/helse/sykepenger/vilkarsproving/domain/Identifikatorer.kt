@@ -34,3 +34,11 @@ internal value class OpptjeningsvurderingId(
         fun ny() = OpptjeningsvurderingId(UUID.randomUUID())
     }
 }
+
+/** ID-en til en avgjørelse i sp-rettighetskategori, sendt med i behovet `Opptjeningsvurdering`. */
+@JvmInline
+internal value class RettighetskategoriId(
+    val value: UUID,
+) {
+    override fun toString() = value.toString()
+}

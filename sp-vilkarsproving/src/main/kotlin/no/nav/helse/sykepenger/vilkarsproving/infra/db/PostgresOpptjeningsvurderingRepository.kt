@@ -7,6 +7,7 @@ import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningsvurderingRe
 import no.nav.helse.sykepenger.vilkarsproving.domain.*
 import org.intellij.lang.annotations.Language
 import org.postgresql.util.PSQLException
+import java.time.Instant
 import java.time.LocalDate
 
 private const val VURDERINGSKILDE_VURDERT_I_SP_VILKARSPROVING = "VURDERT_I_SP_VILKARSPROVING"
@@ -193,6 +194,47 @@ internal class PostgresOpptjeningsvurderingRepository(
         return session
             .run(
                 queryOf(sql, mapOf("id" to opptjeningsvurderingId.value)).map(::tilOpptjeningsvurderingRad).asSingle,
+            )?.let(::hydrer)
+    }
+
+    override fun koble(
+        opptjeningsvurderingId: OpptjeningsvurderingId,
+        rettighetskategoriIder: Set<RettighetskategoriId>,
+        registrert: Instant,
+    ) {
+        @Language("PostgreSQL")
+        val sql = """
+            insert into opptjeningsvurdering_rettighetskategori (opptjeningsvurdering_id, rettighetskategori_id, registrert)
+            values (:opptjeningsvurderingId, :rettighetskategoriId, :registrert)
+            on conflict (opptjeningsvurdering_id, rettighetskategori_id) do nothing
+        """
+        rettighetskategoriIder.forEach { rettighetskategoriId ->
+            session.run(
+                queryOf(
+                    sql,
+                    mapOf(
+                        "opptjeningsvurderingId" to opptjeningsvurderingId.value,
+                        "rettighetskategoriId" to rettighetskategoriId.value,
+                        "registrert" to registrert,
+                    ),
+                ).asUpdate,
+            )
+        }
+    }
+
+    override fun nyesteKobletTil(rettighetskategoriId: RettighetskategoriId): Opptjeningsvurdering? {
+        @Language("PostgreSQL")
+        val sql = """
+            select o.id, o.fødselsnummer, o.skjæringstidspunkt, o.kategori, o.vurderingskilde, o.opptjening_ok, o.vurdert_tidspunkt
+            from opptjeningsvurdering o
+            join opptjeningsvurdering_rettighetskategori r on r.opptjeningsvurdering_id = o.id
+            where r.rettighetskategori_id = :rettighetskategoriId
+            order by o.vurdert_tidspunkt desc, o.opprettet desc
+            limit 1
+        """
+        return session
+            .run(
+                queryOf(sql, mapOf("rettighetskategoriId" to rettighetskategoriId.value)).map(::tilOpptjeningsvurderingRad).asSingle,
             )?.let(::hydrer)
     }
 

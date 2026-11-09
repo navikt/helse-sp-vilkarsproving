@@ -9,6 +9,7 @@ import no.nav.helse.sykepenger.vilkarsproving.domain.Kategori
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsprøvingId
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.RettighetskategoriId
 import org.intellij.lang.annotations.Language
 import java.time.LocalDate
 import java.util.UUID
@@ -21,12 +22,13 @@ internal class PostgresOpptjeningsprøvingRepository(
 
         @Language("PostgreSQL")
         val sql = """
-            insert into opptjeningsproving (id, fødselsnummer, skjæringstidspunkt, kategori, startet, tilstand, utestående_behov, opptjeningsvurdering_id)
-            values (:id, :fodselsnummer, :skjaeringstidspunkt, :kategori, :startet, :tilstand, :behov, :opptjeningsvurderingId)
+            insert into opptjeningsproving (id, fødselsnummer, skjæringstidspunkt, kategori, startet, tilstand, utestående_behov, opptjeningsvurdering_id, rettighetskategori_ider)
+            values (:id, :fodselsnummer, :skjaeringstidspunkt, :kategori, :startet, :tilstand, :behov, :opptjeningsvurderingId, :rettighetskategoriIder)
             on conflict (id) do update
             set tilstand = excluded.tilstand,
                 utestående_behov = excluded.utestående_behov,
                 opptjeningsvurdering_id = excluded.opptjeningsvurdering_id,
+                rettighetskategori_ider = excluded.rettighetskategori_ider,
                 endret = now()
         """
         session.run(
@@ -41,6 +43,7 @@ internal class PostgresOpptjeningsprøvingRepository(
                     "tilstand" to tilstand.navn,
                     "behov" to tilstand.behov,
                     "opptjeningsvurderingId" to tilstand.opptjeningsvurderingId,
+                    "rettighetskategoriIder" to session.createArrayOf("uuid", prøving.rettighetskategoriIder.map { it.value }),
                 ),
             ).asUpdate,
         )
@@ -53,7 +56,7 @@ internal class PostgresOpptjeningsprøvingRepository(
     ): Opptjeningsprøving? {
         @Language("PostgreSQL")
         val sql = """
-            select id, fødselsnummer, skjæringstidspunkt, kategori, startet, tilstand, utestående_behov, opptjeningsvurdering_id
+            select id, fødselsnummer, skjæringstidspunkt, kategori, startet, tilstand, utestående_behov, opptjeningsvurdering_id, rettighetskategori_ider
             from opptjeningsproving
             where fødselsnummer = :fodselsnummer and skjæringstidspunkt = :skjaeringstidspunkt and kategori = :kategori
             order by løpenummer desc
@@ -84,6 +87,11 @@ internal class PostgresOpptjeningsprøvingRepository(
                     behov = row.stringOrNull("utestående_behov"),
                     opptjeningsvurderingId = row.uuidOrNull("opptjeningsvurdering_id"),
                 ),
+            rettighetskategoriIder =
+                row
+                    .array<UUID>("rettighetskategori_ider")
+                    .map(::RettighetskategoriId)
+                    .toSet(),
         )
 }
 

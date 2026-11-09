@@ -11,6 +11,7 @@ import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResultat
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
+import no.nav.helse.sykepenger.vilkarsproving.domain.RettighetskategoriId
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
 import no.nav.sykepenger.libs.logging.MdcKey
 import no.nav.sykepenger.libs.logging.loggInfo
@@ -52,7 +53,7 @@ internal class OpptjeningsvurderingRiver(
         val fødselsnummer = packet["fødselsnummer"].asString()
         val skjæringstidspunkt = packet["Opptjeningsvurdering.skjæringstidspunkt"].asLocalDate()
         val arbeidssituasjon = Arbeidssituasjon.valueOf(packet["Opptjeningsvurdering.arbeidssituasjon"].asString())
-        val rettighetskategoriId = packet["Opptjeningsvurdering.rettighetskategoriId"].asString()
+        val rettighetskategoriId = RettighetskategoriId(packet["Opptjeningsvurdering.rettighetskategoriId"].asUUID())
 
         medMdc(
             MdcKey.IDENTITETSNUMMER to fødselsnummer,
@@ -60,7 +61,7 @@ internal class OpptjeningsvurderingRiver(
             loggInfo(
                 "Mottatt behov for $behovKey",
                 "skjæringstidspunkt" to skjæringstidspunkt.toString(),
-                "rettighetskategoriId" to rettighetskategoriId,
+                "rettighetskategoriId" to rettighetskategoriId.toString(),
             )
 
             val vurderOpptjeningResultat =
@@ -69,6 +70,7 @@ internal class OpptjeningsvurderingRiver(
                         fødselsnummer = fødselsnummer,
                         skjæringstidspunkt = skjæringstidspunkt,
                         arbeidssituasjon = arbeidssituasjon,
+                        rettighetskategoriId = rettighetskategoriId,
                     )
                 }
 

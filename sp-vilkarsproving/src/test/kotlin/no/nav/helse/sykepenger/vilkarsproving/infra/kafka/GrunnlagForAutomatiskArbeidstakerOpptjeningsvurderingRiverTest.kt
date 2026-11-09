@@ -262,6 +262,37 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         assertEquals(Opptjeningsgrunnlag.SelvstendigNæringsdrivende, kilde.grunnlag)
     }
 
+    @Test
+    fun `vurderingen kobles til alle rettighetskategori-ID-er som venter på prøvingen`() {
+        val rapid =
+            TestRapid().apply {
+                OpptjeningsvurderingRiver(this, transaksjon)
+                GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(this, transaksjon)
+            }
+        val første = UUID.randomUUID()
+        val andre = UUID.randomUUID()
+        rapid.sendTestMessage(opptjeningsvurderingBehov("Arbeidstaker", første))
+        rapid.sendTestMessage(opptjeningsvurderingBehov("Arbeidstaker", andre))
+        assertEquals(1, prøvinger.allePrøvinger.size)
+
+        rapid.sendTestMessage(arbeidsforholdløsning(arbeidsforhold(ansattSiden = "2018-01-01", ansattTil = "2018-01-31")))
+        rapid.sendTestMessage(arbeidsforholdløsning(arbeidsforhold(ansattSiden = "2018-01-01", ansattTil = "2018-01-31")))
+        val vurdering = vurdert()
+
+        // Kjente ID-er svarer med vurderingen uten ny prøving, også når arbeidssituasjonen i behovet er en annen
+        rapid.sendTestMessage(opptjeningsvurderingBehov("SelvstendigNæringsdrivende", første))
+        rapid.sendTestMessage(opptjeningsvurderingBehov("SelvstendigNæringsdrivende", andre))
+
+        val løsninger =
+            (0 until rapid.inspektør.size)
+                .map { rapid.inspektør.message(it) }
+                .filter { it.path("@behov").toList().map { behov -> behov.asString() } == listOf("Opptjeningsvurdering") }
+                .map { it.path("@løsning").path("Opptjeningsvurdering").path("id").asString() }
+        assertEquals(List(3) { vurdering.id.toString() }, løsninger)
+        assertEquals(1, prøvinger.allePrøvinger.size)
+        assertEquals(1, vurderinger.antallLagringer)
+    }
+
     private fun påbegyntPrøving() =
         Opptjeningsprøving
             .start(
@@ -279,6 +310,23 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         const val FØDSELSNUMMER = "12029240045"
         const val ORGNUMMER = "987654321"
         val OPPRINNELIG_BEHOV_ID: String = UUID.randomUUID().toString()
+
+        fun opptjeningsvurderingBehov(
+            arbeidssituasjon: String,
+            rettighetskategoriId: UUID,
+        ) = """
+            {
+              "@event_name": "behov",
+              "@id": "${UUID.randomUUID()}",
+              "@behov": ["Opptjeningsvurdering"],
+              "fødselsnummer": "$FØDSELSNUMMER",
+              "Opptjeningsvurdering": {
+                "skjæringstidspunkt": "2018-02-01",
+                "arbeidssituasjon": "$arbeidssituasjon",
+                "rettighetskategoriId": "$rettighetskategoriId"
+              }
+            }
+            """.trimIndent()
 
         fun arbeidsforhold(
             orgnummer: String = ORGNUMMER,

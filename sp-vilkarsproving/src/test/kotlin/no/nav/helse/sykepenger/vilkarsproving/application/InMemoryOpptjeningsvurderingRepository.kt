@@ -2,6 +2,8 @@ package no.nav.helse.sykepenger.vilkarsproving.application
 
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.RettighetskategoriId
+import java.time.Instant
 import java.time.LocalDate
 
 internal class InMemoryOpptjeningsvurderingRepository : OpptjeningsvurderingRepository {
@@ -29,4 +31,33 @@ internal class InMemoryOpptjeningsvurderingRepository : OpptjeningsvurderingRepo
         .sortedByDescending { it.vurdertTidspunkt }
 
     override fun finn(opptjeningsvurderingId: OpptjeningsvurderingId) = vurderinger.firstOrNull { it.id == opptjeningsvurderingId }
+
+    override fun koble(
+        opptjeningsvurderingId: OpptjeningsvurderingId,
+        rettighetskategoriIder: Set<RettighetskategoriId>,
+        registrert: Instant,
+    ) {
+        checkNotNull(finn(opptjeningsvurderingId)) { "Vurdering $opptjeningsvurderingId finnes ikke" }
+        rettighetskategoriIder.forEach { rettighetskategoriId ->
+            if (_koblinger.none { it.opptjeningsvurderingId == opptjeningsvurderingId && it.rettighetskategoriId == rettighetskategoriId }) {
+                _koblinger.add(Kobling(opptjeningsvurderingId, rettighetskategoriId, registrert))
+            }
+        }
+    }
+
+    // Som i Postgres vinner den sist lagrede vurderingen når vurderingstidspunktene er like
+    override fun nyesteKobletTil(rettighetskategoriId: RettighetskategoriId) =
+        _koblinger
+            .filter { it.rettighetskategoriId == rettighetskategoriId }
+            .mapNotNull { finn(it.opptjeningsvurderingId) }
+            .maxWithOrNull(compareBy({ it.vurdertTidspunkt }, { vurderinger.indexOf(it) }))
+
+    private val _koblinger = mutableListOf<Kobling>()
+    internal val koblinger: List<Kobling> get() = _koblinger.toList()
+
+    internal data class Kobling(
+        val opptjeningsvurderingId: OpptjeningsvurderingId,
+        val rettighetskategoriId: RettighetskategoriId,
+        val registrert: Instant,
+    )
 }
