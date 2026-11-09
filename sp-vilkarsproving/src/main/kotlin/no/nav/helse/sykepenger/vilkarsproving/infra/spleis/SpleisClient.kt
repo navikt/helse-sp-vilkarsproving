@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.github.navikt.tbd_libs.access_token.AccessTokenProvider
 import com.github.navikt.tbd_libs.access_token.TexasClient
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.RettighetskategoriId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering.SpleisArbeidstaker.Ansettelsesperiode
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold
 import no.nav.helse.til
@@ -111,8 +112,10 @@ internal class SpleisClient(
             val antallDager: Int? = null,
             val opptjeningsperiode: PeriodeDto? = null,
             val arbeidsforhold: List<ArbeidsforholdDto> = emptyList(),
+            val rettighetskategorier: List<RettighetskategoriDto> = emptyList(),
         ) {
             val opprettetInstant = opprettet.atZone(ZoneId.of("Europe/Oslo")).toInstant()
+            private val rettighetskategorierDomene get() = rettighetskategorier.map { it.tilDomene() }
 
             fun tilDomene(): SpleisOpptjeningsvurdering =
                 when (kilde to type) {
@@ -125,6 +128,7 @@ internal class SpleisClient(
                             antallDager = requireNotNull(antallDager) { "antallDager mangler for SPLEIS/ARBEIDSTAKER-vurdering $opptjeningsvurderingId" },
                             opptjeningsperiode = opptjeningsperiode?.tilDomene(),
                             arbeidsforhold = arbeidsforhold.map { it.tilDomene() },
+                            rettighetskategorier = rettighetskategorierDomene,
                         )
 
                     OpptjeningsvurderingKildeDto.SPLEIS to OpptjeningsvurderingTypeDto.SELVSTENDIG ->
@@ -132,6 +136,7 @@ internal class SpleisClient(
                             opptjeningsvurderingId = opptjeningsvurderingId,
                             opprettet = opprettetInstant,
                             skjæringstidspunkt = skjæringstidspunkt,
+                            rettighetskategorier = rettighetskategorierDomene,
                         )
 
                     OpptjeningsvurderingKildeDto.INFOTRYGD to OpptjeningsvurderingTypeDto.ARBEIDSTAKER ->
@@ -139,6 +144,7 @@ internal class SpleisClient(
                             opptjeningsvurderingId = opptjeningsvurderingId,
                             opprettet = opprettetInstant,
                             skjæringstidspunkt = skjæringstidspunkt,
+                            rettighetskategorier = rettighetskategorierDomene,
                         )
 
                     else -> error("Ugyldig kombinasjon av kilde ($kilde) og type ($type) for opptjeningsvurdering $opptjeningsvurderingId")
@@ -172,6 +178,18 @@ internal class SpleisClient(
                 Arbeidsforhold(
                     organisasjonsnummer = organisasjonsnummer,
                     ansettelsesperioder = ansettelsesperioder.map { it.tilDomene() },
+                )
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        private data class RettighetskategoriDto(
+            val id: UUID,
+            val opprettet: LocalDateTime,
+        ) {
+            fun tilDomene() =
+                SpleisOpptjeningsvurdering.Rettighetskategori(
+                    id = RettighetskategoriId(id),
+                    opprettet = opprettet.atZone(ZoneId.of("Europe/Oslo")).toInstant(),
                 )
         }
 

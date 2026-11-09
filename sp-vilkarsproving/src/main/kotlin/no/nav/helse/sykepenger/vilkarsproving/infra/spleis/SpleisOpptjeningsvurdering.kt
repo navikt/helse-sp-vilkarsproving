@@ -2,6 +2,7 @@ package no.nav.helse.sykepenger.vilkarsproving.infra.spleis
 
 import no.nav.helse.Periode
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.RettighetskategoriId
 import no.nav.helse.til
 import java.time.Instant
 import java.time.LocalDate
@@ -10,6 +11,12 @@ internal sealed interface SpleisOpptjeningsvurdering {
     val opptjeningsvurderingId: OpptjeningsvurderingId
     val skjæringstidspunkt: LocalDate
     val opprettet: Instant
+    val rettighetskategorier: List<Rettighetskategori>
+
+    data class Rettighetskategori(
+        val id: RettighetskategoriId,
+        val opprettet: Instant,
+    )
 
     data class SpleisArbeidstaker(
         override val opptjeningsvurderingId: OpptjeningsvurderingId,
@@ -19,6 +26,7 @@ internal sealed interface SpleisOpptjeningsvurdering {
         val antallDager: Int,
         val opptjeningsperiode: Periode?,
         val arbeidsforhold: List<Arbeidsforhold>,
+        override val rettighetskategorier: List<Rettighetskategori> = emptyList(),
     ) : SpleisOpptjeningsvurdering {
         data class Arbeidsforhold(
             val organisasjonsnummer: String,
@@ -39,11 +47,13 @@ internal sealed interface SpleisOpptjeningsvurdering {
         override val opptjeningsvurderingId: OpptjeningsvurderingId,
         override val opprettet: Instant,
         override val skjæringstidspunkt: LocalDate,
+        override val rettighetskategorier: List<Rettighetskategori> = emptyList(),
     ) : SpleisOpptjeningsvurdering
 
     data class InfotrygdArbeidstaker(
         override val opptjeningsvurderingId: OpptjeningsvurderingId,
         override val opprettet: Instant,
         override val skjæringstidspunkt: LocalDate,
+        override val rettighetskategorier: List<Rettighetskategori> = emptyList(),
     ) : SpleisOpptjeningsvurdering
 }

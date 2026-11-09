@@ -6,6 +6,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED
 import no.nav.helse.sykepenger.vilkarsproving.domain.OpptjeningsvurderingId
+import no.nav.helse.sykepenger.vilkarsproving.domain.RettighetskategoriId
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering.SpleisArbeidstaker.Ansettelsesperiode
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering.SpleisArbeidstaker.Arbeidsforhold
 import no.nav.helse.til
@@ -112,8 +113,22 @@ internal class SpleisClientTest {
         assertEquals(LocalDate.of(2018, 1, 1), infotrygdvurdering.skjæringstidspunkt)
         assertTrue(infotrygdvurdering is SpleisOpptjeningsvurdering.InfotrygdArbeidstaker)
         assertEquals(klokka12, infotrygdvurdering.opprettet)
+        assertEquals(
+            listOf(
+                SpleisOpptjeningsvurdering.Rettighetskategori(
+                    RettighetskategoriId(UUID.fromString("6f1d1c0e-1b2a-4c3d-8e9f-0a1b2c3d4e5f")),
+                    klokka11,
+                ),
+                SpleisOpptjeningsvurdering.Rettighetskategori(
+                    RettighetskategoriId(UUID.fromString("6f1d1c0e-1b2a-4c3d-8e9f-0a1b2c3d4e60")),
+                    klokka12,
+                ),
+            ),
+            infotrygdvurdering.rettighetskategorier,
+        )
 
         val ikkeOppfyltSpleisvurdering = opptjeningsvurderinger[1] as SpleisOpptjeningsvurdering.SpleisArbeidstaker
+        assertEquals(emptyList<SpleisOpptjeningsvurdering.Rettighetskategori>(), ikkeOppfyltSpleisvurdering.rettighetskategorier)
         assertEquals(false, ikkeOppfyltSpleisvurdering.oppfylt)
         assertEquals(0, ikkeOppfyltSpleisvurdering.antallDager)
         assertNull(ikkeOppfyltSpleisvurdering.opptjeningsperiode)
@@ -195,7 +210,11 @@ internal class SpleisClientTest {
                   "opprettet": "2026-09-29T12:00:00.000000",                  
                   "type": "ARBEIDSTAKER",
                   "skjæringstidspunkt": "2018-01-01",
-                  "kilde": "INFOTRYGD"
+                  "kilde": "INFOTRYGD",
+                  "rettighetskategorier": [
+                    { "id": "6f1d1c0e-1b2a-4c3d-8e9f-0a1b2c3d4e5f", "opprettet": "2026-09-29T11:00:00" },
+                    { "id": "6f1d1c0e-1b2a-4c3d-8e9f-0a1b2c3d4e60", "opprettet": "2026-09-29T12:00:00.000000" }
+                  ]
                 },
                 {
                   "opptjeningsvurderingId": "00000000-0000-0000-0000-000000000001",

@@ -42,7 +42,7 @@ internal class PersonAvstemmingRiver(
         ) {
             loggInfo("Mottatt $eventName")
             try {
-                personAvstemmingService.lagreOpptjeningsvurderinger(fødselsnummer)
+                personAvstemmingService.avstem(fødselsnummer)
             } catch (ex: IllegalStateException) {
                 loggError("Hopper over $eventName som ikke kunne behandles", ex)
             }
