@@ -238,6 +238,21 @@ internal class PostgresOpptjeningsvurderingRepository(
             )?.let(::hydrer)
     }
 
+    override fun rettighetskategoriIder(opptjeningsvurderingId: OpptjeningsvurderingId): Set<RettighetskategoriId> {
+        @Language("PostgreSQL")
+        val sql = """
+            select rettighetskategori_id
+            from opptjeningsvurdering_rettighetskategori
+            where opptjeningsvurdering_id = :opptjeningsvurderingId
+        """
+        return session
+            .run(
+                queryOf(sql, mapOf("opptjeningsvurderingId" to opptjeningsvurderingId.value))
+                    .map { RettighetskategoriId(it.uuid("rettighetskategori_id")) }
+                    .asList,
+            ).toSet()
+    }
+
     private fun hydrer(rad: OpptjeningsvurderingRad): Opptjeningsvurdering =
         when (rad.vurderingskilde) {
             VURDERINGSKILDE_OVERFOERT_FRA_INFOTRYGD ->

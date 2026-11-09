@@ -300,6 +300,49 @@ internal class PostgresOpptjeningsvurderingRepositoryTest : DatabaseTest() {
         assertEquals(vurdering.id, transaksjon { it.opptjeningsvurderinger.nyesteKobletTil(andre) }?.id)
     }
 
+    @Test
+    fun `rettighetskategori-ID-ene til en vurdering er alle den er koblet til`() {
+        val vurdering = lagreVurdering(Opptjeningsgrunnlag.SelvstendigNæringsdrivende)
+        val ukoblet = lagreVurdering(Opptjeningsgrunnlag.SelvstendigNæringsdrivende)
+        val ider = setOf(RettighetskategoriId(UUID.randomUUID()), RettighetskategoriId(UUID.randomUUID()))
+
+        transaksjon { it.opptjeningsvurderinger.koble(vurdering.id, ider, Instant.now()) }
+
+        assertEquals(ider, transaksjon { it.opptjeningsvurderinger.rettighetskategoriIder(vurdering.id) })
+        assertEquals(emptySet<RettighetskategoriId>(), transaksjon { it.opptjeningsvurderinger.rettighetskategoriIder(ukoblet.id) })
+    }
+
+    @Test
+    fun `erstatning arver koblingene til den erstattede vurderingen, registrert da den ble laget`() {
+        val erstattet = vurderingMedVurdertTidspunkt(Instant.parse("2018-02-01T00:00:00Z"))
+        val rettighetskategoriId = RettighetskategoriId(UUID.randomUUID())
+        transaksjon {
+            it.opptjeningsvurderinger.lagre(erstattet)
+            it.opptjeningsvurderinger.koble(erstattet.id, setOf(rettighetskategoriId), Instant.parse("2018-02-01T00:00:00Z"))
+        }
+        val ny = vurderingMedVurdertTidspunkt(Instant.parse("2018-03-01T12:00:00Z"))
+
+        transaksjon { it.opptjeningsvurderinger.lagreErstatning(ny, erstattet) }
+
+        assertEquals(ny.id, transaksjon { it.opptjeningsvurderinger.nyesteKobletTil(rettighetskategoriId) }?.id)
+        assertEquals(Instant.parse("2018-03-01T12:00:00Z"), registrert(ny.id, rettighetskategoriId))
+    }
+
+    private fun registrert(
+        opptjeningsvurderingId: OpptjeningsvurderingId,
+        rettighetskategoriId: RettighetskategoriId,
+    ): Instant? =
+        Database.dataSource.connection.use { connection ->
+            connection
+                .prepareStatement(
+                    "SELECT registrert FROM opptjeningsvurdering_rettighetskategori WHERE opptjeningsvurdering_id = ? AND rettighetskategori_id = ?",
+                ).use { statement ->
+                    statement.setObject(1, opptjeningsvurderingId.value)
+                    statement.setObject(2, rettighetskategoriId.value)
+                    statement.executeQuery().use { rs -> if (rs.next()) rs.getTimestamp(1).toInstant() else null }
+                }
+        }
+
     private fun vurderingMedVurdertTidspunkt(vurdertTidspunkt: Instant) = vurderingMedVurderteTidspunkter(vurdertTidspunkt)
 
     private fun vurderingMedVurderteTidspunkter(vararg vurderteTidspunkter: Instant): Opptjeningsvurdering.VurdertISpVilkårsprøving {

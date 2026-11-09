@@ -4,6 +4,7 @@ import com.github.navikt.tbd_libs.personpseudoid.Identitetsnummer
 import com.github.navikt.tbd_libs.populasjonstilgang.api.PopulasjonstilgangskontrollProvider
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangSomMangler
 import com.github.navikt.tbd_libs.populasjonstilgang.api.TilgangskontrollResultat
+import com.github.navikt.tbd_libs.rapids_and_rivers.test_support.TestRapid
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -12,8 +13,11 @@ import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
+import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
+import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
+import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureResources
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestAdapter
@@ -22,9 +26,11 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures.InMemoryPer
 import no.nav.sykepenger.libs.ktor.auth.*
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import tools.jackson.module.kotlin.jacksonObjectMapper
+import java.time.LocalDate
 import java.util.*
 
 class PostManuellOpptjeningsvurderingBehandlerTest {
@@ -169,6 +175,45 @@ class PostManuellOpptjeningsvurderingBehandlerTest {
             assertEquals(HttpStatusCode.BadRequest, response.status)
         }
 
+    @Test
+    fun `senere behov med rettighetskategori-ID-en til den erstattede vurderingen får den manuelle vurderingen`() =
+        testApplication {
+            val pseudoId = settOpp()
+            val rapid = TestRapid().apply { OpptjeningsvurderingRiver(this, transaksjonProvider) }
+            val rettighetskategoriId = UUID.randomUUID()
+            rapid.sendTestMessage(opptjeningsvurderingBehov(rettighetskategoriId))
+            val erstattet = rapid.løsningsId(0)
+
+            val response = client.post(url(pseudoId)) { json(request()) }
+            val manuell = jacksonObjectMapper().readTree(response.bodyAsText())["opptjeningsvurderingId"].asString()
+            rapid.sendTestMessage(opptjeningsvurderingBehov(rettighetskategoriId))
+
+            assertNotEquals(erstattet, manuell)
+            assertEquals(manuell, rapid.løsningsId(1))
+        }
+
+    @Test
+    fun `manuell vurdering som erstatter en vurdering uten koblinger kobles ved neste behov`() =
+        testApplication {
+            val pseudoId = settOpp()
+            val rapid = TestRapid().apply { OpptjeningsvurderingRiver(this, transaksjonProvider) }
+            val ukoblet =
+                checkNotNull(
+                    Opptjeningsprøving.start("12345678901", LocalDate.parse("2025-04-09"), Arbeidssituasjon.SelvstendigNæringsdrivende).vurdering,
+                )
+            transaksjonProvider.opptjeningsvurderinger.lagre(ukoblet)
+
+            val response = client.post(url(pseudoId)) { json(request()) }
+            val manuell = jacksonObjectMapper().readTree(response.bodyAsText())["opptjeningsvurderingId"].asString()
+            val rettighetskategoriId = UUID.randomUUID()
+            rapid.sendTestMessage(opptjeningsvurderingBehov(rettighetskategoriId))
+            rapid.sendTestMessage(opptjeningsvurderingBehov(rettighetskategoriId))
+
+            assertNotEquals(ukoblet.id.toString(), manuell)
+            assertEquals(manuell, rapid.løsningsId(0))
+            assertEquals(manuell, rapid.løsningsId(1))
+        }
+
     private fun lagret() = transaksjonProvider.opptjeningsvurderinger.alleVurderinger.single() as Opptjeningsvurdering.VurdertISpVilkårsprøving
 
     private fun ApplicationTestBuilder.settOpp(
@@ -241,3 +286,27 @@ private fun HttpRequestBuilder.json(body: String) {
 }
 
 private fun url(pseudoId: String) = "/api/personer/$pseudoId/vilkarsvurderinger/manuell/opptjening"
+
+@Language("JSON")
+private fun opptjeningsvurderingBehov(rettighetskategoriId: UUID) =
+    """
+    {
+      "@event_name": "behov",
+      "@id": "${UUID.randomUUID()}",
+      "@behov": ["Opptjeningsvurdering"],
+      "fødselsnummer": "12345678901",
+      "Opptjeningsvurdering": {
+        "skjæringstidspunkt": "2025-04-09",
+        "arbeidssituasjon": "SelvstendigNæringsdrivende",
+        "rettighetskategoriId": "$rettighetskategoriId"
+      }
+    }
+    """
+
+private fun TestRapid.løsningsId(indeks: Int) =
+    inspektør
+        .message(indeks)
+        .path("@løsning")
+        .path("Opptjeningsvurdering")
+        .path("id")
+        .asString()

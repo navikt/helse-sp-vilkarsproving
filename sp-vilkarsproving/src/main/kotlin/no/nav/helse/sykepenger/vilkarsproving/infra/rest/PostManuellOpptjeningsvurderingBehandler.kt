@@ -66,19 +66,20 @@ internal class PostManuellOpptjeningsvurderingBehandler :
                     is ManuellOpptjeningsvurderingResultat.Vurdert -> resultat.vilkårsvurderinger
                 }
 
+            val forrigeVurdering =
+                kallKontekst.transaksjon.opptjeningsvurderinger.gjeldende(
+                    fødselsnummer = identitetsnummer.value,
+                    skjæringstidspunkt = request.skjæringstidspunkt,
+                )
             val opptjeningsvurdering =
                 Opptjeningsvurdering.avSaksbehandler(
                     fødselsnummer = identitetsnummer.value,
                     skjæringstidspunkt = request.skjæringstidspunkt,
                     vilkårsvurderinger = vilkårsvurderinger,
-                    forrigeVurdering =
-                        kallKontekst.transaksjon.opptjeningsvurderinger.gjeldende(
-                            fødselsnummer = identitetsnummer.value,
-                            skjæringstidspunkt = request.skjæringstidspunkt,
-                        ),
+                    forrigeVurdering = forrigeVurdering,
                 )
 
-            kallKontekst.transaksjon.opptjeningsvurderinger.lagre(opptjeningsvurdering)
+            kallKontekst.transaksjon.opptjeningsvurderinger.lagreErstatning(opptjeningsvurdering, forrigeVurdering)
 
             kallKontekst.transaksjon.outbox.leggTil(
                 identitetsnummer.value,

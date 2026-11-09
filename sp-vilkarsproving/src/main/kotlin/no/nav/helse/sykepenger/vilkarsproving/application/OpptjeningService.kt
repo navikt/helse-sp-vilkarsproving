@@ -270,7 +270,8 @@ internal class OpptjeningService(
         vurdering: Opptjeningsvurdering,
         saksbehandlerIdent: String,
     ) {
-        opptjeningsvurderingRepository.lagre(vurdering)
+        val erstattet = opptjeningsvurderingRepository.gjeldende(vurdering.fødselsnummer, vurdering.skjæringstidspunkt)
+        opptjeningsvurderingRepository.lagreErstatning(vurdering, erstattet)
         outbox.leggTil(
             vurdering.fødselsnummer,
             saksbehandlerhandling(

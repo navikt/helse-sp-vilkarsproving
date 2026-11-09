@@ -52,6 +52,12 @@ internal class InMemoryOpptjeningsvurderingRepository : OpptjeningsvurderingRepo
             .mapNotNull { finn(it.opptjeningsvurderingId) }
             .maxWithOrNull(compareBy({ it.vurdertTidspunkt }, { vurderinger.indexOf(it) }))
 
+    override fun rettighetskategoriIder(opptjeningsvurderingId: OpptjeningsvurderingId) =
+        _koblinger
+            .filter { it.opptjeningsvurderingId == opptjeningsvurderingId }
+            .map { it.rettighetskategoriId }
+            .toSet()
+
     private val _koblinger = mutableListOf<Kobling>()
     internal val koblinger: List<Kobling> get() = _koblinger.toList()
 

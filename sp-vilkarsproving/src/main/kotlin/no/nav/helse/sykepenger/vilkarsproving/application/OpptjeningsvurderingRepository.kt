@@ -30,4 +30,16 @@ internal interface OpptjeningsvurderingRepository {
 
     /** Den koblede vurderingen med senest vurderingstidspunkt. */
     fun nyesteKobletTil(rettighetskategoriId: RettighetskategoriId): Opptjeningsvurdering?
+
+    fun rettighetskategoriIder(opptjeningsvurderingId: OpptjeningsvurderingId): Set<RettighetskategoriId>
+
+    /** Lagrer en vurdering som erstatter [erstattet]. Den nye vurderingen gjelder for de samme rettighetskategori-ID-ene. */
+    fun lagreErstatning(
+        vurdering: Opptjeningsvurdering,
+        erstattet: Opptjeningsvurdering?,
+    ) {
+        lagre(vurdering)
+        if (erstattet == null) return
+        koble(vurdering.id, rettighetskategoriIder(erstattet.id), vurdering.vurdertTidspunkt)
+    }
 }
