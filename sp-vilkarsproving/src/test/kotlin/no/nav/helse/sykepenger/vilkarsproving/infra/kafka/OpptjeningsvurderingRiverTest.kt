@@ -11,6 +11,8 @@ import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import tools.jackson.databind.node.ObjectNode
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.util.*
@@ -147,6 +149,38 @@ internal class OpptjeningsvurderingRiverTest {
         )
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = ["Arbeidstaker", "SelvstendigNæringsdrivende"])
+    fun `behov uten rettighetskategoriId ignoreres`(arbeidssituasjon: String) {
+        rapid.sendTestMessage(opptjeningsvurderingBehov(arbeidssituasjon, rettighetskategoriId = null))
+
+        assertEquals(0, rapid.inspektør.size)
+        assertTrue(prøvinger.allePrøvinger.isEmpty())
+        assertEquals(0, vurderinger.antallLagringer)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["Arbeidstaker", "SelvstendigNæringsdrivende"])
+    fun `behov med null som rettighetskategoriId ignoreres`(arbeidssituasjon: String) {
+        val behov = jacksonObjectMapper().readTree(opptjeningsvurderingBehov(arbeidssituasjon))
+        (behov.path("Opptjeningsvurdering") as ObjectNode).putNull("rettighetskategoriId")
+
+        rapid.sendTestMessage(behov.toString())
+
+        assertEquals(0, rapid.inspektør.size)
+        assertTrue(prøvinger.allePrøvinger.isEmpty())
+        assertEquals(0, vurderinger.antallLagringer)
+    }
+
+    @Test
+    fun `behov uten rettighetskategoriId besvares ikke selv om vurderingen finnes`() {
+        fullførtPrøving()
+
+        rapid.sendTestMessage(opptjeningsvurderingBehov("Arbeidstaker", rettighetskategoriId = null))
+
+        assertEquals(0, rapid.inspektør.size)
+    }
+
     // Riveren skal ikke plukke opp behov som allerede har fått en løsning
     @Test
     fun `behov med løsning ignoreres`() {
@@ -231,7 +265,7 @@ internal class OpptjeningsvurderingRiverTest {
 
         fun opptjeningsvurderingBehov(
             arbeidssituasjon: String,
-            rettighetskategoriId: UUID? = null,
+            rettighetskategoriId: UUID? = UUID.randomUUID(),
         ): String {
             val rettighetskategorifelt = rettighetskategoriId?.let { ""","rettighetskategoriId": "$it"""" } ?: ""
 

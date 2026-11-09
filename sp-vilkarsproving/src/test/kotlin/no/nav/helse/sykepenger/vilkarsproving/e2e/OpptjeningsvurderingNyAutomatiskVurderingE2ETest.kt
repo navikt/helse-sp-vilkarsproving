@@ -232,7 +232,8 @@ internal class OpptjeningsvurderingNyAutomatiskVurderingE2ETest : DatabaseTest()
           "fødselsnummer": "$FØDSELSNUMMER",
           "Opptjeningsvurdering" : {
               "skjæringstidspunkt": "2018-02-01",
-              "arbeidssituasjon": "Arbeidstaker"
+              "arbeidssituasjon": "Arbeidstaker",
+              "rettighetskategoriId": "${UUID.randomUUID()}"
           }
         }
         """

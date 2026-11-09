@@ -30,7 +30,6 @@ import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.get
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.post
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.testfixtures.InMemoryPersonPseudoIdProvider
 import no.nav.sykepenger.libs.ktor.auth.*
-import no.nav.sykepenger.libs.leaderelection.LeaderElection
 import no.nav.sykepenger.libs.outbox.OutboxPubliseringsjobb
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
@@ -434,7 +433,8 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
           "fødselsnummer": "$FØDSELSNUMMER",
           "Opptjeningsvurdering" : {
               "skjæringstidspunkt": "2018-02-01",
-              "arbeidssituasjon": "$arbeidssituasjon"
+              "arbeidssituasjon": "$arbeidssituasjon",
+              "rettighetskategoriId": "${UUID.randomUUID()}"
           }
         }
         """
