@@ -7,6 +7,8 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.db.DatabaseTest
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingResultatRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
+import no.nav.helse.sykepenger.vilkarsproving.infra.rettighetskategori.FakeRettighetskategoriClient
+import no.nav.helse.sykepenger.vilkarsproving.infra.rettighetskategori.hovedkategori
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisOpptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
@@ -18,9 +20,10 @@ import java.util.*
 
 internal class OpptjeningE2ETest : DatabaseTest() {
     private val transaksjon = Database.transaksjonProvider
+    private val rettighetskategorier = FakeRettighetskategoriClient()
     private val rapid =
         TestRapid().apply {
-            OpptjeningsvurderingRiver(this, transaksjon)
+            OpptjeningsvurderingRiver(this, transaksjon, rettighetskategorier)
             GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(this, transaksjon)
             OpptjeningsvurderingResultatRiver(
                 this,
@@ -264,7 +267,7 @@ internal class OpptjeningE2ETest : DatabaseTest() {
 
         val nyRapid =
             TestRapid().apply {
-                OpptjeningsvurderingRiver(this, transaksjon)
+                OpptjeningsvurderingRiver(this, transaksjon, rettighetskategorier)
             }
         nyRapid.sendTestMessage(opptjeningsvurderingBehov(UUID.randomUUID(), "SelvstendigNæringsdrivende"), FØDSELSNUMMER)
 
@@ -286,7 +289,7 @@ internal class OpptjeningE2ETest : DatabaseTest() {
     fun `feil i behandlingen av en melding lagrer ingenting`() {
         val feilendeRapid =
             TestRapid().apply {
-                OpptjeningsvurderingRiver(this, feilerEtterArbeidet)
+                OpptjeningsvurderingRiver(this, feilerEtterArbeidet, rettighetskategorier)
             }
 
         assertThrows<RuntimeException> {
@@ -307,15 +310,14 @@ internal class OpptjeningE2ETest : DatabaseTest() {
                 }
         }
 
-    private companion object {
-        const val FØDSELSNUMMER = "12029240045"
-        const val ORGNUMMER = "987654321"
-
-        @Language("JSON")
-        fun opptjeningsvurderingBehov(
-            id: UUID,
-            arbeidssituasjon: String,
-        ) = """
+    @Language("JSON")
+    private fun opptjeningsvurderingBehov(
+        id: UUID,
+        arbeidssituasjon: String,
+    ): String {
+        val rettighetskategoriId = UUID.randomUUID()
+        rettighetskategorier.registrer(rettighetskategoriId, hovedkategori(arbeidssituasjon))
+        return """
         {
           "@event_name": "behov",
           "@id": "$id",
@@ -324,10 +326,15 @@ internal class OpptjeningE2ETest : DatabaseTest() {
           "Opptjeningsvurdering" : {
               "skjæringstidspunkt": "2018-02-01",
               "arbeidssituasjon": "$arbeidssituasjon",
-              "rettighetskategoriId": "${UUID.randomUUID()}"
+              "rettighetskategoriId": "$rettighetskategoriId"
           }
         }
         """
+    }
+
+    private companion object {
+        const val FØDSELSNUMMER = "12029240045"
+        const val ORGNUMMER = "987654321"
 
         fun arbeidsforhold(
             orgnummer: String = ORGNUMMER,

@@ -22,6 +22,8 @@ import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonPro
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForNyArbeidstakerOpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
+import no.nav.helse.sykepenger.vilkarsproving.domain.Hovedkategori
+import no.nav.helse.sykepenger.vilkarsproving.infra.rettighetskategori.FakeRettighetskategoriClient
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureResources
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestAdapter
@@ -43,9 +45,10 @@ import java.util.UUID
 
 internal class PostNyAutomatiskVilkårsvurderingBehandlerTest {
     private val transaksjonProvider = InMemoryTransaksjonProvider()
+    private val rettighetskategorier = FakeRettighetskategoriClient()
     private val rapid =
         TestRapid().apply {
-            OpptjeningsvurderingRiver(this, transaksjonProvider)
+            OpptjeningsvurderingRiver(this, transaksjonProvider, rettighetskategorier)
             GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(this, transaksjonProvider)
             GrunnlagForNyArbeidstakerOpptjeningsvurderingRiver(this, transaksjonProvider)
         }
@@ -56,6 +59,7 @@ internal class PostNyAutomatiskVilkårsvurderingBehandlerTest {
         testApplication {
             val pseudoId = settOpp()
             val rettighetskategoriId = UUID.randomUUID()
+            rettighetskategorier.registrer(rettighetskategoriId, Hovedkategori.SelvstendigNæringsdrivende)
             rapid.sendTestMessage(opptjeningsvurderingBehov("SelvstendigNæringsdrivende", rettighetskategoriId))
             val erstattet = løsningsIder().single()
 

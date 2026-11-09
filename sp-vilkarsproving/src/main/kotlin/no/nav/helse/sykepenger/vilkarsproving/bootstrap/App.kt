@@ -21,6 +21,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetSaksbehandlerhandlin
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellOpptjeningsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostNyAutomatiskVilkårsvurderingBehandler
+import no.nav.helse.sykepenger.vilkarsproving.infra.rettighetskategori.RettighetskategoriClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.SpleisClient
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.openapi.OpenApiConfig
@@ -78,6 +79,7 @@ fun main() {
     val versjonAvKode = env.getValue("NAIS_APP_IMAGE")
     val konfigurasjon = AppKonfigurasjon.fraEnv(APP_NAVN, env)
     val spleisClient = SpleisClient.fromEnv()
+    val rettighetskategoriClient = RettighetskategoriClient.fromEnv()
 
     val dataSource = konfigurasjon.database.dataSource()
     logger.info("Migrerer database")
@@ -114,6 +116,7 @@ fun main() {
             OpptjeningsvurderingRiver(
                 rapidsConnection = this,
                 transaksjonProvider = transaksjonProvider,
+                rettighetskategoriClient = rettighetskategoriClient,
                 versjonAvKode = versjonAvKode,
             )
             OpptjeningsvurderingResultatRiver(

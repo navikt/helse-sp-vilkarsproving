@@ -26,12 +26,12 @@ internal class OpptjeningService(
     private val opptjeningsprøvingRepository = kontekst.opptjeningsprøvinger
     private val outbox = kontekst.outbox
 
-    fun vurderOpptjening(
+    /** Steg 1 i gjenbruken: den nyeste vurderingen som er koblet til rettighetskategori-ID-en, uten oppslag i sp-rettighetskategori. */
+    fun kobletVurdering(
         fødselsnummer: String,
         skjæringstidspunkt: LocalDate,
-        arbeidssituasjon: Arbeidssituasjon,
         rettighetskategoriId: RettighetskategoriId,
-    ): VurderOpptjeningResultat =
+    ): HarVurdering? =
         medMdc(
             MdcKey.IDENTITETSNUMMER to fødselsnummer,
         ) {
@@ -42,12 +42,25 @@ internal class OpptjeningService(
                     "rettighetskategoriId" to rettighetskategoriId.toString(),
                     "skjæringstidspunkt" to skjæringstidspunkt.toString(),
                 )
-                return@medMdc HarVurdering(fødselsnummer, skjæringstidspunkt, vurdering.id)
+                HarVurdering(fødselsnummer, skjæringstidspunkt, vurdering.id)
             }
+        }
+
+    /** Gjenbruker en koblet eller gjeldende vurdering for [kategori], eller starter en ny prøving. */
+    fun vurderOpptjening(
+        fødselsnummer: String,
+        skjæringstidspunkt: LocalDate,
+        kategori: Kategori,
+        rettighetskategoriId: RettighetskategoriId,
+    ): VurderOpptjeningResultat =
+        medMdc(
+            MdcKey.IDENTITETSNUMMER to fødselsnummer,
+        ) {
+            kobletVurdering(fødselsnummer, skjæringstidspunkt, rettighetskategoriId)?.let { return@medMdc it }
 
             opptjeningsvurderingRepository
                 .gjeldende(fødselsnummer, skjæringstidspunkt)
-                ?.takeIf { it.kategori == arbeidssituasjon.kategori }
+                ?.takeIf { it.kategori == kategori }
                 ?.let { vurdering ->
                     opptjeningsvurderingRepository.koble(vurdering.id, setOf(rettighetskategoriId), Instant.now())
                     loggInfo(
@@ -59,7 +72,7 @@ internal class OpptjeningService(
                     return@medMdc HarVurdering(fødselsnummer, skjæringstidspunkt, vurdering.id)
                 }
 
-            opptjeningsprøvingRepository.finnSiste(fødselsnummer, skjæringstidspunkt, arbeidssituasjon.kategori)?.takeUnless { it.erAvsluttet }?.let {
+            opptjeningsprøvingRepository.finnSiste(fødselsnummer, skjæringstidspunkt, kategori)?.takeUnless { it.erAvsluttet }?.let {
                 it.leggTil(rettighetskategoriId)
                 opptjeningsprøvingRepository.lagre(it)
                 loggInfo(
@@ -75,7 +88,7 @@ internal class OpptjeningService(
                 Opptjeningsprøving.start(
                     fødselsnummer,
                     skjæringstidspunkt,
-                    arbeidssituasjon,
+                    kategori.arbeidssituasjon,
                     versjonAvKode,
                     setOf(rettighetskategoriId),
                 )
@@ -100,13 +113,6 @@ internal class OpptjeningService(
             )
             HarVurdering(fødselsnummer, skjæringstidspunkt, vurdering.id)
         }
-
-    private val Arbeidssituasjon.kategori: Kategori
-        get() =
-            when (this) {
-                Arbeidssituasjon.Arbeidstaker -> Kategori.Arbeidstaker
-                Arbeidssituasjon.SelvstendigNæringsdrivende -> Kategori.SelvstendigNæringsdrivende
-            }
 
     fun behandleGrunnlagForAutomatiskArbeidstakerOpptjeningsvurdering(
         arbeidsforhold: List<Arbeidsforhold>,

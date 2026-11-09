@@ -32,6 +32,8 @@ spec:
   env:
     - name: TILGANGSMASKINEN_SCOPE
       value: "api://prod-gcp.tilgangsmaskin.populasjonstilgangskontroll/.default"
+    - name: SP_RETTIGHETSKATEGORI_SCOPE
+      value: "api://prod-gcp.tbd.sp-rettighetskategori/.default"
     - name: TILGANG_SKRIV
       value: 611669fa-de5c-4dc2-a0e8-6041a019992a # 0000-AZ-speil-brukere
     - name: TILGANG_LES

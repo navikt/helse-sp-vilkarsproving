@@ -6,6 +6,7 @@ import no.nav.helse.januar
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.domain.*
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidsforhold.Arbeidsforholdtype
+import no.nav.helse.sykepenger.vilkarsproving.infra.rettighetskategori.FakeRettighetskategoriClient
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -266,7 +267,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
     fun `vurderingen kobles til alle rettighetskategori-ID-er som venter på prøvingen`() {
         val rapid =
             TestRapid().apply {
-                OpptjeningsvurderingRiver(this, transaksjon)
+                OpptjeningsvurderingRiver(this, transaksjon, FakeRettighetskategoriClient())
                 GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(this, transaksjon)
             }
         val første = UUID.randomUUID()
@@ -279,7 +280,7 @@ internal class GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiverTest {
         rapid.sendTestMessage(arbeidsforholdløsning(arbeidsforhold(ansattSiden = "2018-01-01", ansattTil = "2018-01-31")))
         val vurdering = vurdert()
 
-        // Kjente ID-er svarer med vurderingen uten ny prøving, også når arbeidssituasjonen i behovet er en annen
+        // Kjente ID-er svarer med vurderingen uten ny prøving og uten oppslag, også når arbeidssituasjonen i behovet er en annen
         rapid.sendTestMessage(opptjeningsvurderingBehov("SelvstendigNæringsdrivende", første))
         rapid.sendTestMessage(opptjeningsvurderingBehov("SelvstendigNæringsdrivende", andre))
 

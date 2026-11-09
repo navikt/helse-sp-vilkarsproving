@@ -21,6 +21,8 @@ spec:
   env:
     - name: TILGANGSMASKINEN_SCOPE
       value: "api://dev-gcp.tilgangsmaskin.populasjonstilgangskontroll/.default"
+    - name: SP_RETTIGHETSKATEGORI_SCOPE
+      value: "api://dev-gcp.tbd.sp-rettighetskategori/.default"
     - name: TILGANG_SKRIV
       value: cda797bb-ac3b-4440-b661-2cd5eb3edba0 # 0000-CA-Speil-Saksbehandler
     - name: TILGANG_LES

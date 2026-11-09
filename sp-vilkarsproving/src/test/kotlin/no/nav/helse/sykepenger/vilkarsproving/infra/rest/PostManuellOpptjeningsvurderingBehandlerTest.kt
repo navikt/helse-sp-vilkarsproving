@@ -14,10 +14,12 @@ import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import no.nav.helse.sykepenger.vilkarsproving.application.InMemoryTransaksjonProvider
 import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
+import no.nav.helse.sykepenger.vilkarsproving.domain.Hovedkategori
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsprøving
 import no.nav.helse.sykepenger.vilkarsproving.domain.Opptjeningsvurdering
 import no.nav.helse.sykepenger.vilkarsproving.domain.Vilkårskode
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
+import no.nav.helse.sykepenger.vilkarsproving.infra.rettighetskategori.FakeRettighetskategoriClient
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureContentNegotiation
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.plugins.configureResources
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.RestAdapter
@@ -179,7 +181,7 @@ class PostManuellOpptjeningsvurderingBehandlerTest {
     fun `senere behov med rettighetskategori-ID-en til den erstattede vurderingen får den manuelle vurderingen`() =
         testApplication {
             val pseudoId = settOpp()
-            val rapid = TestRapid().apply { OpptjeningsvurderingRiver(this, transaksjonProvider) }
+            val rapid = TestRapid().apply { OpptjeningsvurderingRiver(this, transaksjonProvider, FakeRettighetskategoriClient(Hovedkategori.SelvstendigNæringsdrivende)) }
             val rettighetskategoriId = UUID.randomUUID()
             rapid.sendTestMessage(opptjeningsvurderingBehov(rettighetskategoriId))
             val erstattet = rapid.løsningsId(0)
@@ -196,7 +198,7 @@ class PostManuellOpptjeningsvurderingBehandlerTest {
     fun `manuell vurdering som erstatter en vurdering uten koblinger kobles ved neste behov`() =
         testApplication {
             val pseudoId = settOpp()
-            val rapid = TestRapid().apply { OpptjeningsvurderingRiver(this, transaksjonProvider) }
+            val rapid = TestRapid().apply { OpptjeningsvurderingRiver(this, transaksjonProvider, FakeRettighetskategoriClient(Hovedkategori.SelvstendigNæringsdrivende)) }
             val ukoblet =
                 checkNotNull(
                     Opptjeningsprøving.start("12345678901", LocalDate.parse("2025-04-09"), Arbeidssituasjon.SelvstendigNæringsdrivende).vurdering,

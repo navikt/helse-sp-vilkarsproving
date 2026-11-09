@@ -60,6 +60,8 @@ spec:
       value: tbd.rapid.v1
     - name: TILGANGSMASKINEN_BASE_URL
       value: http://populasjonstilgangskontroll.tilgangsmaskin
+    - name: SP_RETTIGHETSKATEGORI_BASE_URL
+      value: http://sp-rettighetskategori
   accessPolicy:
     inbound:
       rules:
@@ -71,3 +73,4 @@ spec:
         - application: populasjonstilgangskontroll
           namespace: tilgangsmaskin
         - application: spleis-api
+        - application: sp-rettighetskategori

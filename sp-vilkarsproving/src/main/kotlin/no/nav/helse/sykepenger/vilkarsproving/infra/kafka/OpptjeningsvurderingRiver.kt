@@ -10,18 +10,25 @@ import io.micrometer.core.instrument.MeterRegistry
 import no.nav.helse.sykepenger.vilkarsproving.application.OpptjeningService
 import no.nav.helse.sykepenger.vilkarsproving.application.Transaksjonskontekst
 import no.nav.helse.sykepenger.vilkarsproving.application.VurderOpptjeningResultat
-import no.nav.helse.sykepenger.vilkarsproving.domain.Arbeidssituasjon
+import no.nav.helse.sykepenger.vilkarsproving.domain.Hovedkategori
+import no.nav.helse.sykepenger.vilkarsproving.domain.Kategori
 import no.nav.helse.sykepenger.vilkarsproving.domain.RettighetskategoriId
+import no.nav.helse.sykepenger.vilkarsproving.infra.rettighetskategori.IRettighetskategoriClient
+import no.nav.helse.sykepenger.vilkarsproving.infra.rettighetskategori.RettighetskategoriClientException
 import no.nav.helse.sykepenger.vilkarsproving.rammeverk.rest.TransaksjonProvider
 import no.nav.sykepenger.libs.logging.MdcKey
+import no.nav.sykepenger.libs.logging.loggError
 import no.nav.sykepenger.libs.logging.loggInfo
+import no.nav.sykepenger.libs.logging.loggWarn
 import no.nav.sykepenger.libs.logging.medMdc
 import tools.jackson.databind.JsonNode
 import tools.jackson.module.kotlin.jacksonObjectMapper
+import java.time.LocalDate
 
 internal class OpptjeningsvurderingRiver(
     rapidsConnection: RapidsConnection,
     private val transaksjonProvider: TransaksjonProvider<Transaksjonskontekst>,
+    private val rettighetskategoriClient: IRettighetskategoriClient,
     private val versjonAvKode: String = "test",
 ) : River.PacketListener {
     private val behovKey = "Opptjeningsvurdering"
@@ -38,7 +45,6 @@ internal class OpptjeningsvurderingRiver(
                 validate {
                     it.requireKey("fødselsnummer")
                     it.require("Opptjeningsvurdering.skjæringstidspunkt", JsonNode::asLocalDate)
-                    it.requireKey("Opptjeningsvurdering.arbeidssituasjon")
                     it.requireKey("Opptjeningsvurdering.rettighetskategoriId")
                 }
             }.register(this)
@@ -52,7 +58,6 @@ internal class OpptjeningsvurderingRiver(
     ) {
         val fødselsnummer = packet["fødselsnummer"].asString()
         val skjæringstidspunkt = packet["Opptjeningsvurdering.skjæringstidspunkt"].asLocalDate()
-        val arbeidssituasjon = Arbeidssituasjon.valueOf(packet["Opptjeningsvurdering.arbeidssituasjon"].asString())
         val rettighetskategoriId = RettighetskategoriId(packet["Opptjeningsvurdering.rettighetskategoriId"].asUUID())
 
         medMdc(
@@ -66,12 +71,18 @@ internal class OpptjeningsvurderingRiver(
 
             val vurderOpptjeningResultat =
                 transaksjonProvider.transaksjon { kontekst ->
-                    OpptjeningService(kontekst, versjonAvKode).vurderOpptjening(
-                        fødselsnummer = fødselsnummer,
-                        skjæringstidspunkt = skjæringstidspunkt,
-                        arbeidssituasjon = arbeidssituasjon,
-                        rettighetskategoriId = rettighetskategoriId,
-                    )
+                    OpptjeningService(kontekst, versjonAvKode).kobletVurdering(fødselsnummer, skjæringstidspunkt, rettighetskategoriId)
+                } ?: run {
+                    // Oppslaget gjøres utenfor transaksjonen, så vi ikke holder på en databaseforbindelse mens vi venter på svar
+                    val kategori = hentKategori(rettighetskategoriId, fødselsnummer, skjæringstidspunkt) ?: return@medMdc
+                    transaksjonProvider.transaksjon { kontekst ->
+                        OpptjeningService(kontekst, versjonAvKode).vurderOpptjening(
+                            fødselsnummer = fødselsnummer,
+                            skjæringstidspunkt = skjæringstidspunkt,
+                            kategori = kategori,
+                            rettighetskategoriId = rettighetskategoriId,
+                        )
+                    }
                 }
 
             // Publisering skjer først etter at transaksjonen er commitet — vi forteller aldri
@@ -112,6 +123,45 @@ internal class OpptjeningsvurderingRiver(
                     )
                     context.publish(utgåendeBehov.toJson())
                 }
+            }
+        }
+    }
+
+    /** Kategorien til opptjening ut fra hovedkategorien. Null betyr at behovet skal ignoreres. */
+    private fun hentKategori(
+        rettighetskategoriId: RettighetskategoriId,
+        fødselsnummer: String,
+        skjæringstidspunkt: LocalDate,
+    ): Kategori? {
+        val detaljer =
+            arrayOf(
+                "rettighetskategoriId" to rettighetskategoriId.toString(),
+                "skjæringstidspunkt" to skjæringstidspunkt.toString(),
+            )
+        val hovedkategori =
+            try {
+                rettighetskategoriClient.hentHovedkategori(rettighetskategoriId, fødselsnummer)
+            } catch (ex: RettighetskategoriClientException) {
+                loggWarn("Fikk ikke slått opp rettighetskategorien. Sender ingen løsning", ex, *detaljer)
+                return null
+            }
+        return when (hovedkategori) {
+            Hovedkategori.Arbeidstaker -> {
+                Kategori.Arbeidstaker
+            }
+
+            Hovedkategori.SelvstendigNæringsdrivende -> {
+                Kategori.SelvstendigNæringsdrivende
+            }
+
+            Hovedkategori.ArbeidstakerOgSelvstendigNæringsdrivende -> {
+                loggError("Opptjening kan ikke vurdere hovedkategorien Arbeidstaker og selvstendig næringsdrivende. Ignorerer behovet", *detaljer)
+                null
+            }
+
+            is Hovedkategori.Ukjent -> {
+                loggError("Hovedkategorien mangler eller er ukjent. Ignorerer behovet", "hovedkategori" to hovedkategori.verdi.toString(), *detaljer)
+                null
             }
         }
     }

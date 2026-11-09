@@ -19,6 +19,7 @@ import no.nav.helse.sykepenger.vilkarsproving.infra.db.DatabaseTest
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingResultatRiver
 import no.nav.helse.sykepenger.vilkarsproving.infra.kafka.OpptjeningsvurderingRiver
+import no.nav.helse.sykepenger.vilkarsproving.infra.rettighetskategori.FakeRettighetskategoriClient
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.GetVilkårsvurderingerForPersonBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.rest.PostManuellOpptjeningsvurderingBehandler
 import no.nav.helse.sykepenger.vilkarsproving.infra.spleis.ISpleisClient
@@ -56,7 +57,7 @@ internal class OpptjeningsvurderingManuellVurderingE2ETest : DatabaseTest() {
     private val transaksjon = Database.transaksjonProvider
     private val rapid =
         TestRapid().apply {
-            OpptjeningsvurderingRiver(this, transaksjon)
+            OpptjeningsvurderingRiver(this, transaksjon, FakeRettighetskategoriClient())
             GrunnlagForAutomatiskArbeidstakerOpptjeningsvurderingRiver(this, transaksjon)
             OpptjeningsvurderingResultatRiver(
                 this,
